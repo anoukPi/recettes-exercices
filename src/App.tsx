@@ -11,18 +11,18 @@ import { MealsPage } from './pages/MealsPage';
 import { ActivityPage } from './pages/ActivityPage';
 
 const NAV_ITEMS = [
-  { path: '/recipes', label: 'Recettes' },
-  { path: '/exercises', label: 'Exercices' },
   { path: '/journal', label: 'Carnet' },
   { path: '/repas', label: 'Repas' },
   { path: '/activity', label: 'Activité' },
+  { path: '/recipes', label: 'Recettes' },
+  { path: '/exercises', label: 'Exercices' },
   { path: '/settings', label: 'Paramètres' },
 ];
 
 function AppNav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const current = NAV_ITEMS.find((item) => location.pathname.startsWith(item.path))?.path ?? '/recipes';
+  const current = NAV_ITEMS.find((item) => location.pathname.startsWith(item.path))?.path ?? '/journal';
 
   return (
     <select
@@ -50,7 +50,7 @@ function App() {
 
       <main>
         <Routes>
-          <Route path="/" element={<Navigate to="/recipes" replace />} />
+          <Route path="/" element={<Navigate to="/journal" replace />} />
           <Route path="/recipes" element={<RecipesPage />} />
           <Route path="/recipes/new" element={<NewRecipePage />} />
           <Route path="/recipes/:id" element={<RecipeDetailPage />} />
