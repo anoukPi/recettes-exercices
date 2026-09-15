@@ -262,7 +262,19 @@ export function MealsPage() {
                     {state?.status === 'ok' ? (
                       <>
                         {Math.round(state.totals.calories_kcal)} kcal
-                        {state.gi !== null && <span className="journal-gi-badge">IG {state.gi}</span>}
+                        {state.gi !== null && (
+                          <span className="journal-gi-badge" title="Indice glycémique de l'aliment">
+                            IG {state.gi}
+                          </span>
+                        )}
+                        {state.totals.glycemic_load > 0 && (
+                          <span
+                            className="journal-gi-badge journal-gl-badge"
+                            title="Charge glycémique de cette portion (IG × quantité de glucides mangée)"
+                          >
+                            CG {Math.round(state.totals.glycemic_load)}
+                          </span>
+                        )}
                         {state.warnings.length > 0 && (
                           <span className="warning-icon" title={state.warnings.join(' • ')} aria-label="Attention">
                             {' '}

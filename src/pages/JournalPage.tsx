@@ -16,21 +16,83 @@ function giAppreciation(avgGi: number): { label: string; className: string } {
   return { label: band.label, className: band.className };
 }
 
-const MICRO_LABELS: { key: keyof NutritionTotals; label: string; unit: string }[] = [
-  { key: 'fiber_g', label: 'Fibres', unit: 'g' },
-  { key: 'sugar_g', label: 'Sucres', unit: 'g' },
-  { key: 'sodium_mg', label: 'Sodium', unit: 'mg' },
-  { key: 'calcium_mg', label: 'Calcium', unit: 'mg' },
-  { key: 'iron_mg', label: 'Fer', unit: 'mg' },
-  { key: 'potassium_mg', label: 'Potassium', unit: 'mg' },
-  { key: 'magnesium_mg', label: 'Magnésium', unit: 'mg' },
-  { key: 'zinc_mg', label: 'Zinc', unit: 'mg' },
-  { key: 'vitamin_a_mcg', label: 'Vitamine A', unit: 'µg' },
-  { key: 'vitamin_c_mg', label: 'Vitamine C', unit: 'mg' },
-  { key: 'vitamin_d_mcg', label: 'Vitamine D', unit: 'µg' },
-  { key: 'vitamin_e_mg', label: 'Vitamine E', unit: 'mg' },
-  { key: 'vitamin_b12_mcg', label: 'Vitamine B12', unit: 'µg' },
+type MicroLabel = { key: keyof NutritionTotals; label: string; unit: string };
+
+const MICRO_GROUPS: { title: string; items: MicroLabel[] }[] = [
+  {
+    title: 'Autres',
+    items: [
+      { key: 'fiber_g', label: 'Fibres', unit: 'g' },
+      { key: 'sugar_g', label: 'Sucres', unit: 'g' },
+    ],
+  },
+  {
+    title: 'Minéraux',
+    items: [
+      { key: 'sodium_mg', label: 'Sodium', unit: 'mg' },
+      { key: 'calcium_mg', label: 'Calcium', unit: 'mg' },
+      { key: 'iron_mg', label: 'Fer', unit: 'mg' },
+      { key: 'potassium_mg', label: 'Potassium', unit: 'mg' },
+      { key: 'magnesium_mg', label: 'Magnésium', unit: 'mg' },
+      { key: 'zinc_mg', label: 'Zinc', unit: 'mg' },
+    ],
+  },
+  {
+    title: 'Vitamines',
+    items: [
+      { key: 'vitamin_a_mcg', label: 'Vitamine A', unit: 'µg' },
+      { key: 'vitamin_c_mg', label: 'Vitamine C', unit: 'mg' },
+      { key: 'vitamin_d_mcg', label: 'Vitamine D', unit: 'µg' },
+      { key: 'vitamin_e_mg', label: 'Vitamine E', unit: 'mg' },
+      { key: 'vitamin_b12_mcg', label: 'Vitamine B12', unit: 'µg' },
+    ],
+  },
 ];
+
+interface MeterStatus {
+  percent: number;
+  className: 'meter-under' | 'meter-ok' | 'meter-over' | 'meter-far';
+}
+
+/** Best-effort : pas un jugement médical, juste un repère visuel — en dessous
+ * de 60% ou au-dessus de 140% de l'objectif, l'écart est mis en avant. */
+function meterStatus(actual: number, target: number): MeterStatus {
+  const pct = target > 0 ? (actual / target) * 100 : 0;
+  let className: MeterStatus['className'] = 'meter-ok';
+  if (pct < 60 || pct > 140) className = 'meter-far';
+  else if (pct < 85 || pct > 115) className = pct < 85 ? 'meter-under' : 'meter-over';
+  return { percent: Math.min(pct, 100), className };
+}
+
+function MacroMeter({
+  label,
+  actual,
+  target,
+  unit,
+}: {
+  label: string;
+  actual: number;
+  target: number | undefined;
+  unit: string;
+}) {
+  const status = target ? meterStatus(actual, target) : null;
+  return (
+    <div className="meter-row">
+      <div className="meter-row-header">
+        <span>{label}</span>
+        <span className="meter-row-value">
+          {Math.round(actual)}
+          {target ? ` / ${Math.round(target)} ${unit}` : ` ${unit}`}
+        </span>
+      </div>
+      {status && (
+        <div className="meter-track">
+          <div className={`meter-fill ${status.className}`} style={{ width: `${status.percent}%` }} />
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function JournalPage() {
   const { session, loading: authLoading } = useSession();
@@ -82,36 +144,20 @@ export function JournalPage() {
       {error && <p className="error">{error}</p>}
 
       <div className="journal-summary">
-        <div className="journal-summary-main">
-          <div>
-            <span className="journal-summary-value">{Math.round(dayTotals.totals.calories_kcal)}</span>
-            <span className="journal-summary-unit">
-              {dailyTargets ? `/ ${Math.round(dailyTargets.calories_kcal)} kcal` : 'kcal'}
-            </span>
-          </div>
-          <div>
-            <span className="journal-summary-value">{Math.round(dayTotals.totals.protein_g)}</span>
-            <span className="journal-summary-unit">
-              {dailyTargets ? `/ ${Math.round(dailyTargets.protein_g)} g protéines` : 'g protéines'}
-            </span>
-          </div>
-          <div>
-            <span className="journal-summary-value">{Math.round(dayTotals.totals.carbs_g)}</span>
-            <span className="journal-summary-unit">
-              {dailyTargets ? `/ ${Math.round(dailyTargets.carbs_g)} g glucides` : 'g glucides'}
-            </span>
-          </div>
-          <div>
-            <span className="journal-summary-value">{Math.round(dayTotals.totals.fat_g)}</span>
-            <span className="journal-summary-unit">
-              {dailyTargets ? `/ ${Math.round(dailyTargets.fat_g)} g lipides` : 'g lipides'}
-            </span>
-          </div>
-          <div>
-            <span className="journal-summary-value">{Math.round(dayTotals.totals.glycemic_load)}</span>
-            <span className="journal-summary-unit">charge glycémique</span>
-          </div>
+        <div className="journal-summary-hero">
+          <span className="journal-summary-value">{Math.round(dayTotals.totals.calories_kcal)}</span>
+          <span className="journal-summary-unit">
+            {dailyTargets ? `/ ${Math.round(dailyTargets.calories_kcal)} kcal` : 'kcal'}
+          </span>
         </div>
+        <div className="meter-group">
+          <MacroMeter label="Protéines" actual={dayTotals.totals.protein_g} target={dailyTargets?.protein_g} unit="g" />
+          <MacroMeter label="Glucides" actual={dayTotals.totals.carbs_g} target={dailyTargets?.carbs_g} unit="g" />
+          <MacroMeter label="Lipides" actual={dayTotals.totals.fat_g} target={dailyTargets?.fat_g} unit="g" />
+        </div>
+        <p className="hint">
+          Charge glycémique du jour : {Math.round(dayTotals.totals.glycemic_load)}
+        </p>
         {!profile && (
           <p className="hint">
             Renseigne ton{' '}
@@ -162,20 +208,27 @@ export function JournalPage() {
         {dayTotals.hasAny && (
           <details className="journal-micro-details">
             <summary>Micronutriments</summary>
-            <ul className="journal-micro-list">
-              {MICRO_LABELS.map(({ key, label, unit }) => (
-                <li key={key}>
-                  <span>{label}</span>
-                  <span>
-                    {Math.round(dayTotals.totals[key] * 10) / 10} {unit}
-                  </span>
-                </li>
-              ))}
-              <li>
-                <span>Sel</span>
-                <span>{Math.round(((dayTotals.totals.sodium_mg * 2.5) / 1000) * 10) / 10} g</span>
-              </li>
-            </ul>
+            {MICRO_GROUPS.map(({ title, items }) => (
+              <div key={title} className="journal-micro-group">
+                <h5>{title}</h5>
+                <ul className="journal-micro-list">
+                  {items.map(({ key, label, unit }) => (
+                    <li key={key}>
+                      <span>{label}</span>
+                      <span>
+                        {Math.round(dayTotals.totals[key] * 10) / 10} {unit}
+                      </span>
+                    </li>
+                  ))}
+                  {title === 'Minéraux' && (
+                    <li>
+                      <span>Sel</span>
+                      <span>{Math.round(((dayTotals.totals.sodium_mg * 2.5) / 1000) * 10) / 10} g</span>
+                    </li>
+                  )}
+                </ul>
+              </div>
+            ))}
           </details>
         )}
       </div>

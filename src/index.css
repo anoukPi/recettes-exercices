@@ -316,16 +316,13 @@ h4 {
   margin-bottom: 1.25rem;
 }
 
-.journal-summary-main {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  margin-bottom: 0.5rem;
+.journal-summary-hero {
+  margin-bottom: 1rem;
 }
 
 .journal-summary-value {
   font-family: var(--font-display);
-  font-size: 1.6rem;
+  font-size: 2rem;
   font-weight: 700;
   margin-right: 0.3rem;
   color: var(--primary);
@@ -334,7 +331,55 @@ h4 {
 
 .journal-summary-unit {
   color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.meter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 0.75rem;
+}
+
+.meter-row-header {
+  display: flex;
+  justify-content: space-between;
   font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+}
+
+.meter-row-value {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.meter-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-muted);
+  overflow: hidden;
+}
+
+.meter-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.2s ease;
+}
+
+.meter-fill.meter-ok {
+  background: var(--primary);
+}
+
+.meter-fill.meter-under {
+  background: var(--accent);
+}
+
+.meter-fill.meter-over {
+  background: var(--warning);
+}
+
+.meter-fill.meter-far {
+  background: var(--danger);
 }
 
 .bilan-line {
@@ -348,9 +393,22 @@ h4 {
   color: var(--text);
 }
 
+.journal-micro-group {
+  margin-top: 0.75rem;
+}
+
+.journal-micro-group h5 {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
 .journal-micro-list {
   list-style: none;
-  margin: 0.5rem 0 0;
+  margin: 0;
   padding: 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -518,6 +576,12 @@ h4 {
   color: var(--primary);
   font-size: 0.72rem;
   white-space: nowrap;
+  cursor: help;
+}
+
+.journal-gl-badge {
+  background: var(--accent-soft);
+  color: var(--accent);
 }
 
 .warning-icon.unavailable {
