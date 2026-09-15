@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { addDays, defaultMealForNow, formatDateKeyFr, toDateKey } from '../lib/date';
 import { suggestUnit } from '../lib/unitSuggestion';
+import { disambiguationFor } from '../lib/ingredientDisambiguation';
 import { useDayNutrition, REASON_UNAVAILABLE } from '../lib/useDayNutrition';
 import { addJournalEntry, deleteJournalEntry, updateJournalEntryQuantity } from '../api/journal';
 import { addReferenceItem, listReferenceItems, type ReferenceItem } from '../api/referenceItems';
@@ -66,6 +67,9 @@ export function MealsPage() {
   };
 
   const selectedRecipe = recipeByTitle.get(ingName.trim().toLowerCase());
+  const [dismissedAmbiguous, setDismissedAmbiguous] = useState<string | null>(null);
+  const ambiguousVariants =
+    ingName.trim().toLowerCase() !== dismissedAmbiguous ? disambiguationFor(ingName) : null;
 
   const handleIngNameChange = (name: string) => {
     setIngName(name);
@@ -73,6 +77,11 @@ export function MealsPage() {
       const suggested = suggestUnit(name);
       if (suggested) setIngUnit(suggested);
     }
+  };
+
+  const pickVariant = (variant: string) => {
+    handleIngNameChange(variant);
+    setDismissedAmbiguous(variant.trim().toLowerCase());
   };
 
   const handleAddFood = async (e: FormEvent) => {
@@ -366,6 +375,30 @@ export function MealsPage() {
             />
           </div>
           {selectedRecipe && <p className="hint">Plat de ta bibliothèque : {selectedRecipe.title}.</p>}
+          {ambiguousVariants && (
+            <div className="disambiguation">
+              <p className="hint">« {ingName.trim()} » regroupe des aliments assez différents — précise :</p>
+              <div className="tag-filter">
+                {ambiguousVariants.map((variant) => (
+                  <button
+                    key={variant}
+                    type="button"
+                    className="tag-chip"
+                    onClick={() => pickVariant(variant)}
+                  >
+                    {variant}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="tag-chip clear"
+                  onClick={() => setDismissedAmbiguous(ingName.trim().toLowerCase())}
+                >
+                  Garder « {ingName.trim()} »
+                </button>
+              </div>
+            </div>
+          )}
           <button type="submit">Ajouter</button>
         </form>
       </div>
