@@ -1,9 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { getProfile, saveProfile } from '../api/profile';
 import { computeDailyTargets } from '../lib/dailyNeeds';
+import { useSession } from '../lib/auth';
 import { ACTIVITY_LEVELS, GOALS, type Profile } from '../types';
 
 export function ProfileSection() {
+  const { session } = useSession();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -60,6 +62,15 @@ export function ProfileSection() {
   const targets = profile ? computeDailyTargets(profile) : null;
 
   if (loading) return <p>Chargement…</p>;
+
+  if (!session) {
+    return (
+      <section className="reference-manager profile-section">
+        <h3>Profil</h3>
+        <p className="hint">Connecte-toi ci-dessus pour renseigner ton profil.</p>
+      </section>
+    );
+  }
 
   return (
     <section className="reference-manager profile-section">

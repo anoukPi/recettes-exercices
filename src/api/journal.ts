@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
+import { getCurrentUserId } from '../lib/auth';
 import type { JournalEntry, JournalEntryInput } from '../types';
 
 export async function listJournalEntries(date: string): Promise<JournalEntry[]> {
@@ -11,8 +12,14 @@ export async function listJournalEntries(date: string): Promise<JournalEntry[]> 
   return data ?? [];
 }
 
-export async function addJournalEntry(input: JournalEntryInput): Promise<JournalEntry> {
-  const { data, error } = await supabase.from('journal_entries').insert(input).select().single();
+export async function addJournalEntry(input: Omit<JournalEntryInput, 'user_id'>): Promise<JournalEntry> {
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error('Connecte-toi pour ajouter une entrée au carnet.');
+  const { data, error } = await supabase
+    .from('journal_entries')
+    .insert({ ...input, user_id: userId })
+    .select()
+    .single();
   if (error) throw error;
   return data;
 }

@@ -5,11 +5,13 @@ import { addDays, formatDateKeyFr, toDateKey } from '../lib/date';
 import { DEFAULT_MET, MET_VALUES, estimateCaloriesBurned, metForActivity } from '../lib/metValues';
 import { addActivityEntry, deleteActivityEntry, listActivityEntries } from '../api/activities';
 import { getProfile } from '../api/profile';
+import { useSession } from '../lib/auth';
 import type { ActivityEntry, Profile } from '../types';
 
 const ACTIVITY_TYPES = Object.keys(MET_VALUES);
 
 export function ActivityPage() {
+  const { session, loading: authLoading } = useSession();
   const [dateKey, setDateKey] = useState(toDateKey(new Date()));
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,7 +74,6 @@ export function ActivityPage() {
         duration_minutes: minutes,
         met,
         calories_kcal: calories,
-        user_id: null,
       });
       setActivityType('');
       setDuration('');
@@ -91,6 +92,19 @@ export function ActivityPage() {
     if (!name) return;
     setCustomMets((prev) => (name in prev ? prev : { ...prev, [name]: metForActivity(name) }));
   };
+
+  if (authLoading) return null;
+
+  if (!session) {
+    return (
+      <section className="journal">
+        <p className="hint">
+          Connecte-toi dans <Link to="/settings">Paramètres</Link> pour voir et remplir ton carnet
+          d'activité.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="journal">

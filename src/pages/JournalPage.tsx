@@ -12,6 +12,7 @@ import { addReferenceItem, listReferenceItems, type ReferenceItem } from '../api
 import { getRecipe, listRecipes } from '../api/recipes';
 import { getProfile } from '../api/profile';
 import { listActivityEntries } from '../api/activities';
+import { useSession } from '../lib/auth';
 import { computeDailyTargets, type DailyTargets } from '../lib/dailyNeeds';
 import { MEALS, type ActivityEntry, type JournalEntry, type NutritionTotals, type Profile, type Recipe } from '../types';
 
@@ -62,6 +63,7 @@ type EntryNutritionState =
   | { status: 'unavailable' };
 
 export function JournalPage() {
+  const { session, loading: authLoading } = useSession();
   const [dateKey, setDateKey] = useState(toDateKey(new Date()));
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -360,6 +362,18 @@ export function JournalPage() {
     await deleteJournalEntry(id);
     setEntries((prev) => prev.filter((e) => e.id !== id));
   };
+
+  if (authLoading) return null;
+
+  if (!session) {
+    return (
+      <section className="journal">
+        <p className="hint">
+          Connecte-toi dans <Link to="/settings">Paramètres</Link> pour voir et remplir ton carnet.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="journal">

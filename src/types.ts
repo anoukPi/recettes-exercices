@@ -80,7 +80,7 @@ export const GOALS = [
 export type Goal = (typeof GOALS)[number]['value'];
 
 export interface Profile {
-  id: string;
+  id: string; // = auth.uid() de l'utilisatrice
   sex: 'homme' | 'femme' | null;
   birth_date: string | null;
   height_cm: number | null;
@@ -94,6 +94,7 @@ export type ProfileInput = Omit<Profile, 'id' | 'updated_at'>;
 
 export interface JournalEntry {
   id: string;
+  user_id: string;
   entry_date: string;
   kind: JournalEntryKind;
   reference_item_id: string | null;

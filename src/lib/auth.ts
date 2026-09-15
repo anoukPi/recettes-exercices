@@ -36,3 +36,8 @@ export async function signOut(): Promise<void> {
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
 }
+
+export async function getCurrentUserId(): Promise<string | null> {
+  const { data } = await supabase.auth.getUser();
+  return data.user?.id ?? null;
+}

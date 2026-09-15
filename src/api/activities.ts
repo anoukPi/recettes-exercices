@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
+import { getCurrentUserId } from '../lib/auth';
 import type { ActivityEntry, ActivityEntryInput } from '../types';
 
 export async function listActivityEntries(date: string): Promise<ActivityEntry[]> {
@@ -11,8 +12,14 @@ export async function listActivityEntries(date: string): Promise<ActivityEntry[]
   return data ?? [];
 }
 
-export async function addActivityEntry(input: ActivityEntryInput): Promise<ActivityEntry> {
-  const { data, error } = await supabase.from('activity_entries').insert(input).select().single();
+export async function addActivityEntry(input: Omit<ActivityEntryInput, 'user_id'>): Promise<ActivityEntry> {
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error('Connecte-toi pour ajouter une activité.');
+  const { data, error } = await supabase
+    .from('activity_entries')
+    .insert({ ...input, user_id: userId })
+    .select()
+    .single();
   if (error) throw error;
   return data;
 }
