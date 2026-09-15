@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { getProfile, saveProfile } from '../api/profile';
 import { computeDailyTargets } from '../lib/dailyNeeds';
 import { useSession } from '../lib/auth';
+import { TagInput } from './TagInput';
+import { formatTagList, parseTagList } from '../lib/tags';
 import { ACTIVITY_LEVELS, GOALS, type Profile } from '../types';
 
 export function ProfileSection() {
@@ -20,6 +22,7 @@ export function ProfileSection() {
   const [goal, setGoal] = useState('');
   const [goalWeightChangeKg, setGoalWeightChangeKg] = useState('');
   const [goalTimeframeWeeks, setGoalTimeframeWeeks] = useState('');
+  const [sportsInput, setSportsInput] = useState('');
 
   useEffect(() => {
     getProfile()
@@ -34,6 +37,7 @@ export function ProfileSection() {
           setGoal(p.goal ?? '');
           setGoalWeightChangeKg(p.goal_weight_change_kg?.toString() ?? '');
           setGoalTimeframeWeeks(p.goal_timeframe_weeks?.toString() ?? '');
+          setSportsInput(formatTagList(p.sports ?? []));
         }
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Erreur de chargement.'))
@@ -55,6 +59,7 @@ export function ProfileSection() {
         goal: (goal || null) as Profile['goal'],
         goal_weight_change_kg: goalWeightChangeKg ? parseFloat(goalWeightChangeKg) : null,
         goal_timeframe_weeks: goalTimeframeWeeks ? parseFloat(goalTimeframeWeeks) : null,
+        sports: parseTagList(sportsInput),
       });
       setProfile(updated);
       setSaved(true);
@@ -144,6 +149,14 @@ export function ProfileSection() {
             ))}
           </select>
         </div>
+
+        <TagInput
+          label="Sports pratiqués"
+          listId="profile-sports"
+          value={sportsInput}
+          onChange={setSportsInput}
+          placeholder="ex: escalade, course à pied, musculation"
+        />
 
         <div className="field">
           <label htmlFor="profile-goal">Objectif</label>

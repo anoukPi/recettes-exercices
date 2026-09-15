@@ -91,6 +91,7 @@ export interface Profile {
   goal: Goal | null;
   goal_weight_change_kg: number | null;
   goal_timeframe_weeks: number | null;
+  sports: string[];
   updated_at: string;
 }
 
