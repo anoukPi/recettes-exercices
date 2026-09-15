@@ -56,9 +56,11 @@ export function ManualNutritionForm({ referenceItemId, label, onSaved }: ManualN
 
   return (
     <form className="manual-nutrition-form" onSubmit={handleSubmit}>
+      <p className="manual-nutrition-title">Valeurs nutritionnelles pour 100g de « {label} »</p>
       <p className="hint">
-        Valeurs pour 100g de « {label} » — demande-les à une IA ou trouve-les toi-même, puis
-        recopie-les ici. Marquées comme saisie manuelle, pas vérifiées comme les données USDA.
+        Toujours pour 100g, quelle que soit la portion que tu ajoutes au carnet — demande-les à une
+        IA ou trouve-les toi-même, puis recopie-les ici. Marquées comme saisie manuelle, pas
+        vérifiées comme les données USDA.
       </p>
       {error && <p className="error">{error}</p>}
       <div className="manual-nutrition-grid">

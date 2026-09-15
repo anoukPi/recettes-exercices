@@ -550,6 +550,12 @@ h4 {
   border-top: 1px solid var(--border);
 }
 
+.manual-nutrition-title {
+  margin: 0 0 0.2rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
 .manual-nutrition-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
