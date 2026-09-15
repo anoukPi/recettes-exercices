@@ -32,6 +32,32 @@ const PIECE_UNIT_NAMES = new Set(['unité', 'pièce', 'sachet', 'boîte', 'botte
 // moyenne générale et peuvent s'écarter significativement de la réalité.
 const EXACT_UNITS = new Set(['g', 'kg', 'mg']);
 
+// Variantes courantes (pluriel, sans accent, abréviations) qu'on ramène à la
+// clé canonique avant de chercher dans les tables ci-dessus — sinon "gr" ou
+// "grammes" ne matche jamais "g" et la conversion échoue silencieusement.
+const UNIT_ALIASES: Record<string, string> = {
+  gr: 'g', grs: 'g', gramme: 'g', grammes: 'g',
+  kilo: 'kg', kilos: 'kg', kilogramme: 'kg', kilogrammes: 'kg',
+  milligramme: 'mg', milligrammes: 'mg',
+  millilitre: 'ml', millilitres: 'ml',
+  centilitre: 'cl', centilitres: 'cl',
+  litre: 'l', litres: 'l',
+  'cuillères à soupe': 'cuillère à soupe', 'c.à.s': 'cuillère à soupe', 'cas': 'cuillère à soupe',
+  càs: 'cuillère à soupe', cs: 'cuillère à soupe', 'cuillere a soupe': 'cuillère à soupe',
+  'cuillères à café': 'cuillère à café', 'c.à.c': 'cuillère à café', cac: 'cuillère à café',
+  càc: 'cuillère à café', cc: 'cuillère à café', 'cuillere a cafe': 'cuillère à café',
+  pincées: 'pincée', tasses: 'tasse', verres: 'verre', tranches: 'tranche',
+  gousses: 'gousse', poignées: 'poignée',
+  unités: 'unité', u: 'unité', piece: 'pièce', pieces: 'pièce', pièces: 'pièce',
+  sachets: 'sachet', boite: 'boîte', boites: 'boîte', 'boîtes': 'boîte',
+  bottes: 'botte', feuilles: 'feuille', brins: 'brin',
+};
+
+function normalizeUnit(unit: string): string {
+  const key = unit.trim().toLowerCase();
+  return UNIT_ALIASES[key] ?? key;
+}
+
 export function gramsForQuantity(
   quantity: number,
   unit: string,
@@ -39,7 +65,7 @@ export function gramsForQuantity(
   customPieceWeightG?: number | null,
 ): number | null {
   if (!Number.isFinite(quantity)) return null;
-  const key = unit.trim().toLowerCase();
+  const key = normalizeUnit(unit);
 
   if (PIECE_UNIT_NAMES.has(key)) {
     if (customPieceWeightG != null) return quantity * customPieceWeightG;
@@ -56,7 +82,7 @@ export function gramsForQuantity(
 /** true si l'unité est convertible mais seulement via une moyenne approximative
  * (poids au litre supposé, taille de pièce standard, cuillère moyenne...). */
 export function isApproxUnit(unit: string): boolean {
-  const key = unit.trim().toLowerCase();
+  const key = normalizeUnit(unit);
   if (PIECE_UNIT_NAMES.has(key)) return true;
   return key in GRAMS_PER_UNIT && !EXACT_UNITS.has(key);
 }
