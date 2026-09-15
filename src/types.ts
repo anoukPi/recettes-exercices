@@ -112,6 +112,23 @@ export interface JournalEntry {
 
 export type JournalEntryInput = Omit<JournalEntry, 'id' | 'created_at'>;
 
+export const INTENSITIES = [
+  { value: 'leger', label: 'Légère' },
+  { value: 'modere', label: 'Modérée' },
+  { value: 'intense', label: 'Intense' },
+] as const;
+export type Intensity = (typeof INTENSITIES)[number]['value'];
+
+export const TRAINING_TYPES = [
+  { value: 'musculation', label: 'Musculation' },
+  { value: 'cardio', label: 'Cardio' },
+  { value: 'hiit', label: 'HIIT / Circuit training' },
+  { value: 'etirement', label: 'Étirement / Mobilité' },
+  { value: 'sport_collectif', label: 'Sport collectif' },
+  { value: 'autre', label: 'Autre' },
+] as const;
+export type TrainingType = (typeof TRAINING_TYPES)[number]['value'];
+
 export interface ActivityEntry {
   id: string;
   entry_date: string;
@@ -119,11 +136,25 @@ export interface ActivityEntry {
   duration_minutes: number;
   met: number;
   calories_kcal: number;
+  intensity: Intensity | null;
+  training_type: TrainingType | null;
   user_id: string | null;
   created_at: string;
 }
 
 export type ActivityEntryInput = Omit<ActivityEntry, 'id' | 'created_at'>;
+
+export interface SessionExercise {
+  id: string;
+  activity_entry_id: string;
+  exercise_id: string;
+  sets: number | null;
+  reps: number | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export type SessionExerciseInput = Omit<SessionExercise, 'id' | 'created_at'>;
 
 export interface NutritionTotals {
   calories_kcal: number;

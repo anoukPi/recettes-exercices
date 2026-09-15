@@ -6,7 +6,8 @@ import { DEFAULT_MET, MET_VALUES, estimateCaloriesBurned, metForActivity } from 
 import { addActivityEntry, deleteActivityEntry, listActivityEntries } from '../api/activities';
 import { getProfile } from '../api/profile';
 import { useSession } from '../lib/auth';
-import type { ActivityEntry, Profile } from '../types';
+import { SessionExercises } from '../components/SessionExercises';
+import { INTENSITIES, TRAINING_TYPES, type ActivityEntry, type Intensity, type Profile, type TrainingType } from '../types';
 
 const ACTIVITY_TYPES = Object.keys(MET_VALUES);
 
@@ -21,6 +22,8 @@ export function ActivityPage() {
 
   const [activityType, setActivityType] = useState('');
   const [duration, setDuration] = useState('');
+  const [intensity, setIntensity] = useState<Intensity | ''>('');
+  const [trainingType, setTrainingType] = useState<TrainingType | ''>('');
   const [formError, setFormError] = useState<string | null>(null);
 
   const loadEntries = (date: string) => {
@@ -74,9 +77,13 @@ export function ActivityPage() {
         duration_minutes: minutes,
         met,
         calories_kcal: calories,
+        intensity: intensity || null,
+        training_type: trainingType || null,
       });
       setActivityType('');
       setDuration('');
+      setIntensity('');
+      setTrainingType('');
       loadEntries(dateKey);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Une erreur est survenue.');
@@ -160,26 +167,37 @@ export function ActivityPage() {
 
       <ul className="journal-entry-list">
         {entries.map((entry) => (
-          <li key={entry.id} className="journal-entry">
-            <div className="journal-entry-main">
-              <span className="journal-entry-label">{entry.activity_type}</span>
-              <span className="journal-entry-qty">{entry.duration_minutes} min</span>
-            </div>
-            <span className="journal-entry-kcal">
-              {Math.round(entry.calories_kcal)} kcal
-              <span className="warning-icon" title="Estimation approximative" aria-label="Estimation">
-                {' '}
-                ⚠️
+          <li key={entry.id} className="journal-entry activity-entry">
+            <div className="journal-entry-row">
+              <div className="journal-entry-main">
+                <span className="journal-entry-label">{entry.activity_type}</span>
+                <span className="journal-entry-qty">
+                  {entry.duration_minutes} min
+                  {entry.training_type && (
+                    <> · {TRAINING_TYPES.find((t) => t.value === entry.training_type)?.label}</>
+                  )}
+                  {entry.intensity && (
+                    <> · {INTENSITIES.find((i) => i.value === entry.intensity)?.label.toLowerCase()}</>
+                  )}
+                </span>
+              </div>
+              <span className="journal-entry-kcal">
+                {Math.round(entry.calories_kcal)} kcal
+                <span className="warning-icon" title="Estimation approximative" aria-label="Estimation">
+                  {' '}
+                  ⚠️
+                </span>
               </span>
-            </span>
-            <button
-              type="button"
-              className="remove-row"
-              onClick={() => handleDelete(entry.id)}
-              aria-label={`Supprimer ${entry.activity_type}`}
-            >
-              ✕
-            </button>
+              <button
+                type="button"
+                className="remove-row"
+                onClick={() => handleDelete(entry.id)}
+                aria-label={`Supprimer ${entry.activity_type}`}
+              >
+                ✕
+              </button>
+            </div>
+            <SessionExercises activityEntryId={entry.id} />
           </li>
         ))}
       </ul>
@@ -205,6 +223,24 @@ export function ActivityPage() {
               placeholder="Activité"
               onAddNew={addCustomActivity}
             />
+          </div>
+          <div className="journal-add-row two-cols">
+            <select value={trainingType} onChange={(e) => setTrainingType(e.target.value as TrainingType)}>
+              <option value="">Type d'entraînement</option>
+              {TRAINING_TYPES.map((t) => (
+                <option key={t.value} value={t.value}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+            <select value={intensity} onChange={(e) => setIntensity(e.target.value as Intensity)}>
+              <option value="">Intensité</option>
+              {INTENSITIES.map((i) => (
+                <option key={i.value} value={i.value}>
+                  {i.label}
+                </option>
+              ))}
+            </select>
           </div>
           <button type="submit">Ajouter</button>
         </form>
