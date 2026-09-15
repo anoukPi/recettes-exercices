@@ -30,6 +30,12 @@ export interface DailyTargets {
   carbs_g: number;
   fat_g: number;
   flooredBySafety: boolean;
+  /** Métabolisme de base — calories brûlées au repos complet, avant tout mouvement. */
+  bmr_kcal: number;
+  /** Dépense totale estimée (BMR × niveau d'activité déclaré) — avant l'ajustement
+   * lié à l'objectif (déficit/surplus). C'est la vraie estimation de "dépenses",
+   * pas l'objectif calorique d'apport. */
+  tdee_kcal: number;
 }
 
 export function ageFromBirthDate(birthDate: string): number {
@@ -89,5 +95,13 @@ export function computeDailyTargets(profile: Profile): DailyTargets | null {
   const carbsCal = Math.max(0, calories - proteinCal - fatCal);
   const carbs_g = carbsCal / 4;
 
-  return { calories_kcal: calories, protein_g, carbs_g, fat_g, flooredBySafety: rawCalories < floor };
+  return {
+    calories_kcal: calories,
+    protein_g,
+    carbs_g,
+    fat_g,
+    flooredBySafety: rawCalories < floor,
+    bmr_kcal: bmr,
+    tdee_kcal: tdee,
+  };
 }

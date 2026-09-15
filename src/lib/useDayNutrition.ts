@@ -193,15 +193,25 @@ export function useDayNutrition(dateKey: string) {
   );
 
   const bilan = useMemo(() => {
+    if (!dailyTargets) return null;
+    // Journée avec activité loguée : BMR (dépense de base, incompressible) +
+    // l'activité réellement mesurée ce jour-là — plus précis que le
+    // multiplicateur générique du profil. Sans activité loguée : on retombe
+    // sur le TDEE estimé (BMR × niveau d'activité déclaré), pas sur l'objectif
+    // calorique d'apport (qui inclut déjà le déficit/surplus visé — ce
+    // n'est pas une dépense).
     const hasMeasuredExpenses = activityEntries.length > 0;
-    const expenses = hasMeasuredExpenses ? dayActivityCalories : dailyTargets?.calories_kcal ?? null;
-    if (expenses === null) return null;
+    const expenses = hasMeasuredExpenses
+      ? dailyTargets.bmr_kcal + dayActivityCalories
+      : dailyTargets.tdee_kcal;
     return {
       expenses,
       measured: hasMeasuredExpenses,
+      bmr: dailyTargets.bmr_kcal,
+      activityCalories: dayActivityCalories,
       gap: dayTotals.totals.calories_kcal - expenses,
     };
-  }, [activityEntries.length, dayActivityCalories, dailyTargets, dayTotals.totals.calories_kcal]);
+  }, [dailyTargets, activityEntries.length, dayActivityCalories, dayTotals.totals.calories_kcal]);
 
   const dayGi = useMemo(() => {
     if (dayTotals.totals.carbs_g < 1) return null;

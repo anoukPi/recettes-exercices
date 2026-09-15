@@ -133,15 +133,22 @@ export function JournalPage() {
         )}
         {bilan && (
           <p className="hint bilan-line">
-            Dépenses : {Math.round(bilan.expenses)} kcal (
+            Dépenses : {Math.round(bilan.expenses)} kcal — métabolisme de base{' '}
+            {Math.round(bilan.bmr)} kcal
             {bilan.measured ? (
               <>
-                mesurées via <Link to="/activity">l'activité loguée</Link>
+                {' '}
+                + <Link to="/activity">activité loguée</Link> {Math.round(bilan.activityCalories)}{' '}
+                kcal
               </>
             ) : (
-              <>estimation du profil — logue une activité pour un bilan réel</>
+              <>
+                {' '}
+                × niveau d'activité du profil (estimation — logue une activité pour un bilan basé
+                sur du réel)
+              </>
             )}
-            ) · Écart : {bilan.gap >= 0 ? '+' : ''}
+            {' · '}Écart : {bilan.gap >= 0 ? '+' : ''}
             {Math.round(bilan.gap)} kcal
           </p>
         )}
