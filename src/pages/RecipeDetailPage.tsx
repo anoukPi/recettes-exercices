@@ -58,6 +58,10 @@ export function RecipeDetailPage() {
       </Link>
       <h2>{recipe.title}</h2>
 
+      {recipe.photo_url && (
+        <img src={recipe.photo_url} alt={recipe.title} className="detail-photo" />
+      )}
+
       {recipe.instagram_link && (
         <p>
           <a href={recipe.instagram_link} target="_blank" rel="noreferrer">
@@ -76,10 +80,14 @@ export function RecipeDetailPage() {
         </div>
       )}
 
-      {recipe.ingredients && (
+      {recipe.ingredients.length > 0 && (
         <>
           <h3>Ingrédients</h3>
-          <p className="preserve-lines">{recipe.ingredients}</p>
+          <ul className="ingredient-list">
+            {recipe.ingredients.map((ing, i) => (
+              <li key={i}>{[ing.quantity, ing.unit, ing.ingredient].filter(Boolean).join(' ')}</li>
+            ))}
+          </ul>
         </>
       )}
 

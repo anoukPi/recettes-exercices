@@ -1,8 +1,11 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { TagInput } from './TagInput';
+import { IngredientListEditor } from './IngredientListEditor';
 import { formatTagList, parseTagList } from '../lib/tags';
 import { listRecipeTags } from '../api/tags';
-import type { Recipe, RecipeInput } from '../types';
+import { uploadRecipePhoto } from '../api/storage';
+import { parseCaption } from '../lib/captionParser';
+import type { Recipe, RecipeInput, RecipeIngredient } from '../types';
 
 interface RecipeFormProps {
   initial?: Recipe;
@@ -13,17 +16,46 @@ interface RecipeFormProps {
 export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) {
   const [title, setTitle] = useState(initial?.title ?? '');
   const [instagramLink, setInstagramLink] = useState(initial?.instagram_link ?? '');
-  const [ingredients, setIngredients] = useState(initial?.ingredients ?? '');
+  const [ingredients, setIngredients] = useState<RecipeIngredient[]>(
+    initial?.ingredients && initial.ingredients.length > 0
+      ? initial.ingredients
+      : [{ quantity: '', unit: '', ingredient: '' }],
+  );
   const [steps, setSteps] = useState(initial?.steps ?? '');
   const [tags, setTags] = useState(formatTagList(initial?.tags ?? []));
   const [notes, setNotes] = useState(initial?.notes ?? '');
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(initial?.photo_url ?? null);
+  const [photoRemoved, setPhotoRemoved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [captionInput, setCaptionInput] = useState('');
+
+  const handleExtractCaption = () => {
+    if (!captionInput.trim()) return;
+    const parsed = parseCaption(captionInput);
+    if (parsed.title) setTitle(parsed.title);
+    if (parsed.ingredients.length > 0) setIngredients(parsed.ingredients);
+    if (parsed.steps) setSteps(parsed.steps);
+  };
 
   useEffect(() => {
     listRecipeTags().then(setTagSuggestions).catch(() => {});
   }, []);
+
+  const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setPhotoFile(file);
+    setPhotoRemoved(false);
+    if (file) setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setPhotoRemoved(true);
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -34,10 +66,22 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
     setSubmitting(true);
     setError(null);
     try {
+      let photoUrl = initial?.photo_url ?? null;
+      if (photoFile) {
+        photoUrl = await uploadRecipePhoto(photoFile);
+      } else if (photoRemoved) {
+        photoUrl = null;
+      }
+
+      const cleanIngredients = ingredients.filter(
+        (row) => row.quantity.trim() || row.unit.trim() || row.ingredient.trim(),
+      );
+
       await onSubmit({
         title: title.trim(),
         instagram_link: instagramLink.trim() || null,
-        ingredients: ingredients.trim() || null,
+        photo_url: photoUrl,
+        ingredients: cleanIngredients,
         steps: steps.trim() || null,
         tags: parseTagList(tags),
         notes: notes.trim() || null,
@@ -53,6 +97,20 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
     <form className="entry-form" onSubmit={handleSubmit}>
       {error && <p className="error">{error}</p>}
 
+      <div className="field caption-import">
+        <label htmlFor="recipe-caption">Importer depuis une légende Instagram (optionnel)</label>
+        <textarea
+          id="recipe-caption"
+          value={captionInput}
+          onChange={(e) => setCaptionInput(e.target.value)}
+          rows={4}
+          placeholder="Colle ici la légende du post — titre, Ingrédients :, Étapes : si présents"
+        />
+        <button type="button" onClick={handleExtractCaption} disabled={!captionInput.trim()}>
+          Extraire dans le formulaire
+        </button>
+      </div>
+
       <div className="field">
         <label htmlFor="recipe-title">Titre *</label>
         <input
@@ -62,6 +120,19 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
           onChange={(e) => setTitle(e.target.value)}
           required
         />
+      </div>
+
+      <div className="field">
+        <label htmlFor="recipe-photo">Photo</label>
+        {photoPreview && (
+          <div className="photo-preview">
+            <img src={photoPreview} alt="Aperçu de la recette" />
+            <button type="button" className="link-button" onClick={handleRemovePhoto}>
+              Retirer la photo
+            </button>
+          </div>
+        )}
+        <input id="recipe-photo" type="file" accept="image/*" onChange={handlePhotoChange} />
       </div>
 
       <div className="field">
@@ -75,16 +146,7 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
         />
       </div>
 
-      <div className="field">
-        <label htmlFor="recipe-ingredients">Ingrédients</label>
-        <textarea
-          id="recipe-ingredients"
-          value={ingredients}
-          onChange={(e) => setIngredients(e.target.value)}
-          rows={6}
-          placeholder={'Un ingrédient par ligne'}
-        />
-      </div>
+      <IngredientListEditor ingredients={ingredients} onChange={setIngredients} />
 
       <div className="field">
         <label htmlFor="recipe-steps">Étapes de préparation</label>

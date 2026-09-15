@@ -1,4 +1,4 @@
-# Ma bibliothèque — Recettes & Exercices
+# Kaly — Recettes & Exercices
 
 Outil web perso (usage solo) pour enregistrer des recettes et exercices trouvés sur Instagram (ou ailleurs), avec tags et filtrage.
 

@@ -5,18 +5,26 @@ import { NewRecipePage } from './pages/NewRecipePage';
 import { NewExercisePage } from './pages/NewExercisePage';
 import { RecipeDetailPage } from './pages/RecipeDetailPage';
 import { ExerciseDetailPage } from './pages/ExerciseDetailPage';
+import { SettingsPage } from './pages/SettingsPage';
+import { JournalPage } from './pages/JournalPage';
 
 function App() {
   return (
     <div className="app">
       <header className="app-header">
-        <h1>Ma bibliothèque</h1>
+        <h1>Kaly</h1>
         <nav className="tabs">
           <NavLink to="/recipes" className={({ isActive }) => (isActive ? 'active' : '')}>
             Recettes
           </NavLink>
           <NavLink to="/exercises" className={({ isActive }) => (isActive ? 'active' : '')}>
             Exercices
+          </NavLink>
+          <NavLink to="/journal" className={({ isActive }) => (isActive ? 'active' : '')}>
+            Carnet
+          </NavLink>
+          <NavLink to="/settings" className={({ isActive }) => `settings-link${isActive ? ' active' : ''}`}>
+            ⚙️
           </NavLink>
         </nav>
       </header>
@@ -30,6 +38,8 @@ function App() {
           <Route path="/exercises" element={<ExercisesPage />} />
           <Route path="/exercises/new" element={<NewExercisePage />} />
           <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/journal" element={<JournalPage />} />
         </Routes>
       </main>
     </div>

@@ -102,6 +102,7 @@ export function ExerciseForm({ initial, onSubmit, submitLabel }: ExerciseFormPro
         value={tags}
         onChange={setTags}
         suggestions={tagSuggestions}
+        placeholder="ex: cardio, maison, sans matériel"
       />
 
       <div className="field">
