@@ -50,6 +50,13 @@ export function AuthStatus() {
       <p className="hint">Pas encore de connexion active — ça n'affecte rien pour l'instant.</p>
       {error && <p className="error">{error}</p>}
       {info && <p className="hint">{info}</p>}
+      {mode === 'signup' && (
+        <p className="hint warning-hint">
+          ⚠️ Kaly n'est pas un avis médical — un outil d'auto-suivi, pas un dispositif de santé.
+          En cas de doute sur ton alimentation ou ton activité physique, parles-en à un
+          professionnel de santé.
+        </p>
+      )}
       <form onSubmit={handleSubmit}>
         <div className="field">
           <label htmlFor="auth-email">Email</label>

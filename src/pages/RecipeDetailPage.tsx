@@ -2,6 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { RecipeForm } from '../components/RecipeForm';
 import { deleteRecipe, duplicateRecipe, getRecipe, updateRecipe } from '../api/recipes';
+import {
+  endorseRecipe,
+  listEndorsementCounts,
+  listMyEndorsedRecipeIds,
+  removeEndorsement,
+} from '../api/endorsements';
 import { useSession } from '../lib/auth';
 import type { Recipe, RecipeInput } from '../types';
 
@@ -13,6 +19,8 @@ export function RecipeDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
+  const [endorsed, setEndorsed] = useState(false);
+  const [endorsementCount, setEndorsementCount] = useState(0);
 
   useEffect(() => {
     if (!id) return;
@@ -22,6 +30,25 @@ export function RecipeDetailPage() {
       .catch((err) => setError(err instanceof Error ? err.message : 'Erreur de chargement.'))
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!id || !session) return;
+    listMyEndorsedRecipeIds().then((ids) => setEndorsed(ids.has(id)));
+    listEndorsementCounts().then((counts) => setEndorsementCount(counts[id] ?? 0));
+  }, [id, session]);
+
+  const toggleEndorsement = async () => {
+    if (!id) return;
+    if (endorsed) {
+      await removeEndorsement(id);
+      setEndorsed(false);
+      setEndorsementCount((c) => Math.max(0, c - 1));
+    } else {
+      await endorseRecipe(id);
+      setEndorsed(true);
+      setEndorsementCount((c) => c + 1);
+    }
+  };
 
   const handleUpdate = async (input: Omit<RecipeInput, 'user_id'>) => {
     if (!id) return;
@@ -116,6 +143,23 @@ export function RecipeDetailPage() {
       <p className="meta">
         Ajoutée le {new Date(recipe.created_at).toLocaleDateString('fr-FR')}
       </p>
+
+      {session && (
+        <div className="endorsement">
+          <button
+            type="button"
+            className={endorsed ? 'endorsed' : ''}
+            onClick={toggleEndorsement}
+          >
+            {endorsed ? '✓ J\'ai testé' : 'J\'ai testé cette recette'}
+          </button>
+          {endorsementCount > 0 && (
+            <span className="hint">
+              {endorsementCount} personne{endorsementCount > 1 ? 's ont' : ' a'} testé cette recette
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="actions">
         {session?.user.id === recipe.user_id ? (
