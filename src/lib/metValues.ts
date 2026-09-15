@@ -23,6 +23,11 @@ export const MET_VALUES: Record<string, number> = {
   Basketball: 6.5,
   'HIIT / Circuit training': 8.0,
   Ski: 7.0,
+  'Escalade de bloc': 6.0,
+  // Effort réel proche de l'escalade de bloc (~7-8 MET), mais sur une session
+  // de voie environ la moitié du temps loguée est passée à assurer (effort
+  // léger, ~2-2.5 MET) plutôt qu'à grimper — d'où une moyenne plus basse ici.
+  'Escalade de voie': 4.5,
 };
 
 // Utilisée quand l'activité saisie n'est pas dans la liste ci-dessus —
