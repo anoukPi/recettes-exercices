@@ -278,6 +278,89 @@ h4 {
   font-variant-numeric: tabular-nums;
 }
 
+.month-calendar {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  max-width: 400px;
+}
+
+.month-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.month-calendar-header strong {
+  text-transform: capitalize;
+  font-family: var(--font-display);
+}
+
+.month-calendar-header button {
+  border: none;
+  background: none;
+  font-size: 1rem;
+  color: var(--text);
+  padding: 0.25rem 0.5rem;
+}
+
+.month-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.3rem;
+}
+
+.month-calendar-weekday {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.month-calendar-day {
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  color: var(--text);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.month-calendar-day:disabled {
+  opacity: 0.35;
+}
+
+.month-calendar-day.today {
+  border-color: var(--text);
+  font-weight: 700;
+}
+
+.month-calendar-day.selected {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.month-calendar-day.cal-day-ok {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.month-calendar-day.cal-day-under,
+.month-calendar-day.cal-day-over {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.month-calendar-day.cal-day-far {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
 .gi-appreciation {
   display: inline-block;
   margin: 0.5rem 0 0;

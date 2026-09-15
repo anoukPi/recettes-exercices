@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { addDays, formatDateKeyFr, toDateKey } from '../lib/date';
 import { useDayNutrition } from '../lib/useDayNutrition';
 import { useSession } from '../lib/auth';
+import { MonthCalendar } from '../components/MonthCalendar';
 import type { NutritionTotals } from '../types';
 
 const GI_BANDS: { max: number; label: string; className: string }[] = [
@@ -99,6 +101,8 @@ export function JournalPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const dateKey = searchParams.get('date') || toDateKey(new Date());
   const setDateKey = (next: string) => setSearchParams({ date: next });
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [monthKey, setMonthKey] = useState(dateKey.slice(0, 7));
 
   const { loading, error, profile, dailyTargets, dayTotals, dayGi, bilan } = useDayNutrition(dateKey);
 
@@ -139,6 +143,29 @@ export function JournalPage() {
           Lendemain →
         </button>
       </div>
+
+      <button
+        type="button"
+        className="link-button"
+        onClick={() => {
+          setShowCalendar((v) => !v);
+          setMonthKey(dateKey.slice(0, 7));
+        }}
+      >
+        {showCalendar ? 'Masquer le calendrier' : 'Voir le calendrier du mois'}
+      </button>
+
+      {showCalendar && (
+        <MonthCalendar
+          monthKey={monthKey}
+          selectedDate={dateKey}
+          onSelectDate={(d) => {
+            setDateKey(d);
+            setShowCalendar(false);
+          }}
+          onChangeMonth={setMonthKey}
+        />
+      )}
 
       {loading && <p>Chargement…</p>}
       {error && <p className="error">{error}</p>}

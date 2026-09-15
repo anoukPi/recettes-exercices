@@ -12,6 +12,16 @@ export async function listJournalEntries(date: string): Promise<JournalEntry[]> 
   return data ?? [];
 }
 
+export async function listJournalEntriesInRange(startDate: string, endDate: string): Promise<JournalEntry[]> {
+  const { data, error } = await supabase
+    .from('journal_entries')
+    .select('*')
+    .gte('entry_date', startDate)
+    .lte('entry_date', endDate);
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function updateJournalEntryQuantity(id: string, quantity: number): Promise<JournalEntry> {
   const { data, error } = await supabase
     .from('journal_entries')
