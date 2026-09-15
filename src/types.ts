@@ -165,6 +165,18 @@ export interface CycleEntry {
   created_at: string;
 }
 
+export interface FitnessTest {
+  id: string;
+  user_id: string;
+  entry_date: string;
+  test_name: string;
+  value: number;
+  unit: string;
+  created_at: string;
+}
+
+export type FitnessTestInput = Omit<FitnessTest, 'id' | 'created_at'>;
+
 export interface NutritionTotals {
   calories_kcal: number;
   protein_g: number;

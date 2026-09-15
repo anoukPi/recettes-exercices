@@ -278,6 +278,17 @@ h4 {
   font-variant-numeric: tabular-nums;
 }
 
+.trend-chart {
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  margin: 0.75rem 0;
+}
+
+.trend-chart-label {
+  font-size: 8px;
+}
+
 .month-calendar {
   background: var(--surface);
   border: 1px solid var(--border);

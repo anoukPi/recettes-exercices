@@ -10,12 +10,14 @@ import { JournalPage } from './pages/JournalPage';
 import { MealsPage } from './pages/MealsPage';
 import { ActivityPage } from './pages/ActivityPage';
 import { CyclePage } from './pages/CyclePage';
+import { TestsPage } from './pages/TestsPage';
 
 const NAV_ITEMS = [
   { path: '/journal', label: 'Carnet' },
   { path: '/repas', label: 'Repas' },
   { path: '/activity', label: 'Activité' },
   { path: '/cycle', label: 'Cycle' },
+  { path: '/tests', label: 'Tests' },
   { path: '/recipes', label: 'Recettes' },
   { path: '/exercises', label: 'Exercices' },
   { path: '/settings', label: 'Paramètres' },
@@ -64,6 +66,7 @@ function App() {
           <Route path="/repas" element={<MealsPage />} />
           <Route path="/activity" element={<ActivityPage />} />
           <Route path="/cycle" element={<CyclePage />} />
+          <Route path="/tests" element={<TestsPage />} />
         </Routes>
       </main>
     </div>
