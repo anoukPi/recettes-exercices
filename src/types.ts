@@ -107,6 +107,19 @@ export interface JournalEntry {
 
 export type JournalEntryInput = Omit<JournalEntry, 'id' | 'created_at'>;
 
+export interface ActivityEntry {
+  id: string;
+  entry_date: string;
+  activity_type: string;
+  duration_minutes: number;
+  met: number;
+  calories_kcal: number;
+  user_id: string | null;
+  created_at: string;
+}
+
+export type ActivityEntryInput = Omit<ActivityEntry, 'id' | 'created_at'>;
+
 export interface NutritionTotals {
   calories_kcal: number;
   protein_g: number;

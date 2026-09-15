@@ -11,8 +11,9 @@ import { getIngredientNutrition } from '../api/nutrition';
 import { addReferenceItem, listReferenceItems, type ReferenceItem } from '../api/referenceItems';
 import { getRecipe, listRecipes } from '../api/recipes';
 import { getProfile } from '../api/profile';
+import { listActivityEntries } from '../api/activities';
 import { computeDailyTargets, type DailyTargets } from '../lib/dailyNeeds';
-import { MEALS, type JournalEntry, type NutritionTotals, type Profile, type Recipe } from '../types';
+import { MEALS, type ActivityEntry, type JournalEntry, type NutritionTotals, type Profile, type Recipe } from '../types';
 
 const GI_BANDS: { max: number; label: string; className: string }[] = [
   { max: 35, label: 'très bas', className: 'gi-very-low' },
@@ -70,6 +71,7 @@ export function JournalPage() {
   const [unitOptions, setUnitOptions] = useState<string[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [activityEntries, setActivityEntries] = useState<ActivityEntry[]>([]);
 
   const [ingName, setIngName] = useState('');
   const [ingQty, setIngQty] = useState('');
@@ -90,6 +92,7 @@ export function JournalPage() {
 
   useEffect(() => {
     loadEntries(dateKey);
+    listActivityEntries(dateKey).then(setActivityEntries).catch(() => setActivityEntries([]));
   }, [dateKey]);
 
   useEffect(() => {
@@ -235,6 +238,22 @@ export function JournalPage() {
     () => (profile ? computeDailyTargets(profile) : null),
     [profile],
   );
+
+  const dayActivityCalories = useMemo(
+    () => activityEntries.reduce((sum, a) => sum + a.calories_kcal, 0),
+    [activityEntries],
+  );
+
+  const bilan = useMemo(() => {
+    const hasMeasuredExpenses = activityEntries.length > 0;
+    const expenses = hasMeasuredExpenses ? dayActivityCalories : dailyTargets?.calories_kcal ?? null;
+    if (expenses === null) return null;
+    return {
+      expenses,
+      measured: hasMeasuredExpenses,
+      gap: dayTotals.totals.calories_kcal - expenses,
+    };
+  }, [activityEntries.length, dayActivityCalories, dailyTargets, dayTotals.totals.calories_kcal]);
 
   const dayGi = useMemo(() => {
     if (dayTotals.totals.carbs_g < 1) return null;
@@ -409,6 +428,20 @@ export function JournalPage() {
         {dayGi !== null && (
           <p className={`gi-appreciation ${giAppreciation(dayGi).className}`}>
             IG global du jour : {Math.round(dayGi)} ({giAppreciation(dayGi).label})
+          </p>
+        )}
+        {bilan && (
+          <p className="hint bilan-line">
+            Dépenses : {Math.round(bilan.expenses)} kcal (
+            {bilan.measured ? (
+              <>
+                mesurées via <Link to="/activity">l'activité loguée</Link>
+              </>
+            ) : (
+              <>estimation du profil — logue une activité pour un bilan réel</>
+            )}
+            ) · Écart : {bilan.gap >= 0 ? '+' : ''}
+            {Math.round(bilan.gap)} kcal
           </p>
         )}
         {(dayTotals.hasPartial || dayTotals.hasWarning) && (

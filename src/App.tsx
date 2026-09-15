@@ -7,6 +7,7 @@ import { RecipeDetailPage } from './pages/RecipeDetailPage';
 import { ExerciseDetailPage } from './pages/ExerciseDetailPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { JournalPage } from './pages/JournalPage';
+import { ActivityPage } from './pages/ActivityPage';
 
 function App() {
   return (
@@ -22,6 +23,9 @@ function App() {
           </NavLink>
           <NavLink to="/journal" className={({ isActive }) => (isActive ? 'active' : '')}>
             Carnet
+          </NavLink>
+          <NavLink to="/activity" className={({ isActive }) => (isActive ? 'active' : '')}>
+            Activité
           </NavLink>
           <NavLink to="/settings" className={({ isActive }) => `settings-link${isActive ? ' active' : ''}`}>
             ⚙️
@@ -40,6 +44,7 @@ function App() {
           <Route path="/exercises/:id" element={<ExerciseDetailPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/journal" element={<JournalPage />} />
+          <Route path="/activity" element={<ActivityPage />} />
         </Routes>
       </main>
     </div>
