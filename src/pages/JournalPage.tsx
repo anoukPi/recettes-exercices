@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { addDays, formatDateKeyFr, toDateKey } from '../lib/date';
 import { useDayNutrition } from '../lib/useDayNutrition';
 import { useSession } from '../lib/auth';
 import { MonthCalendar } from '../components/MonthCalendar';
-import type { NutritionTotals } from '../types';
+import { listCycleEntries } from '../api/cycle';
+import { isIronReminderDay } from '../lib/cycle';
+import type { CycleEntry, NutritionTotals } from '../types';
 
 const GI_BANDS: { max: number; label: string; className: string }[] = [
   { max: 35, label: 'très bas', className: 'gi-very-low' },
@@ -103,8 +105,16 @@ export function JournalPage() {
   const setDateKey = (next: string) => setSearchParams({ date: next });
   const [showCalendar, setShowCalendar] = useState(false);
   const [monthKey, setMonthKey] = useState(dateKey.slice(0, 7));
+  const [cycleEntries, setCycleEntries] = useState<CycleEntry[]>([]);
 
   const { loading, error, profile, dailyTargets, dayTotals, dayGi, bilan } = useDayNutrition(dateKey);
+
+  useEffect(() => {
+    if (!session) return;
+    listCycleEntries().then(setCycleEntries).catch(() => {});
+  }, [session]);
+
+  const ironReminder = isIronReminderDay(dateKey, cycleEntries);
 
   if (authLoading) return null;
 
@@ -197,6 +207,12 @@ export function JournalPage() {
             ⚠️ Ton objectif calculé était en dessous du plancher de sécurité — il a été ajusté au
             minimum recommandé. Si tu vises une perte de poids plus rapide, mieux vaut en parler à
             un professionnel de santé qu'ajuster ce chiffre.
+          </p>
+        )}
+        {ironReminder && (
+          <p className="hint warning-hint">
+            🩸 Règles en cours — pense à surveiller ton apport en fer ces jours-ci (pertes de sang).{' '}
+            <Link to="/cycle">Gérer le suivi du cycle</Link>
           </p>
         )}
         {dayGi !== null && (

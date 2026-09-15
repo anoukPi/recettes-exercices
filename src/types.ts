@@ -158,6 +158,13 @@ export interface SessionExercise {
 
 export type SessionExerciseInput = Omit<SessionExercise, 'id' | 'created_at'>;
 
+export interface CycleEntry {
+  id: string;
+  user_id: string;
+  entry_date: string;
+  created_at: string;
+}
+
 export interface NutritionTotals {
   calories_kcal: number;
   protein_g: number;
