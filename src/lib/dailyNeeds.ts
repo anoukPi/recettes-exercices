@@ -16,11 +16,20 @@ const GOAL_ADJUSTMENT: Record<Goal, number> = {
   prise: 400,
 };
 
+// Plancher calorique de sécurité (FR-8) : seuils couramment cités en dessous
+// desquels un déficit devient un sujet à voir avec un professionnel de santé,
+// pas un réglage d'app.
+const CALORIE_FLOOR: Record<'homme' | 'femme', number> = {
+  homme: 1500,
+  femme: 1200,
+};
+
 export interface DailyTargets {
   calories_kcal: number;
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  flooredBySafety: boolean;
 }
 
 export function ageFromBirthDate(birthDate: string): number {
@@ -61,7 +70,9 @@ export function computeDailyTargets(profile: Profile): DailyTargets | null {
   const base = 10 * profile.weight_kg + 6.25 * profile.height_cm - 5 * age;
   const bmr = profile.sex === 'homme' ? base + 5 : base - 161;
   const tdee = bmr * ACTIVITY_MULTIPLIERS[profile.activity_level];
-  const calories = Math.max(1200, tdee + GOAL_ADJUSTMENT[profile.goal]);
+  const floor = CALORIE_FLOOR[profile.sex];
+  const rawCalories = tdee + GOAL_ADJUSTMENT[profile.goal];
+  const calories = Math.max(floor, rawCalories);
 
   const protein_g = profile.weight_kg * 1.8;
   const proteinCal = protein_g * 4;
@@ -70,5 +81,5 @@ export function computeDailyTargets(profile: Profile): DailyTargets | null {
   const carbsCal = Math.max(0, calories - proteinCal - fatCal);
   const carbs_g = carbsCal / 4;
 
-  return { calories_kcal: calories, protein_g, carbs_g, fat_g };
+  return { calories_kcal: calories, protein_g, carbs_g, fat_g, flooredBySafety: rawCalories < floor };
 }

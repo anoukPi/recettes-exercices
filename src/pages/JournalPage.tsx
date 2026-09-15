@@ -425,6 +425,13 @@ export function JournalPage() {
             journaliers ici.
           </p>
         )}
+        {dailyTargets?.flooredBySafety && (
+          <p className="hint warning-hint">
+            ⚠️ Ton objectif calculé était en dessous du plancher de sécurité — il a été ajusté au
+            minimum recommandé. Si tu vises une perte de poids plus rapide, mieux vaut en parler à
+            un professionnel de santé qu'ajuster ce chiffre.
+          </p>
+        )}
         {dayGi !== null && (
           <p className={`gi-appreciation ${giAppreciation(dayGi).className}`}>
             IG global du jour : {Math.round(dayGi)} ({giAppreciation(dayGi).label})
