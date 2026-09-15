@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { RecipeForm } from '../components/RecipeForm';
-import { deleteRecipe, getRecipe, updateRecipe } from '../api/recipes';
+import { deleteRecipe, duplicateRecipe, getRecipe, updateRecipe } from '../api/recipes';
+import { useSession } from '../lib/auth';
 import type { Recipe, RecipeInput } from '../types';
 
 export function RecipeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { session } = useSession();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +23,7 @@ export function RecipeDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleUpdate = async (input: RecipeInput) => {
+  const handleUpdate = async (input: Omit<RecipeInput, 'user_id'>) => {
     if (!id) return;
     const updated = await updateRecipe(id, input);
     setRecipe(updated);
@@ -33,6 +35,12 @@ export function RecipeDetailPage() {
     if (!window.confirm('Supprimer définitivement cette recette ?')) return;
     await deleteRecipe(id);
     navigate('/recipes');
+  };
+
+  const handleDuplicate = async () => {
+    if (!recipe) return;
+    const copy = await duplicateRecipe(recipe);
+    navigate(`/recipes/${copy.id}`);
   };
 
   if (loading) return <p>Chargement…</p>;
@@ -110,12 +118,22 @@ export function RecipeDetailPage() {
       </p>
 
       <div className="actions">
-        <button type="button" onClick={() => setEditing(true)}>
-          Modifier
-        </button>
-        <button type="button" className="danger" onClick={handleDelete}>
-          Supprimer
-        </button>
+        {session?.user.id === recipe.user_id ? (
+          <>
+            <button type="button" onClick={() => setEditing(true)}>
+              Modifier
+            </button>
+            <button type="button" className="danger" onClick={handleDelete}>
+              Supprimer
+            </button>
+          </>
+        ) : (
+          session && (
+            <button type="button" onClick={handleDuplicate}>
+              Dupliquer dans ma bibliothèque
+            </button>
+          )
+        )}
       </div>
     </section>
   );

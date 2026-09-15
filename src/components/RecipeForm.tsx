@@ -9,7 +9,7 @@ import type { Recipe, RecipeInput, RecipeIngredient } from '../types';
 
 interface RecipeFormProps {
   initial?: Recipe;
-  onSubmit: (input: RecipeInput) => Promise<void>;
+  onSubmit: (input: Omit<RecipeInput, 'user_id'>) => Promise<void>;
   submitLabel: string;
 }
 

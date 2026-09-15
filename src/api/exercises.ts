@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
+import { getCurrentUserId } from '../lib/auth';
 import type { Exercise, ExerciseInput } from '../types';
 
 export async function listExercises(): Promise<Exercise[]> {
@@ -20,10 +21,25 @@ export async function getExercise(id: string): Promise<Exercise> {
   return data;
 }
 
-export async function createExercise(input: ExerciseInput): Promise<Exercise> {
+export async function createExercise(input: Omit<ExerciseInput, 'user_id'>): Promise<Exercise> {
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error('Connecte-toi pour ajouter un exercice.');
   const { data, error } = await supabase
     .from('exercises')
-    .insert(input)
+    .insert({ ...input, user_id: userId })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function duplicateExercise(source: Exercise): Promise<Exercise> {
+  const userId = await getCurrentUserId();
+  if (!userId) throw new Error('Connecte-toi pour dupliquer un exercice.');
+  const { id: _id, user_id: _userId, created_at: _createdAt, ...rest } = source;
+  const { data, error } = await supabase
+    .from('exercises')
+    .insert({ ...rest, title: `${source.title} (copie)`, user_id: userId })
     .select()
     .single();
   if (error) throw error;
@@ -32,7 +48,7 @@ export async function createExercise(input: ExerciseInput): Promise<Exercise> {
 
 export async function updateExercise(
   id: string,
-  input: ExerciseInput,
+  input: Omit<ExerciseInput, 'user_id'>,
 ): Promise<Exercise> {
   const { data, error } = await supabase
     .from('exercises')

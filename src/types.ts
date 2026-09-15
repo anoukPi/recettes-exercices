@@ -6,6 +6,7 @@ export interface RecipeIngredient {
 
 export interface Recipe {
   id: string;
+  user_id: string;
   title: string;
   instagram_link: string | null;
   photo_url: string | null;
@@ -20,6 +21,7 @@ export type RecipeInput = Omit<Recipe, 'id' | 'created_at'>;
 
 export interface Exercise {
   id: string;
+  user_id: string;
   title: string;
   instagram_link: string | null;
   muscles: string[];

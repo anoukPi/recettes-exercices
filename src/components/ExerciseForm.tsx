@@ -6,7 +6,7 @@ import type { Exercise, ExerciseInput } from '../types';
 
 interface ExerciseFormProps {
   initial?: Exercise;
-  onSubmit: (input: ExerciseInput) => Promise<void>;
+  onSubmit: (input: Omit<ExerciseInput, 'user_id'>) => Promise<void>;
   submitLabel: string;
 }
 

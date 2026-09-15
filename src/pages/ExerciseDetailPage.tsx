@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ExerciseForm } from '../components/ExerciseForm';
-import { deleteExercise, getExercise, updateExercise } from '../api/exercises';
+import { deleteExercise, duplicateExercise, getExercise, updateExercise } from '../api/exercises';
+import { useSession } from '../lib/auth';
 import type { Exercise, ExerciseInput } from '../types';
 
 export function ExerciseDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { session } = useSession();
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +23,7 @@ export function ExerciseDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const handleUpdate = async (input: ExerciseInput) => {
+  const handleUpdate = async (input: Omit<ExerciseInput, 'user_id'>) => {
     if (!id) return;
     const updated = await updateExercise(id, input);
     setExercise(updated);
@@ -33,6 +35,12 @@ export function ExerciseDetailPage() {
     if (!window.confirm('Supprimer définitivement cet exercice ?')) return;
     await deleteExercise(id);
     navigate('/exercises');
+  };
+
+  const handleDuplicate = async () => {
+    if (!exercise) return;
+    const copy = await duplicateExercise(exercise);
+    navigate(`/exercises/${copy.id}`);
   };
 
   if (loading) return <p>Chargement…</p>;
@@ -108,12 +116,22 @@ export function ExerciseDetailPage() {
       </p>
 
       <div className="actions">
-        <button type="button" onClick={() => setEditing(true)}>
-          Modifier
-        </button>
-        <button type="button" className="danger" onClick={handleDelete}>
-          Supprimer
-        </button>
+        {session?.user.id === exercise.user_id ? (
+          <>
+            <button type="button" onClick={() => setEditing(true)}>
+              Modifier
+            </button>
+            <button type="button" className="danger" onClick={handleDelete}>
+              Supprimer
+            </button>
+          </>
+        ) : (
+          session && (
+            <button type="button" onClick={handleDuplicate}>
+              Dupliquer dans ma bibliothèque
+            </button>
+          )
+        )}
       </div>
     </section>
   );
