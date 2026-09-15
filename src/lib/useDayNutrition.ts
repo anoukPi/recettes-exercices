@@ -38,6 +38,7 @@ export function useDayNutrition(dateKey: string) {
   const [activityEntries, setActivityEntries] = useState<ActivityEntry[]>([]);
   const [nutritionByEntry, setNutritionByEntry] = useState<Record<string, EntryNutritionState>>({});
   const [ingredientNameToId, setIngredientNameToId] = useState<Map<string, string>>(new Map());
+  const [pieceWeights, setPieceWeights] = useState<Map<string, number>>(new Map());
 
   const loadEntries = (date: string) => {
     setLoading(true);
@@ -58,8 +59,13 @@ export function useDayNutrition(dateKey: string) {
     listReferenceItems('ingredient')
       .then((items) => {
         const map = new Map<string, string>();
-        for (const item of items) map.set(item.name.toLowerCase(), item.id);
+        const weights = new Map<string, number>();
+        for (const item of items) {
+          map.set(item.name.toLowerCase(), item.id);
+          if (item.piece_weight_g != null) weights.set(item.name.toLowerCase(), item.piece_weight_g);
+        }
         setIngredientNameToId(map);
+        setPieceWeights(weights);
       })
       .catch(() => {});
   }, []);
@@ -73,7 +79,12 @@ export function useDayNutrition(dateKey: string) {
       const compute = async (): Promise<EntryNutritionState> => {
         if (entry.kind === 'ingredient') {
           if (!entry.reference_item_id || !entry.unit) return { status: 'unavailable' };
-          const grams = gramsForQuantity(entry.quantity, entry.unit, entry.label);
+          const grams = gramsForQuantity(
+            entry.quantity,
+            entry.unit,
+            entry.label,
+            pieceWeights.get(entry.label.trim().toLowerCase()),
+          );
           if (grams === null) return { status: 'unavailable' };
           const nutrition = await getIngredientNutrition(entry.reference_item_id, entry.label);
           if (!nutrition) return { status: 'unavailable' };
@@ -107,7 +118,12 @@ export function useDayNutrition(dateKey: string) {
             partial = true;
             continue;
           }
-          const grams = gramsForQuantity(qty, ing.unit, ing.ingredient);
+          const grams = gramsForQuantity(
+            qty,
+            ing.unit,
+            ing.ingredient,
+            pieceWeights.get(ing.ingredient.trim().toLowerCase()),
+          );
           if (grams === null) {
             partial = true;
             continue;
@@ -161,7 +177,7 @@ export function useDayNutrition(dateKey: string) {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, ingredientNameToId]);
+  }, [entries, ingredientNameToId, pieceWeights]);
 
   const dayTotals = useMemo(() => {
     let totals = emptyTotals();

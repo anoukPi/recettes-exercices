@@ -86,6 +86,8 @@ export const PIECE_WEIGHTS_G: Record<string, number> = {
   'pâte brisée': 230,
   'pâte feuilletée': 230,
   'pâte sablée': 230,
+  baguette: 250,
+  'baguette pain blanc': 250,
 };
 
 // Poids qui dépendent à la fois de l'unité ET de l'ingrédient — un "sachet" ou

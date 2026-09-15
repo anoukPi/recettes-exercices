@@ -1,11 +1,15 @@
 import { useState, type FormEvent } from 'react';
 import { setManualNutrition } from '../api/nutrition';
+import { setPieceWeight } from '../api/referenceItems';
 
 interface ManualNutritionFormProps {
   referenceItemId: string;
   label: string;
+  unit: string;
   onSaved: () => void;
 }
+
+const PIECE_UNITS = new Set(['unité', 'pièce', 'sachet', 'boîte', 'botte', 'feuille', 'brin']);
 
 const FIELDS: { key: 'calories_kcal' | 'protein_g' | 'carbs_g' | 'fat_g' | 'fiber_g' | 'sugar_g' | 'sodium_mg'; label: string; unit: string }[] = [
   { key: 'calories_kcal', label: 'Calories', unit: 'kcal' },
@@ -17,17 +21,24 @@ const FIELDS: { key: 'calories_kcal' | 'protein_g' | 'carbs_g' | 'fat_g' | 'fibe
   { key: 'sodium_mg', label: 'Sodium', unit: 'mg' },
 ];
 
-export function ManualNutritionForm({ referenceItemId, label, onSaved }: ManualNutritionFormProps) {
+export function ManualNutritionForm({ referenceItemId, label, unit, onSaved }: ManualNutritionFormProps) {
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState<Record<string, string>>({});
+  const [pieceWeightG, setPieceWeightG] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const needsPieceWeight = PIECE_UNITS.has(unit.trim().toLowerCase());
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     if (!values.calories_kcal) {
       setError('Les calories (pour 100g) sont au minimum nécessaires.');
+      return;
+    }
+    if (needsPieceWeight && !pieceWeightG) {
+      setError(`Le poids d'1 ${unit} (en g) est nécessaire pour calculer la portion.`);
       return;
     }
     setSaving(true);
@@ -37,6 +48,9 @@ export function ManualNutritionForm({ referenceItemId, label, onSaved }: ManualN
         if (values[key]) parsed[key] = parseFloat(values[key].replace(',', '.'));
       }
       await setManualNutrition(referenceItemId, parsed);
+      if (needsPieceWeight) {
+        await setPieceWeight(referenceItemId, parseFloat(pieceWeightG.replace(',', '.')));
+      }
       setOpen(false);
       onSaved();
     } catch (err) {
@@ -79,6 +93,19 @@ export function ManualNutritionForm({ referenceItemId, label, onSaved }: ManualN
           </div>
         ))}
       </div>
+      {needsPieceWeight && (
+        <div className="field">
+          <label htmlFor="manual-piece-weight">Poids d'1 {unit} de « {label} » (g)</label>
+          <input
+            id="manual-piece-weight"
+            type="number"
+            step="any"
+            value={pieceWeightG}
+            onChange={(e) => setPieceWeightG(e.target.value)}
+            placeholder="ex. 250"
+          />
+        </div>
+      )}
       <div className="manual-nutrition-actions">
         <button type="submit" disabled={saving}>
           {saving ? 'Enregistrement…' : 'Enregistrer'}

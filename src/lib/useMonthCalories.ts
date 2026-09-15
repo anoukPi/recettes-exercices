@@ -46,11 +46,21 @@ export function useMonthCalories(monthKey: string) {
         const ingredientNameToId = new Map<string, string>(
           ingredientItems.map((i) => [i.name.toLowerCase(), i.id]),
         );
+        const pieceWeights = new Map<string, number>(
+          ingredientItems
+            .filter((i) => i.piece_weight_g != null)
+            .map((i) => [i.name.toLowerCase(), i.piece_weight_g as number]),
+        );
 
         const caloriesForEntry = async (entry: JournalEntry): Promise<number> => {
           if (entry.kind === 'ingredient') {
             if (!entry.reference_item_id || !entry.unit) return 0;
-            const grams = gramsForQuantity(entry.quantity, entry.unit, entry.label);
+            const grams = gramsForQuantity(
+              entry.quantity,
+              entry.unit,
+              entry.label,
+              pieceWeights.get(entry.label.trim().toLowerCase()),
+            );
             if (grams === null) return 0;
             const nutrition = await getIngredientNutrition(entry.reference_item_id, entry.label);
             return nutrition?.calories_kcal ? (nutrition.calories_kcal * grams) / 100 : 0;
@@ -64,7 +74,12 @@ export function useMonthCalories(monthKey: string) {
             const qty = parseFloat(ing.quantity.replace(',', '.'));
             const refId = ingredientNameToId.get(ing.ingredient.trim().toLowerCase());
             if (!refId || Number.isNaN(qty) || !ing.unit) continue;
-            const grams = gramsForQuantity(qty, ing.unit, ing.ingredient);
+            const grams = gramsForQuantity(
+              qty,
+              ing.unit,
+              ing.ingredient,
+              pieceWeights.get(ing.ingredient.trim().toLowerCase()),
+            );
             if (grams === null) continue;
             const nutrition = await getIngredientNutrition(refId, ing.ingredient);
             if (nutrition?.calories_kcal) sum += (nutrition.calories_kcal * grams) / 100;

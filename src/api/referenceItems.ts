@@ -6,6 +6,7 @@ export interface ReferenceItem {
   id: string;
   type: ReferenceType;
   name: string;
+  piece_weight_g: number | null;
   created_at: string;
 }
 
@@ -57,4 +58,15 @@ export async function renameReferenceItem(id: string, name: string): Promise<Ref
 export async function deleteReferenceItem(id: string): Promise<void> {
   const { error } = await supabase.from('reference_items').delete().eq('id', id);
   if (error) throw error;
+}
+
+export async function setPieceWeight(id: string, grams: number): Promise<ReferenceItem> {
+  const { data, error } = await supabase
+    .from('reference_items')
+    .update({ piece_weight_g: grams })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
 }

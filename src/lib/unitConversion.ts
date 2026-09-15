@@ -32,11 +32,17 @@ const PIECE_UNIT_NAMES = new Set(['unité', 'pièce', 'sachet', 'boîte', 'botte
 // moyenne générale et peuvent s'écarter significativement de la réalité.
 const EXACT_UNITS = new Set(['g', 'kg', 'mg']);
 
-export function gramsForQuantity(quantity: number, unit: string, ingredientName?: string): number | null {
+export function gramsForQuantity(
+  quantity: number,
+  unit: string,
+  ingredientName?: string,
+  customPieceWeightG?: number | null,
+): number | null {
   if (!Number.isFinite(quantity)) return null;
   const key = unit.trim().toLowerCase();
 
   if (PIECE_UNIT_NAMES.has(key)) {
+    if (customPieceWeightG != null) return quantity * customPieceWeightG;
     if (!ingredientName) return null;
     const weight = pieceWeight(ingredientName, key);
     return weight === null ? null : quantity * weight;

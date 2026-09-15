@@ -315,6 +315,7 @@ export function MealsPage() {
                     <ManualNutritionForm
                       referenceItemId={entry.reference_item_id!}
                       label={entry.label}
+                      unit={entry.unit ?? ''}
                       onSaved={reload}
                     />
                   )}
