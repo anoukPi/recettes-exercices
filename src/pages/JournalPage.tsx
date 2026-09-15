@@ -227,9 +227,8 @@ export function JournalPage() {
         )}
         {(dayTotals.hasPartial || dayTotals.hasWarning) && (
           <p className="hint warning-hint">
-            ⚠️ Estimation approximative : certaines lignes du détail des repas sont marquées ⚠️
-            (survole l'icône pour savoir pourquoi) ou affichent "?" quand aucune valeur n'a pu être
-            calculée.
+            Certaines lignes du détail des repas sont des estimations approximatives, ou affichent
+            "?" quand aucune valeur n'a pu être calculée.
           </p>
         )}
         {dayTotals.hasAny && (

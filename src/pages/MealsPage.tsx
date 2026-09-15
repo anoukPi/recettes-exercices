@@ -287,18 +287,12 @@ export function MealsPage() {
                             CG {Math.round(state.totals.glycemic_load)}
                           </span>
                         )}
-                        {state.warnings.length > 0 && (
-                          <span className="warning-icon" title={state.warnings.join(' • ')} aria-label="Attention">
-                            {' '}
-                            ⚠️
-                          </span>
-                        )}
                       </>
                     ) : state?.status === 'loading' ? (
                       '…'
                     ) : (
                       <span className="warning-icon unavailable" title={REASON_UNAVAILABLE} aria-label="Donnée indisponible">
-                        ? kcal ⚠️
+                        ? kcal
                       </span>
                     )}
                   </span>

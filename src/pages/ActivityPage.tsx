@@ -181,13 +181,7 @@ export function ActivityPage() {
                   )}
                 </span>
               </div>
-              <span className="journal-entry-kcal">
-                {Math.round(entry.calories_kcal)} kcal
-                <span className="warning-icon" title="Estimation approximative" aria-label="Estimation">
-                  {' '}
-                  ⚠️
-                </span>
-              </span>
+              <span className="journal-entry-kcal">{Math.round(entry.calories_kcal)} kcal</span>
               <button
                 type="button"
                 className="remove-row"
