@@ -178,3 +178,29 @@ export async function getIngredientNutrition(
   if (saveError) throw saveError;
   return saved;
 }
+
+/** Saisie manuelle (ex: valeurs demandées par l'utilisatrice à une IA en
+ * dehors de l'app) quand rien n'a été trouvé dans USDA. Remplace le cache
+ * existant pour cet ingrédient de référence — même mécanisme que le cache
+ * USDA, juste marqué source: 'manual' pour rester traçable dans l'UI. */
+export async function setManualNutrition(
+  referenceItemId: string,
+  values: Partial<NutritionPer100g>,
+): Promise<IngredientNutrition> {
+  const { data, error } = await supabase
+    .from('ingredient_nutrition')
+    .upsert(
+      {
+        reference_item_id: referenceItemId,
+        fdc_id: null,
+        fdc_description: null,
+        source: 'manual',
+        ...values,
+      },
+      { onConflict: 'reference_item_id' },
+    )
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}

@@ -8,6 +8,7 @@ import { addJournalEntry, deleteJournalEntry, updateJournalEntryQuantity } from 
 import { addReferenceItem, listReferenceItems, type ReferenceItem } from '../api/referenceItems';
 import { listRecipes } from '../api/recipes';
 import { useSession } from '../lib/auth';
+import { ManualNutritionForm } from '../components/ManualNutritionForm';
 import { MEALS, type JournalEntry, type Recipe } from '../types';
 
 export function MealsPage() {
@@ -224,8 +225,10 @@ export function MealsPage() {
           <ul className="journal-entry-list">
             {mealEntries.map((entry) => {
               const state = nutritionByEntry[entry.id];
+              const canFixManually = state?.status === 'unavailable' && entry.kind === 'ingredient' && entry.reference_item_id;
               return (
-                <li key={entry.id} className="journal-entry">
+                <li key={entry.id} className={`journal-entry${canFixManually ? ' activity-entry' : ''}`}>
+                  <div className="journal-entry-row">
                   <div className="journal-entry-main">
                     <span className="journal-entry-label">{entry.label}</span>
                     {editingEntryId === entry.id ? (
@@ -298,6 +301,14 @@ export function MealsPage() {
                   >
                     ✕
                   </button>
+                  </div>
+                  {canFixManually && (
+                    <ManualNutritionForm
+                      referenceItemId={entry.reference_item_id!}
+                      label={entry.label}
+                      onSaved={reload}
+                    />
+                  )}
                 </li>
               );
             })}

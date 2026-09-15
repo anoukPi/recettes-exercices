@@ -58,6 +58,7 @@ export interface IngredientNutrition extends NutritionPer100g {
   reference_item_id: string;
   fdc_id: number | null;
   fdc_description: string | null;
+  source: 'usda' | 'manual';
 }
 
 export type JournalEntryKind = 'ingredient' | 'recipe';
