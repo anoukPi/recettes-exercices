@@ -89,6 +89,8 @@ export interface Profile {
   weight_kg: number | null;
   activity_level: ActivityLevel | null;
   goal: Goal | null;
+  goal_weight_change_kg: number | null;
+  goal_timeframe_weeks: number | null;
   updated_at: string;
 }
 

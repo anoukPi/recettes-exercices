@@ -4,9 +4,15 @@ import { SearchableSelect } from '../components/SearchableSelect';
 import { addDays, defaultMealForNow, formatDateKeyFr, toDateKey } from '../lib/date';
 import { addTotals, emptyTotals, scaleNutrition } from '../lib/nutritionCalc';
 import { gramsForQuantity, isApproxUnit } from '../lib/unitConversion';
+import { suggestUnit } from '../lib/unitSuggestion';
 import { hasKnownTranslation } from '../lib/ingredientTranslations';
 import { giFor } from '../lib/glycemicIndex';
-import { addJournalEntry, deleteJournalEntry, listJournalEntries } from '../api/journal';
+import {
+  addJournalEntry,
+  deleteJournalEntry,
+  listJournalEntries,
+  updateJournalEntryQuantity,
+} from '../api/journal';
 import { getIngredientNutrition } from '../api/nutrition';
 import { addReferenceItem, listReferenceItems, type ReferenceItem } from '../api/referenceItems';
 import { getRecipe, listRecipes } from '../api/recipes';
@@ -81,6 +87,8 @@ export function JournalPage() {
   const [ingError, setIngError] = useState<string | null>(null);
 
   const [selectedMeal, setSelectedMeal] = useState<string>(defaultMealForNow());
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [editingQty, setEditingQty] = useState('');
 
   const [nutritionByEntry, setNutritionByEntry] = useState<Record<string, EntryNutritionState>>({});
 
@@ -297,6 +305,14 @@ export function JournalPage() {
 
   const selectedRecipe = recipeByTitle.get(ingName.trim().toLowerCase());
 
+  const handleIngNameChange = (name: string) => {
+    setIngName(name);
+    if (!ingUnit && !recipeByTitle.has(name.trim().toLowerCase())) {
+      const suggested = suggestUnit(name);
+      if (suggested) setIngUnit(suggested);
+    }
+  };
+
   const handleAddFood = async (e: FormEvent) => {
     e.preventDefault();
     setIngError(null);
@@ -361,6 +377,24 @@ export function JournalPage() {
   const handleDelete = async (id: string) => {
     await deleteJournalEntry(id);
     setEntries((prev) => prev.filter((e) => e.id !== id));
+  };
+
+  const startEditQty = (entry: JournalEntry) => {
+    setEditingEntryId(entry.id);
+    setEditingQty(String(entry.quantity));
+  };
+
+  const cancelEditQty = () => {
+    setEditingEntryId(null);
+    setEditingQty('');
+  };
+
+  const saveEditQty = async (id: string) => {
+    const qty = parseFloat(editingQty.replace(',', '.'));
+    if (Number.isNaN(qty) || qty <= 0) return;
+    const updated = await updateJournalEntryQuantity(id, qty);
+    setEntries((prev) => prev.map((e) => (e.id === id ? updated : e)));
+    cancelEditQty();
   };
 
   if (authLoading) return null;
@@ -483,6 +517,10 @@ export function JournalPage() {
                   </span>
                 </li>
               ))}
+              <li>
+                <span>Sel</span>
+                <span>{Math.round(((dayTotals.totals.sodium_mg * 2.5) / 1000) * 10) / 10} g</span>
+              </li>
             </ul>
           </details>
         )}
@@ -516,12 +554,35 @@ export function JournalPage() {
                 <li key={entry.id} className="journal-entry">
                   <div className="journal-entry-main">
                     <span className="journal-entry-label">{entry.label}</span>
-                    <span className="journal-entry-qty">
-                      {entry.quantity} {entry.kind === 'recipe' ? 'portion(s)' : entry.unit}
-                      {state?.status === 'ok' && state.grams !== null && entry.unit !== 'g' && (
-                        <> (≈{Math.round(state.grams)} g)</>
-                      )}
-                    </span>
+                    {editingEntryId === entry.id ? (
+                      <span className="journal-entry-qty-edit">
+                        <input
+                          type="number"
+                          step="any"
+                          value={editingQty}
+                          onChange={(e) => setEditingQty(e.target.value)}
+                          autoFocus
+                        />
+                        <button type="button" onClick={() => saveEditQty(entry.id)}>
+                          ✓
+                        </button>
+                        <button type="button" className="link-button" onClick={cancelEditQty}>
+                          Annuler
+                        </button>
+                      </span>
+                    ) : (
+                      <span
+                        className="journal-entry-qty editable"
+                        onClick={() => startEditQty(entry)}
+                        title="Modifier la quantité"
+                      >
+                        {entry.quantity} {entry.kind === 'recipe' ? 'portion(s)' : entry.unit}
+                        {state?.status === 'ok' && state.grams !== null && entry.unit !== 'g' && (
+                          <> (≈{Math.round(state.grams)} g)</>
+                        )}
+                        {' ✎'}
+                      </span>
+                    )}
                   </div>
                   <span className="journal-entry-kcal">
                     {state?.status === 'ok' ? (
@@ -601,7 +662,7 @@ export function JournalPage() {
             <SearchableSelect
               id="journal-ingredient"
               value={ingName}
-              onChange={setIngName}
+              onChange={handleIngNameChange}
               options={[...ingredientItems.map((i) => i.name), ...recipes.map((r) => r.title)]}
               placeholder="Ingrédient ou plat"
               onAddNew={addIngredientOption}

@@ -12,6 +12,17 @@ export async function listJournalEntries(date: string): Promise<JournalEntry[]> 
   return data ?? [];
 }
 
+export async function updateJournalEntryQuantity(id: string, quantity: number): Promise<JournalEntry> {
+  const { data, error } = await supabase
+    .from('journal_entries')
+    .update({ quantity })
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function addJournalEntry(input: Omit<JournalEntryInput, 'user_id'>): Promise<JournalEntry> {
   const userId = await getCurrentUserId();
   if (!userId) throw new Error('Connecte-toi pour ajouter une entrée au carnet.');

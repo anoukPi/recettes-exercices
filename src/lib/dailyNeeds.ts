@@ -71,7 +71,15 @@ export function computeDailyTargets(profile: Profile): DailyTargets | null {
   const bmr = profile.sex === 'homme' ? base + 5 : base - 161;
   const tdee = bmr * ACTIVITY_MULTIPLIERS[profile.activity_level];
   const floor = CALORIE_FLOOR[profile.sex];
-  const rawCalories = tdee + GOAL_ADJUSTMENT[profile.goal];
+
+  // ~7700 kcal par kg de masse (perdu ou pris) — un ordre de grandeur courant,
+  // pas une constante physiologique exacte.
+  const adjustment =
+    profile.goal_weight_change_kg && profile.goal_timeframe_weeks
+      ? (profile.goal_weight_change_kg * 7700) / (profile.goal_timeframe_weeks * 7)
+      : GOAL_ADJUSTMENT[profile.goal];
+
+  const rawCalories = tdee + adjustment;
   const calories = Math.max(floor, rawCalories);
 
   const protein_g = profile.weight_kg * 1.8;

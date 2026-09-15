@@ -18,6 +18,8 @@ export function ProfileSection() {
   const [weightKg, setWeightKg] = useState('');
   const [activityLevel, setActivityLevel] = useState('');
   const [goal, setGoal] = useState('');
+  const [goalWeightChangeKg, setGoalWeightChangeKg] = useState('');
+  const [goalTimeframeWeeks, setGoalTimeframeWeeks] = useState('');
 
   useEffect(() => {
     getProfile()
@@ -30,6 +32,8 @@ export function ProfileSection() {
           setWeightKg(p.weight_kg?.toString() ?? '');
           setActivityLevel(p.activity_level ?? '');
           setGoal(p.goal ?? '');
+          setGoalWeightChangeKg(p.goal_weight_change_kg?.toString() ?? '');
+          setGoalTimeframeWeeks(p.goal_timeframe_weeks?.toString() ?? '');
         }
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Erreur de chargement.'))
@@ -49,6 +53,8 @@ export function ProfileSection() {
         weight_kg: weightKg ? parseFloat(weightKg) : null,
         activity_level: (activityLevel || null) as Profile['activity_level'],
         goal: (goal || null) as Profile['goal'],
+        goal_weight_change_kg: goalWeightChangeKg ? parseFloat(goalWeightChangeKg) : null,
+        goal_timeframe_weeks: goalTimeframeWeeks ? parseFloat(goalTimeframeWeeks) : null,
       });
       setProfile(updated);
       setSaved(true);
@@ -150,6 +156,38 @@ export function ProfileSection() {
             ))}
           </select>
         </div>
+
+        <div className="field">
+          <label htmlFor="profile-goal-weight">
+            Objectif précis (optionnel) — variation de poids visée
+          </label>
+          <input
+            id="profile-goal-weight"
+            type="number"
+            step="any"
+            value={goalWeightChangeKg}
+            onChange={(e) => setGoalWeightChangeKg(e.target.value)}
+            placeholder="ex. -1 (perdre 1kg) ou 2 (prendre 2kg)"
+          />
+        </div>
+
+        <div className="field">
+          <label htmlFor="profile-goal-weeks">Sur combien de semaines</label>
+          <input
+            id="profile-goal-weeks"
+            type="number"
+            step="any"
+            value={goalTimeframeWeeks}
+            onChange={(e) => setGoalTimeframeWeeks(e.target.value)}
+            placeholder="ex. 8"
+          />
+        </div>
+        {goalWeightChangeKg && goalTimeframeWeeks && (
+          <p className="hint">
+            Remplace le déficit/surplus standard de "{goal || 'objectif'}" par un calcul basé sur
+            ce rythme précis.
+          </p>
+        )}
 
         <button type="submit" disabled={saving}>
           {saving ? 'Enregistrement…' : 'Enregistrer le profil'}
