@@ -15,6 +15,20 @@ const GI_BANDS: { max: number; label: string; className: string }[] = [
   { max: Infinity, label: 'élevé', className: 'gi-high' },
 ];
 
+// Seuils courants pour une charge glycémique cumulée sur une journée entière
+// (repère large communément cité dans la littérature sur l'indice
+// glycémique — pas une valeur clinique précise, juste un ordre de grandeur).
+const CG_DAY_BANDS: { max: number; label: string; className: string }[] = [
+  { max: 80, label: 'faible', className: 'gi-very-low' },
+  { max: 120, label: 'modérée', className: 'gi-moderate' },
+  { max: Infinity, label: 'élevée', className: 'gi-high' },
+];
+
+function cgAppreciation(dayCg: number): { label: string; className: string } {
+  const band = CG_DAY_BANDS.find((b) => dayCg < b.max) ?? CG_DAY_BANDS[CG_DAY_BANDS.length - 1];
+  return { label: band.label, className: band.className };
+}
+
 function giAppreciation(avgGi: number): { label: string; className: string } {
   const band = GI_BANDS.find((b) => avgGi < b.max) ?? GI_BANDS[GI_BANDS.length - 1];
   return { label: band.label, className: band.className };
@@ -217,8 +231,12 @@ export function JournalPage() {
         )}
         {dayGi !== null && (
           <>
-            <p className={`gi-appreciation ${giAppreciation(dayGi).className}`}>
-              IG global du jour : {Math.round(dayGi)} ({giAppreciation(dayGi).label})
+            <p className={`gi-appreciation ${cgAppreciation(dayTotals.totals.glycemic_load).className}`}>
+              Charge glycémique du jour : {Math.round(dayTotals.totals.glycemic_load)} (
+              {cgAppreciation(dayTotals.totals.glycemic_load).label})
+            </p>
+            <p className="hint">
+              IG moyen du jour : {Math.round(dayGi)} ({giAppreciation(dayGi).label})
             </p>
             <details className="gi-explainer">
               <summary>ℹ️ IG vs charge glycémique — quelle différence ?</summary>
