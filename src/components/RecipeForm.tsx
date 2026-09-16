@@ -8,6 +8,13 @@ import { parseCaption } from '../lib/captionParser';
 import { DictationButton } from './DictationButton';
 import type { Recipe, RecipeInput, RecipeIngredient } from '../types';
 
+// Suggestions de départ toujours proposées, même avant d'avoir jamais été
+// utilisées sur une recette — catégories de plat + régimes courants.
+const STARTER_TAGS = [
+  'Entrée', 'Plat', 'Dessert', 'Pain', 'Petit-déjeuner', 'Apéritif', 'Sauce',
+  'Sans sucre', 'Sans gluten', 'Végétarien', 'Végan', 'Sans lactose',
+];
+
 interface RecipeFormProps {
   initial?: Recipe;
   onSubmit: (input: Omit<RecipeInput, 'user_id'>) => Promise<void>;
@@ -42,7 +49,9 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
   };
 
   useEffect(() => {
-    listRecipeTags().then(setTagSuggestions).catch(() => {});
+    listRecipeTags()
+      .then((used) => setTagSuggestions(Array.from(new Set([...STARTER_TAGS, ...used]))))
+      .catch(() => setTagSuggestions(STARTER_TAGS));
   }, []);
 
   const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
