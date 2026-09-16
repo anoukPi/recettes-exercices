@@ -13,7 +13,7 @@ export const INGREDIENT_EN: Record<string, string> = {
   'chou-fleur': 'cauliflower', ciboule: 'scallion', citrouille: 'pumpkin', concombre: 'cucumber',
   cornichon: 'pickle', 'courge butternut': 'butternut squash', 'courge spaghetti': 'spaghetti squash',
   courgette: 'zucchini', cresson: 'watercress', échalote: 'shallot', endive: 'endive',
-  épinard: 'spinach', fenouil: 'fennel', gingembre: 'ginger', 'haricot beurre': 'wax bean',
+  épinard: 'spinach', 'épinard congelé': 'spinach frozen', fenouil: 'fennel', gingembre: 'ginger', 'haricot beurre': 'wax bean',
   'haricot rouge': 'kidney bean', 'haricot vert': 'green bean', igname: 'yam', laitue: 'lettuce',
   maïs: 'corn', manioc: 'cassava', navet: 'turnip', oignon: 'onion', 'oignon blanc': 'white onion',
   'oignon jaune': 'yellow onion', 'oignon rouge': 'red onion', 'olive noire': 'black olive',
@@ -65,7 +65,8 @@ export const INGREDIENT_EN: Record<string, string> = {
   merlan: 'whiting', morue: 'salted cod', moule: 'mussel', oursin: 'sea urchin',
   palourde: 'clam', poulpe: 'octopus', raie: 'skate', rouget: 'red mullet',
   'saint-jacques': 'scallop', sardine: 'sardine', saumon: 'salmon', 'saumon fumé': 'smoked salmon',
-  seiche: 'cuttlefish', sole: 'sole', thon: 'tuna', truite: 'trout',
+  sandre: 'walleye', seiche: 'cuttlefish', 'filet sandre': 'walleye',
+  sole: 'sole', thon: 'tuna', truite: 'trout',
 
   // Produits laitiers & oeufs
   beurre: 'butter', 'beurre demi-sel': 'salted butter', "blanc d'oeuf": 'egg white',
