@@ -52,6 +52,20 @@ const INGREDIENT_LINE_WITHOUT_QUANTITY = new RegExp(
   'i',
 );
 
+// Nombres écrits en toutes lettres — très courant à l'oral/dicté ("deux
+// tomates", "trois oeufs") plutôt que le chiffre.
+const NUMBER_WORDS: Record<string, string> = {
+  un: '1', une: '1', deux: '2', trois: '3', quatre: '4', cinq: '5',
+  six: '6', sept: '7', huit: '8', neuf: '9', dix: '10', onze: '11',
+  douze: '12', treize: '13', quatorze: '14', quinze: '15', seize: '16',
+  vingt: '20',
+};
+const NUMBER_WORD_PATTERN = Object.keys(NUMBER_WORDS).sort((a, b) => b.length - a.length).join('|');
+
+// Cas "une courgette", "deux tomates" — nombre en toutes lettres (dicté),
+// sans mot d'unité explicite.
+const NUMBER_WORD_ONLY = new RegExp(`^(${NUMBER_WORD_PATTERN})\\s+(.+)$`, 'i');
+
 function stripBulletAndEmoji(line: string): string {
   return line.replace(LEADING_BULLET, '').replace(LEADING_EMOJI, '').trim();
 }
@@ -71,6 +85,12 @@ export function parseIngredientLine(rawLine: string): RecipeIngredient | null {
     const [, unit, ingredient] = withoutQuantity;
     const hadArticle = /^une?\s+/i.test(line);
     return { quantity: hadArticle ? '1' : '', unit, ingredient: ingredient.trim() };
+  }
+
+  const numberWordOnly = line.match(NUMBER_WORD_ONLY);
+  if (numberWordOnly) {
+    const [, word, ingredient] = numberWordOnly;
+    return { quantity: NUMBER_WORDS[word.toLowerCase()], unit: '', ingredient: ingredient.trim() };
   }
 
   return { quantity: '', unit: '', ingredient: line };
