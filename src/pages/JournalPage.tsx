@@ -35,13 +35,9 @@ function giAppreciation(avgGi: number): { label: string; className: string } {
   return { label: band.label, className: band.className };
 }
 
-/** Rouge/vert dépend de l'objectif : un surplus est le but en prise de
- * masse, pas en perte — sinon on afficherait "rouge" pour quelqu'un qui
- * fait exactement ce qu'il vise. */
-function bilanColor(gap: number, goal: Profile['goal'] | undefined): 'good' | 'over' | 'under' {
-  const threshold = 100; // kcal — en dessous, on considère que c'est "dans le clou"
-  if (Math.abs(gap) <= threshold) return 'good';
-  if (goal === 'prise') return gap > 0 ? 'good' : 'under';
+/** Consommé > dépensé = rouge, consommé ≤ dépensé = vert — règle simple et
+ * directe, peu importe l'objectif du profil. */
+function bilanColor(gap: number): 'good' | 'over' {
   return gap > 0 ? 'over' : 'good';
 }
 
@@ -239,7 +235,7 @@ export function JournalPage() {
       {error && <p className="error">{error}</p>}
 
       {bilan && (
-        <div className={`bilan-hero bilan-hero-${bilanColor(bilan.gap, profile?.goal)}`}>
+        <div className={`bilan-hero bilan-hero-${bilanColor(bilan.gap)}`}>
           <div className="bilan-hero-side">
             <span className="bilan-hero-label">Consommé</span>
             <span className="bilan-hero-value">{Math.round(dayTotals.totals.calories_kcal)}</span>
