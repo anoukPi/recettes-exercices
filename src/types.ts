@@ -180,6 +180,14 @@ export interface FitnessTest {
 
 export type FitnessTestInput = Omit<FitnessTest, 'id' | 'created_at'>;
 
+export interface WaterEntry {
+  id: string;
+  user_id: string;
+  entry_date: string;
+  amount_ml: number;
+  created_at: string;
+}
+
 export interface NutritionTotals {
   calories_kcal: number;
   protein_g: number;

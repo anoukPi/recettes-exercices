@@ -6,7 +6,8 @@ import { useSession } from '../lib/auth';
 import { MonthCalendar } from '../components/MonthCalendar';
 import { listCycleEntries } from '../api/cycle';
 import { isIronReminderDay } from '../lib/cycle';
-import { INTENSITIES, TRAINING_TYPES, type CycleEntry, type NutritionTotals } from '../types';
+import { addWaterEntry, deleteWaterEntry, listWaterEntries } from '../api/water';
+import { INTENSITIES, TRAINING_TYPES, type CycleEntry, type NutritionTotals, type Profile, type WaterEntry } from '../types';
 
 const GI_BANDS: { max: number; label: string; className: string }[] = [
   { max: 35, label: 'très bas', className: 'gi-very-low' },
@@ -32,6 +33,22 @@ function cgAppreciation(dayCg: number): { label: string; className: string } {
 function giAppreciation(avgGi: number): { label: string; className: string } {
   const band = GI_BANDS.find((b) => avgGi < b.max) ?? GI_BANDS[GI_BANDS.length - 1];
   return { label: band.label, className: band.className };
+}
+
+/** Rouge/vert dépend de l'objectif : un surplus est le but en prise de
+ * masse, pas en perte — sinon on afficherait "rouge" pour quelqu'un qui
+ * fait exactement ce qu'il vise. */
+function bilanColor(gap: number, goal: Profile['goal'] | undefined): 'good' | 'over' | 'under' {
+  const threshold = 100; // kcal — en dessous, on considère que c'est "dans le clou"
+  if (Math.abs(gap) <= threshold) return 'good';
+  if (goal === 'prise') return gap > 0 ? 'good' : 'under';
+  return gap > 0 ? 'over' : 'good';
+}
+
+const WATER_GLASS_ML = 250;
+
+function waterTarget(profile: Profile | null): number {
+  return profile?.weight_kg ? Math.round(profile.weight_kg * 30) : 2000;
 }
 
 type MicroLabel = { key: keyof NutritionTotals; label: string; unit: string };
@@ -127,6 +144,7 @@ export function JournalPage() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [monthKey, setMonthKey] = useState(dateKey.slice(0, 7));
   const [cycleEntries, setCycleEntries] = useState<CycleEntry[]>([]);
+  const [waterEntries, setWaterEntries] = useState<WaterEntry[]>([]);
 
   const { loading, error, profile, dailyTargets, dayTotals, dayGi, bilan, activityEntries } =
     useDayNutrition(dateKey);
@@ -136,7 +154,25 @@ export function JournalPage() {
     listCycleEntries().then(setCycleEntries).catch(() => {});
   }, [session]);
 
+  useEffect(() => {
+    if (!session) return;
+    listWaterEntries(dateKey).then(setWaterEntries).catch(() => {});
+  }, [session, dateKey]);
+
   const ironReminder = isIronReminderDay(dateKey, cycleEntries);
+  const waterTotalMl = waterEntries.reduce((sum, w) => sum + w.amount_ml, 0);
+
+  const handleAddWater = async () => {
+    const entry = await addWaterEntry(dateKey, WATER_GLASS_ML);
+    setWaterEntries((prev) => [...prev, entry]);
+  };
+
+  const handleRemoveLastWater = async () => {
+    const last = waterEntries[waterEntries.length - 1];
+    if (!last) return;
+    await deleteWaterEntry(last.id);
+    setWaterEntries((prev) => prev.filter((w) => w.id !== last.id));
+  };
 
   if (authLoading) return null;
 
@@ -202,13 +238,62 @@ export function JournalPage() {
       {loading && <p>Chargement…</p>}
       {error && <p className="error">{error}</p>}
 
-      <div className="journal-summary">
-        <div className="journal-summary-hero">
-          <span className="journal-summary-value">{Math.round(dayTotals.totals.calories_kcal)}</span>
-          <span className="journal-summary-unit">
-            {dailyTargets ? `/ ${Math.round(dailyTargets.calories_kcal)} kcal` : 'kcal'}
-          </span>
+      {bilan && (
+        <div className={`bilan-hero bilan-hero-${bilanColor(bilan.gap, profile?.goal)}`}>
+          <div className="bilan-hero-side">
+            <span className="bilan-hero-label">Consommé</span>
+            <span className="bilan-hero-value">{Math.round(dayTotals.totals.calories_kcal)}</span>
+            <span className="bilan-hero-unit">kcal</span>
+          </div>
+          <div className="bilan-hero-gap">
+            <span className="bilan-hero-gap-value">
+              {bilan.gap >= 0 ? '+' : ''}
+              {Math.round(bilan.gap)}
+            </span>
+            <span className="bilan-hero-unit">écart</span>
+          </div>
+          <div className="bilan-hero-side">
+            <span className="bilan-hero-label">Dépensé</span>
+            <span className="bilan-hero-value">{Math.round(bilan.expenses)}</span>
+            <span className="bilan-hero-unit">kcal</span>
+          </div>
         </div>
+      )}
+      {bilan && (
+        <p className="hint bilan-line">
+          Métabolisme de base {Math.round(bilan.bmr)} kcal
+          {bilan.measured ? (
+            <>
+              {' '}
+              + <Link to="/activity">activité loguée</Link> {Math.round(bilan.activityCalories)} kcal
+            </>
+          ) : (
+            <> × niveau d'activité du profil (estimation — logue une activité pour un bilan basé sur du réel)</>
+          )}
+        </p>
+      )}
+      {!profile && (
+        <p className="hint">
+          Renseigne ton <Link to="/settings">profil dans les Paramètres</Link> pour voir tes
+          objectifs journaliers ici.
+        </p>
+      )}
+      {dailyTargets?.flooredBySafety && (
+        <p className="hint warning-hint">
+          ⚠️ Ton objectif calculé était en dessous du plancher de sécurité — il a été ajusté au
+          minimum recommandé. Si tu vises une perte de poids plus rapide, mieux vaut en parler à un
+          professionnel de santé qu'ajuster ce chiffre.
+        </p>
+      )}
+      {ironReminder && (
+        <p className="hint warning-hint">
+          🩸 Règles en cours — pense à surveiller ton apport en fer ces jours-ci (pertes de sang).{' '}
+          <Link to="/cycle">Gérer le suivi du cycle</Link>
+        </p>
+      )}
+
+      <div className="summary-card">
+        <h4>Alimentation</h4>
         <div className="meter-group">
           <MacroMeter label="Protéines" actual={dayTotals.totals.protein_g} target={dailyTargets?.protein_g} unit="g" />
           <MacroMeter label="Glucides" actual={dayTotals.totals.carbs_g} target={dailyTargets?.carbs_g} unit="g" />
@@ -220,29 +305,6 @@ export function JournalPage() {
             unit="g"
           />
         </div>
-        <p className="hint">
-          Charge glycémique du jour : {Math.round(dayTotals.totals.glycemic_load)}
-        </p>
-        {!profile && (
-          <p className="hint">
-            Renseigne ton{' '}
-            <Link to="/settings">profil dans les Paramètres</Link> pour voir tes objectifs
-            journaliers ici.
-          </p>
-        )}
-        {dailyTargets?.flooredBySafety && (
-          <p className="hint warning-hint">
-            ⚠️ Ton objectif calculé était en dessous du plancher de sécurité — il a été ajusté au
-            minimum recommandé. Si tu vises une perte de poids plus rapide, mieux vaut en parler à
-            un professionnel de santé qu'ajuster ce chiffre.
-          </p>
-        )}
-        {ironReminder && (
-          <p className="hint warning-hint">
-            🩸 Règles en cours — pense à surveiller ton apport en fer ces jours-ci (pertes de sang).{' '}
-            <Link to="/cycle">Gérer le suivi du cycle</Link>
-          </p>
-        )}
         {dayGi !== null && (
           <>
             <p className={`gi-appreciation ${cgAppreciation(dayTotals.totals.glycemic_load).className}`}>
@@ -266,47 +328,54 @@ export function JournalPage() {
             </details>
           </>
         )}
-        {bilan && (
-          <p className="hint bilan-line">
-            Dépenses : {Math.round(bilan.expenses)} kcal — métabolisme de base{' '}
-            {Math.round(bilan.bmr)} kcal
-            {bilan.measured ? (
-              <>
-                {' '}
-                + <Link to="/activity">activité loguée</Link> {Math.round(bilan.activityCalories)}{' '}
-                kcal
-              </>
-            ) : (
-              <>
-                {' '}
-                × niveau d'activité du profil (estimation — logue une activité pour un bilan basé
-                sur du réel)
-              </>
-            )}
-            {' · '}Écart : {bilan.gap >= 0 ? '+' : ''}
-            {Math.round(bilan.gap)} kcal
-          </p>
-        )}
-        {activityEntries.length > 0 && (
-          <ul className="activity-summary-list">
-            {activityEntries.map((a) => (
-              <li key={a.id}>
-                <span>
-                  {a.activity_type}
-                  {a.training_type && ` · ${TRAINING_TYPES.find((t) => t.value === a.training_type)?.label}`}
-                  {a.intensity && ` · ${INTENSITIES.find((i) => i.value === a.intensity)?.label}`}
-                </span>
-                <span className="hint">{a.duration_minutes} min · {Math.round(a.calories_kcal)} kcal</span>
-              </li>
-            ))}
-          </ul>
-        )}
         {(dayTotals.hasPartial || dayTotals.hasWarning) && (
           <p className="hint warning-hint">
             Certaines lignes du détail des repas sont des estimations approximatives, ou affichent
             "?" quand aucune valeur n'a pu être calculée.
           </p>
         )}
+      </div>
+
+      {(activityEntries.length > 0 || bilan) && (
+        <div className="summary-card">
+          <h4>Activité physique</h4>
+          {activityEntries.length > 0 ? (
+            <ul className="activity-summary-list">
+              {activityEntries.map((a) => (
+                <li key={a.id}>
+                  <span>
+                    {a.activity_type}
+                    {a.training_type && ` · ${TRAINING_TYPES.find((t) => t.value === a.training_type)?.label}`}
+                    {a.intensity && ` · ${INTENSITIES.find((i) => i.value === a.intensity)?.label}`}
+                  </span>
+                  <span className="hint">{a.duration_minutes} min · {Math.round(a.calories_kcal)} kcal</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="hint">
+              Rien loguée aujourd'hui — <Link to="/activity">ajouter une activité</Link>.
+            </p>
+          )}
+        </div>
+      )}
+
+      <div className="summary-card">
+        <h4>Hydratation</h4>
+        <MacroMeter label="Eau" actual={waterTotalMl} target={waterTarget(profile)} unit="ml" />
+        <div className="water-actions">
+          <button type="button" onClick={handleAddWater}>
+            + un verre (250 ml)
+          </button>
+          {waterEntries.length > 0 && (
+            <button type="button" className="link-button" onClick={handleRemoveLastWater}>
+              Annuler le dernier
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="journal-summary">
         {dayTotals.hasAny && (
           <details className="journal-micro-details">
             <summary>Micronutriments</summary>

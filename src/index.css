@@ -289,6 +289,94 @@ h4 {
   font-size: 8px;
 }
 
+.bilan-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 1.25rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.bilan-hero-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.bilan-hero-gap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 0.5rem;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+.bilan-hero-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.bilan-hero-value {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.bilan-hero-gap-value {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.bilan-hero-unit {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.bilan-hero-good .bilan-hero-gap-value {
+  color: var(--success);
+}
+
+.bilan-hero-over .bilan-hero-gap-value {
+  color: var(--danger);
+}
+
+.bilan-hero-under .bilan-hero-gap-value {
+  color: var(--accent);
+}
+
+.summary-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.summary-card h4 {
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+}
+
+.water-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.6rem;
+}
+
 .bilan-stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
