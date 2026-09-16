@@ -216,9 +216,23 @@ export function JournalPage() {
           </p>
         )}
         {dayGi !== null && (
-          <p className={`gi-appreciation ${giAppreciation(dayGi).className}`}>
-            IG global du jour : {Math.round(dayGi)} ({giAppreciation(dayGi).label})
-          </p>
+          <>
+            <p className={`gi-appreciation ${giAppreciation(dayGi).className}`}>
+              IG global du jour : {Math.round(dayGi)} ({giAppreciation(dayGi).label})
+            </p>
+            <details className="gi-explainer">
+              <summary>ℹ️ IG vs charge glycémique — quelle différence ?</summary>
+              <p className="hint">
+                <strong>IG (indice glycémique)</strong> : vitesse à laquelle un aliment fait monter
+                la glycémie — fixe pour cet aliment, peu importe la quantité mangée.
+                <br />
+                <strong>Charge glycémique (CG)</strong> : IG × la quantité de glucides réellement
+                mangée. C'est l'impact réel sur ta glycémie de ta portion, pas juste de l'aliment en
+                général — deux portions différentes du même aliment ont le même IG mais pas la même
+                CG.
+              </p>
+            </details>
+          </>
         )}
         {bilan && (
           <p className="hint bilan-line">

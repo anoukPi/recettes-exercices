@@ -223,6 +223,17 @@ export function MealsPage() {
       {loading && <p>Chargement…</p>}
       {error && <p className="error">{error}</p>}
 
+      {entriesByMeal.length > 0 && (
+        <details className="gi-explainer">
+          <summary>ℹ️ IG / CG — quelle différence ?</summary>
+          <p className="hint">
+            <strong>IG</strong> : vitesse à laquelle l'aliment fait monter la glycémie, fixe peu
+            importe la quantité. <strong>CG</strong> : IG × la quantité de glucides de cette
+            portion précise — l'impact réel de ce que tu manges là, maintenant.
+          </p>
+        </details>
+      )}
+
       {entriesByMeal.map(({ meal, entries: mealEntries, totals: mealTotals }) => (
         <div className="journal-meal-group" key={meal}>
           <div className="journal-meal-header">

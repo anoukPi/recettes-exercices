@@ -372,6 +372,16 @@ h4 {
   color: var(--danger);
 }
 
+.gi-explainer {
+  margin: 0.5rem 0;
+}
+
+.gi-explainer summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
 .gi-appreciation {
   display: inline-block;
   margin: 0.5rem 0 0;
