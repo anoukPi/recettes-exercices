@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { getProfile, saveProfile } from '../api/profile';
 import { computeDailyTargets } from '../lib/dailyNeeds';
+import { useMeasuredActivity } from '../lib/useMeasuredActivity';
 import { useSession } from '../lib/auth';
 import { TagInput } from './TagInput';
 import { formatTagList, parseTagList } from '../lib/tags';
@@ -70,7 +71,10 @@ export function ProfileSection() {
     }
   };
 
-  const targets = profile ? computeDailyTargets(profile) : null;
+  const measuredActivity = useMeasuredActivity();
+  const targets = profile
+    ? computeDailyTargets(profile, measuredActivity.avgDailyActivityKcal ?? undefined)
+    : null;
 
   if (loading) return <p>Chargement…</p>;
 
@@ -217,6 +221,11 @@ export function ProfileSection() {
             <li>{Math.round(targets.carbs_g)} g de glucides</li>
             <li>{Math.round(targets.fat_g)} g de lipides</li>
           </ul>
+          <p className="hint">
+            {targets.tdeeSource === 'measured'
+              ? `Dépense calculée à partir de tes séances réellement loguées sur les 14 derniers jours (${measuredActivity.daysWithActivity} jour${measuredActivity.daysWithActivity > 1 ? 's' : ''} avec activité), plus fidèle que le niveau d'activité déclaré.`
+              : "Dépense estimée à partir du niveau d'activité déclaré — logue au moins 3 séances sur 2 semaines dans le carnet d'activité pour passer à un calcul basé sur tes vraies dépenses."}
+          </p>
         </div>
       )}
     </section>

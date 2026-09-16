@@ -34,10 +34,13 @@ export interface DailyTargets {
   flooredBySafety: boolean;
   /** Métabolisme de base — calories brûlées au repos complet, avant tout mouvement. */
   bmr_kcal: number;
-  /** Dépense totale estimée (BMR × niveau d'activité déclaré) — avant l'ajustement
-   * lié à l'objectif (déficit/surplus). C'est la vraie estimation de "dépenses",
-   * pas l'objectif calorique d'apport. */
+  /** Dépense totale estimée — avant l'ajustement lié à l'objectif (déficit/surplus).
+   * C'est la vraie estimation de "dépenses", pas l'objectif calorique d'apport. */
   tdee_kcal: number;
+  /** "measured" si tdee_kcal vient des séances réellement loguées dans le carnet
+   * d'activité (BMR + moyenne mesurée), "estimated" si c'est le multiplicateur
+   * générique du niveau d'activité déclaré, faute d'assez de séances loguées. */
+  tdeeSource: 'measured' | 'estimated';
 }
 
 export function ageFromBirthDate(birthDate: string): number {
@@ -70,14 +73,27 @@ export function isProfileComplete(profile: Profile | null): profile is Profile &
 
 /** Métabolisme de base (Mifflin-St Jeor), la formule la plus fiable et la plus
  * couramment utilisée pour l'estimer à partir du poids, de la taille, de l'âge
- * et du sexe. */
-export function computeDailyTargets(profile: Profile): DailyTargets | null {
+ * et du sexe.
+ *
+ * `measuredAvgActivityKcal` (optionnel) : moyenne quotidienne des calories
+ * d'activité réellement loguées sur une période récente (voir
+ * useMeasuredActivity) — remplace le multiplicateur générique du niveau
+ * d'activité déclaré par BMR + cette moyenne mesurée, plus fidèle à ce que
+ * la personne fait vraiment. */
+export function computeDailyTargets(
+  profile: Profile,
+  measuredAvgActivityKcal?: number,
+): DailyTargets | null {
   if (!isProfileComplete(profile)) return null;
 
   const age = ageFromBirthDate(profile.birth_date);
   const base = 10 * profile.weight_kg + 6.25 * profile.height_cm - 5 * age;
   const bmr = profile.sex === 'homme' ? base + 5 : base - 161;
-  const tdee = bmr * ACTIVITY_MULTIPLIERS[profile.activity_level];
+  const tdeeSource: 'measured' | 'estimated' = measuredAvgActivityKcal != null ? 'measured' : 'estimated';
+  const tdee =
+    measuredAvgActivityKcal != null
+      ? bmr + measuredAvgActivityKcal
+      : bmr * ACTIVITY_MULTIPLIERS[profile.activity_level];
   const floor = CALORIE_FLOOR[profile.sex];
 
   // ~7700 kcal par kg de masse (perdu ou pris) — un ordre de grandeur courant,
@@ -107,5 +123,6 @@ export function computeDailyTargets(profile: Profile): DailyTargets | null {
     flooredBySafety: rawCalories < floor,
     bmr_kcal: bmr,
     tdee_kcal: tdee,
+    tdeeSource,
   };
 }
