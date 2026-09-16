@@ -72,9 +72,23 @@ export function ProfileSection() {
   };
 
   const measuredActivity = useMeasuredActivity();
-  const targets = profile
-    ? computeDailyTargets(profile, measuredActivity.avgDailyActivityKcal ?? undefined)
-    : null;
+  // Recalculé à partir du formulaire en direct (pas du profil déjà enregistré)
+  // pour que l'estimation reflète immédiatement un changement, avant même de
+  // cliquer sur "Enregistrer le profil".
+  const draftProfile: Profile = {
+    id: profile?.id ?? '',
+    updated_at: profile?.updated_at ?? '',
+    sex: sex === 'homme' || sex === 'femme' ? sex : null,
+    birth_date: birthDate || null,
+    height_cm: heightCm ? parseFloat(heightCm) : null,
+    weight_kg: weightKg ? parseFloat(weightKg) : null,
+    activity_level: (activityLevel || null) as Profile['activity_level'],
+    goal: (goal || null) as Profile['goal'],
+    goal_weight_change_kg: goalWeightChangeKg ? parseFloat(goalWeightChangeKg) : null,
+    goal_timeframe_weeks: goalTimeframeWeeks ? parseFloat(goalTimeframeWeeks) : null,
+    sports: parseTagList(sportsInput),
+  };
+  const targets = computeDailyTargets(draftProfile, measuredActivity.avgDailyActivityKcal ?? undefined);
 
   if (loading) return <p>Chargement…</p>;
 
