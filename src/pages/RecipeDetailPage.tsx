@@ -9,6 +9,7 @@ import {
   removeEndorsement,
 } from '../api/endorsements';
 import { useSession } from '../lib/auth';
+import { useRecipeNutrition } from '../lib/useRecipeNutrition';
 import type { Recipe, RecipeInput } from '../types';
 
 export function RecipeDetailPage() {
@@ -16,6 +17,7 @@ export function RecipeDetailPage() {
   const navigate = useNavigate();
   const { session } = useSession();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const { result: nutrition, loading: nutritionLoading } = useRecipeNutrition(recipe);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -124,6 +126,65 @@ export function RecipeDetailPage() {
             ))}
           </ul>
         </>
+      )}
+
+      {recipe.ingredients.length > 0 && (
+        <div className="summary-card">
+          <h4>Valeurs nutritionnelles (recette entière)</h4>
+          {nutritionLoading && <p className="hint">Calcul en cours…</p>}
+          {!nutritionLoading && nutrition?.anyFound && (
+            <>
+              <p className="hint">
+                {Math.round(nutrition.totals.calories_kcal)} kcal · {Math.round(nutrition.totals.protein_g)} g
+                protéines · {Math.round(nutrition.totals.carbs_g)} g glucides · {Math.round(nutrition.totals.fat_g)}{' '}
+                g lipides
+              </p>
+              {nutrition.avgGi !== null && (
+                <p className="hint">
+                  IG moyen : {Math.round(nutrition.avgGi)} · Charge glycémique :{' '}
+                  {Math.round(nutrition.totals.glycemic_load)}
+                </p>
+              )}
+              <details className="journal-micro-details">
+                <summary>Micronutriments (recette entière)</summary>
+                <ul className="journal-micro-list">
+                  <li>
+                    <span>Fibres</span>
+                    <span>{Math.round(nutrition.totals.fiber_g * 10) / 10} g</span>
+                  </li>
+                  <li>
+                    <span>Sucres</span>
+                    <span>{Math.round(nutrition.totals.sugar_g * 10) / 10} g</span>
+                  </li>
+                  <li>
+                    <span>Sel</span>
+                    <span>{Math.round(((nutrition.totals.sodium_mg * 2.5) / 1000) * 10) / 10} g</span>
+                  </li>
+                  <li>
+                    <span>dont saturés</span>
+                    <span>{Math.round(nutrition.totals.fat_saturated_g * 10) / 10} g</span>
+                  </li>
+                </ul>
+              </details>
+              {nutrition.partial && (
+                <p className="hint warning-hint">
+                  ⚠️ Calcul partiel — certains ingrédients n'ont pas pu être trouvés ou convertis
+                  (mesure inconnue, ingrédient introuvable). Le total ci-dessus les exclut.
+                </p>
+              )}
+              <p className="hint">
+                Ceci est le total pour la recette telle qu'écrite, pas "par portion" — la recette
+                n'a pas de nombre de portions défini.
+              </p>
+            </>
+          )}
+          {!nutritionLoading && !nutrition?.anyFound && (
+            <p className="hint">
+              Aucune valeur calculable — les ingrédients doivent être reconnus (quantité + mesure +
+              nom présents dans ta bibliothèque) pour que le calcul fonctionne.
+            </p>
+          )}
+        </div>
       )}
 
       {recipe.steps && (
