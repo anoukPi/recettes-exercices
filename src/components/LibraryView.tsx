@@ -6,6 +6,7 @@ interface LibraryItem {
   title: string;
   tags: string[];
   photo_url?: string | null;
+  subtitle?: string | null;
 }
 
 interface LibraryViewProps<T extends LibraryItem> {
@@ -103,6 +104,7 @@ export function LibraryView<T extends LibraryItem>({
           <Link key={item.id} to={detailPath(item.id)} className="card">
             {item.photo_url && <img src={item.photo_url} alt="" className="card-photo" />}
             <h3>{item.title}</h3>
+            {item.subtitle && <p className="card-subtitle">{item.subtitle}</p>}
             {item.tags.length > 0 && (
               <div className="tags">
                 {item.tags.map((tag) => (
