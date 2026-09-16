@@ -71,27 +71,35 @@ export function useMonthCalories(monthKey: string) {
           if (!recipe) return 0;
           let sum = 0;
           for (const ing of recipe.ingredients) {
-            const qty = parseFloat(ing.quantity.replace(',', '.'));
-            const refId = ingredientNameToId.get(ing.ingredient.trim().toLowerCase());
-            if (!refId || Number.isNaN(qty) || !ing.unit) continue;
-            const grams = gramsForQuantity(
-              qty,
-              ing.unit,
-              ing.ingredient,
-              pieceWeights.get(ing.ingredient.trim().toLowerCase()),
-            );
-            if (grams === null) continue;
-            const nutrition = await getIngredientNutrition(refId, ing.ingredient);
-            if (nutrition?.calories_kcal) sum += (nutrition.calories_kcal * grams) / 100;
+            try {
+              const qty = parseFloat(ing.quantity.replace(',', '.'));
+              const refId = ingredientNameToId.get(ing.ingredient.trim().toLowerCase());
+              if (!refId || Number.isNaN(qty) || !ing.unit) continue;
+              const grams = gramsForQuantity(
+                qty,
+                ing.unit,
+                ing.ingredient,
+                pieceWeights.get(ing.ingredient.trim().toLowerCase()),
+              );
+              if (grams === null) continue;
+              const nutrition = await getIngredientNutrition(refId, ing.ingredient);
+              if (nutrition?.calories_kcal) sum += (nutrition.calories_kcal * grams) / 100;
+            } catch {
+              // un ingrédient en échec ne doit pas casser le calcul du mois entier
+            }
           }
           return sum * entry.quantity;
         };
 
         const byDate: Record<string, DayStatus> = {};
         for (const entry of entries) {
-          const calories = await caloriesForEntry(entry);
-          const prev = byDate[entry.entry_date] ?? { calories: 0, hasData: false };
-          byDate[entry.entry_date] = { calories: prev.calories + calories, hasData: true };
+          try {
+            const calories = await caloriesForEntry(entry);
+            const prev = byDate[entry.entry_date] ?? { calories: 0, hasData: false };
+            byDate[entry.entry_date] = { calories: prev.calories + calories, hasData: true };
+          } catch {
+            // une entrée en échec ne doit pas casser le calcul du mois entier
+          }
         }
         if (!cancelled) setCaloriesByDate(byDate);
       })

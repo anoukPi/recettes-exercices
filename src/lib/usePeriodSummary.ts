@@ -84,20 +84,24 @@ export function usePeriodSummary(startDate: string, endDate: string) {
           if (!recipe) return empty;
           let sum = { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
           for (const ing of recipe.ingredients) {
-            const qty = parseFloat(ing.quantity.replace(',', '.'));
-            const refId = ingredientNameToId.get(ing.ingredient.trim().toLowerCase());
-            if (!refId || Number.isNaN(qty) || !ing.unit) continue;
-            const grams = gramsForQuantity(qty, ing.unit, ing.ingredient, pieceWeights.get(ing.ingredient.trim().toLowerCase()));
-            if (grams === null) continue;
-            const nutrition = await getIngredientNutrition(refId, ing.ingredient);
-            if (!nutrition?.calories_kcal) continue;
-            const factor = grams / 100;
-            sum = {
-              calories: sum.calories + nutrition.calories_kcal * factor,
-              protein_g: sum.protein_g + (nutrition.protein_g ?? 0) * factor,
-              carbs_g: sum.carbs_g + (nutrition.carbs_g ?? 0) * factor,
-              fat_g: sum.fat_g + (nutrition.fat_g ?? 0) * factor,
-            };
+            try {
+              const qty = parseFloat(ing.quantity.replace(',', '.'));
+              const refId = ingredientNameToId.get(ing.ingredient.trim().toLowerCase());
+              if (!refId || Number.isNaN(qty) || !ing.unit) continue;
+              const grams = gramsForQuantity(qty, ing.unit, ing.ingredient, pieceWeights.get(ing.ingredient.trim().toLowerCase()));
+              if (grams === null) continue;
+              const nutrition = await getIngredientNutrition(refId, ing.ingredient);
+              if (!nutrition?.calories_kcal) continue;
+              const factor = grams / 100;
+              sum = {
+                calories: sum.calories + nutrition.calories_kcal * factor,
+                protein_g: sum.protein_g + (nutrition.protein_g ?? 0) * factor,
+                carbs_g: sum.carbs_g + (nutrition.carbs_g ?? 0) * factor,
+                fat_g: sum.fat_g + (nutrition.fat_g ?? 0) * factor,
+              };
+            } catch {
+              // un ingrédient en échec ne doit pas casser le calcul du jour entier
+            }
           }
           const portionFactor = entry.quantity;
           return {
@@ -127,13 +131,17 @@ export function usePeriodSummary(startDate: string, endDate: string) {
         };
 
         for (const entry of journalEntries) {
-          const nutrition = await nutritionForEntry(entry);
-          const day = addDate(entry.entry_date);
-          day.calories += nutrition.calories;
-          day.protein_g += nutrition.protein_g;
-          day.carbs_g += nutrition.carbs_g;
-          day.fat_g += nutrition.fat_g;
-          day.hasData = true;
+          try {
+            const nutrition = await nutritionForEntry(entry);
+            const day = addDate(entry.entry_date);
+            day.calories += nutrition.calories;
+            day.protein_g += nutrition.protein_g;
+            day.carbs_g += nutrition.carbs_g;
+            day.fat_g += nutrition.fat_g;
+            day.hasData = true;
+          } catch {
+            // une entrée en échec ne doit pas casser le résumé de toute la période
+          }
         }
 
         for (const activity of activityEntries) {

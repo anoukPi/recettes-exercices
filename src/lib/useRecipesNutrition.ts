@@ -45,19 +45,24 @@ export function useRecipesNutrition(recipes: Recipe[]) {
           let anyFound = false;
 
           for (const ing of recipe.ingredients) {
-            const qty = parseFloat(ing.quantity.replace(',', '.'));
-            const refId = ingredientNameToId.get(ing.ingredient.trim().toLowerCase());
-            if (!refId || Number.isNaN(qty) || !ing.unit) continue;
-            const grams = gramsForQuantity(qty, ing.unit, ing.ingredient, pieceWeights.get(ing.ingredient.trim().toLowerCase()));
-            if (grams === null) continue;
-            const nutrition = await getIngredientNutrition(refId, ing.ingredient);
-            if (!nutrition) continue;
-            const scaled = scaleNutrition(nutrition, grams);
-            if (!scaled) continue;
-            const gi = giFor(ing.ingredient);
-            if (gi !== null) scaled.glycemic_load = (gi * scaled.carbs_g) / 100;
-            sum = addTotals(sum, scaled);
-            anyFound = true;
+            try {
+              const qty = parseFloat(ing.quantity.replace(',', '.'));
+              const refId = ingredientNameToId.get(ing.ingredient.trim().toLowerCase());
+              if (!refId || Number.isNaN(qty) || !ing.unit) continue;
+              const grams = gramsForQuantity(qty, ing.unit, ing.ingredient, pieceWeights.get(ing.ingredient.trim().toLowerCase()));
+              if (grams === null) continue;
+              const nutrition = await getIngredientNutrition(refId, ing.ingredient);
+              if (!nutrition) continue;
+              const scaled = scaleNutrition(nutrition, grams);
+              if (!scaled) continue;
+              const gi = giFor(ing.ingredient);
+              if (gi !== null) scaled.glycemic_load = (gi * scaled.carbs_g) / 100;
+              sum = addTotals(sum, scaled);
+              anyFound = true;
+            } catch {
+              // Un ingrédient qui échoue (recherche USDA en erreur, etc.) ne
+              // doit pas bloquer le calcul des autres ingrédients/recettes.
+            }
           }
 
           if (!anyFound || sum.calories_kcal <= 0) continue;

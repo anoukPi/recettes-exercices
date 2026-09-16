@@ -44,32 +44,36 @@ export function useRecipeNutrition(recipe: Recipe | null) {
         let partial = false;
 
         for (const ing of recipe.ingredients) {
-          const qty = parseFloat(ing.quantity.replace(',', '.'));
-          const refId = ingredientNameToId.get(ing.ingredient.trim().toLowerCase());
-          if (!refId || Number.isNaN(qty) || !ing.unit) {
+          try {
+            const qty = parseFloat(ing.quantity.replace(',', '.'));
+            const refId = ingredientNameToId.get(ing.ingredient.trim().toLowerCase());
+            if (!refId || Number.isNaN(qty) || !ing.unit) {
+              partial = true;
+              continue;
+            }
+            const grams = gramsForQuantity(qty, ing.unit, ing.ingredient, pieceWeights.get(ing.ingredient.trim().toLowerCase()));
+            if (grams === null) {
+              partial = true;
+              continue;
+            }
+            const nutrition = await getIngredientNutrition(refId, ing.ingredient);
+            if (!nutrition) {
+              partial = true;
+              continue;
+            }
+            const scaled = scaleNutrition(nutrition, grams);
+            if (!scaled) {
+              partial = true;
+              continue;
+            }
+            const gi = giFor(ing.ingredient);
+            if (gi !== null) scaled.glycemic_load = (gi * scaled.carbs_g) / 100;
+            sum = addTotals(sum, scaled);
+            anyFound = true;
+            if (!hasKnownTranslation(ing.ingredient)) partial = true;
+          } catch {
             partial = true;
-            continue;
           }
-          const grams = gramsForQuantity(qty, ing.unit, ing.ingredient, pieceWeights.get(ing.ingredient.trim().toLowerCase()));
-          if (grams === null) {
-            partial = true;
-            continue;
-          }
-          const nutrition = await getIngredientNutrition(refId, ing.ingredient);
-          if (!nutrition) {
-            partial = true;
-            continue;
-          }
-          const scaled = scaleNutrition(nutrition, grams);
-          if (!scaled) {
-            partial = true;
-            continue;
-          }
-          const gi = giFor(ing.ingredient);
-          if (gi !== null) scaled.glycemic_load = (gi * scaled.carbs_g) / 100;
-          sum = addTotals(sum, scaled);
-          anyFound = true;
-          if (!hasKnownTranslation(ing.ingredient)) partial = true;
         }
 
         const avgGi = sum.carbs_g >= 1 ? (sum.glycemic_load / sum.carbs_g) * 100 : null;
