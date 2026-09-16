@@ -5,6 +5,7 @@ import { formatTagList, parseTagList } from '../lib/tags';
 import { listRecipeTags } from '../api/tags';
 import { uploadRecipePhoto } from '../api/storage';
 import { parseCaption } from '../lib/captionParser';
+import { DictationButton } from './DictationButton';
 import type { Recipe, RecipeInput, RecipeIngredient } from '../types';
 
 interface RecipeFormProps {
@@ -106,9 +107,15 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
           rows={4}
           placeholder="Colle ici la légende du post — titre, Ingrédients :, Étapes : si présents"
         />
-        <button type="button" onClick={handleExtractCaption} disabled={!captionInput.trim()}>
-          Extraire dans le formulaire
-        </button>
+        <div className="caption-import-actions">
+          <button type="button" onClick={handleExtractCaption} disabled={!captionInput.trim()}>
+            Extraire dans le formulaire
+          </button>
+          <DictationButton
+            title="Dicter la légende (ingrédients, étapes...)"
+            onResult={(text) => setCaptionInput((prev) => (prev ? `${prev}\n${text}` : text))}
+          />
+        </div>
       </div>
 
       <div className="field">

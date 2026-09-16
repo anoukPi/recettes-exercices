@@ -4,6 +4,8 @@ import { SearchableSelect } from '../components/SearchableSelect';
 import { addDays, defaultMealForNow, formatDateKeyFr, toDateKey } from '../lib/date';
 import { suggestUnit } from '../lib/unitSuggestion';
 import { disambiguationFor } from '../lib/ingredientDisambiguation';
+import { parseIngredientLine } from '../lib/captionParser';
+import { DictationButton } from '../components/DictationButton';
 import { useDayNutrition, REASON_UNAVAILABLE } from '../lib/useDayNutrition';
 import { addJournalEntry, deleteJournalEntry, updateJournalEntryQuantity } from '../api/journal';
 import { addReferenceItem, listReferenceItems, type ReferenceItem } from '../api/referenceItems';
@@ -82,6 +84,14 @@ export function MealsPage() {
   const pickVariant = (variant: string) => {
     handleIngNameChange(variant);
     setDismissedAmbiguous(variant.trim().toLowerCase());
+  };
+
+  const handleDictateIngredient = (transcript: string) => {
+    const parsed = parseIngredientLine(transcript);
+    if (!parsed) return;
+    if (parsed.quantity) setIngQty(parsed.quantity);
+    handleIngNameChange(parsed.ingredient);
+    if (parsed.unit) setIngUnit(parsed.unit);
   };
 
   const handleAddFood = async (e: FormEvent) => {
@@ -368,6 +378,9 @@ export function MealsPage() {
               placeholder="Ingrédient ou plat"
               onAddNew={addIngredientOption}
             />
+            {!selectedRecipe && (
+              <DictationButton title="Dicter (ex: 100 grammes de riz)" onResult={handleDictateIngredient} />
+            )}
           </div>
           {selectedRecipe && <p className="hint">Plat de ta bibliothèque : {selectedRecipe.title}.</p>}
           {ambiguousVariants && (

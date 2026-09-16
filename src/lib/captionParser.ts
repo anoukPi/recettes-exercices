@@ -56,7 +56,7 @@ function stripBulletAndEmoji(line: string): string {
   return line.replace(LEADING_BULLET, '').replace(LEADING_EMOJI, '').trim();
 }
 
-function parseIngredientLine(rawLine: string): RecipeIngredient | null {
+export function parseIngredientLine(rawLine: string): RecipeIngredient | null {
   const line = stripBulletAndEmoji(rawLine);
   if (!line) return null;
 
