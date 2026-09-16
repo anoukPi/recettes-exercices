@@ -29,6 +29,8 @@ export interface DailyTargets {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  /** Repère indicatif (OMS/ANSES : ~10% des calories) — pas une limite stricte. */
+  fat_saturated_g: number;
   flooredBySafety: boolean;
   /** Métabolisme de base — calories brûlées au repos complet, avant tout mouvement. */
   bmr_kcal: number;
@@ -94,12 +96,14 @@ export function computeDailyTargets(profile: Profile): DailyTargets | null {
   const fat_g = fatCal / 9;
   const carbsCal = Math.max(0, calories - proteinCal - fatCal);
   const carbs_g = carbsCal / 4;
+  const fat_saturated_g = (calories * 0.1) / 9;
 
   return {
     calories_kcal: calories,
     protein_g,
     carbs_g,
     fat_g,
+    fat_saturated_g,
     flooredBySafety: rawCalories < floor,
     bmr_kcal: bmr,
     tdee_kcal: tdee,

@@ -11,11 +11,28 @@ interface ManualNutritionFormProps {
 
 const PIECE_UNITS = new Set(['unité', 'pièce', 'sachet', 'boîte', 'botte', 'feuille', 'brin']);
 
-const FIELDS: { key: 'calories_kcal' | 'protein_g' | 'carbs_g' | 'fat_g' | 'fiber_g' | 'sugar_g' | 'sodium_mg'; label: string; unit: string }[] = [
+const FIELDS: {
+  key:
+    | 'calories_kcal'
+    | 'protein_g'
+    | 'carbs_g'
+    | 'fat_g'
+    | 'fat_saturated_g'
+    | 'fat_monounsaturated_g'
+    | 'fat_polyunsaturated_g'
+    | 'fiber_g'
+    | 'sugar_g'
+    | 'sodium_mg';
+  label: string;
+  unit: string;
+}[] = [
   { key: 'calories_kcal', label: 'Calories', unit: 'kcal' },
   { key: 'protein_g', label: 'Protéines', unit: 'g' },
   { key: 'carbs_g', label: 'Glucides', unit: 'g' },
   { key: 'fat_g', label: 'Lipides', unit: 'g' },
+  { key: 'fat_saturated_g', label: 'dont saturés', unit: 'g' },
+  { key: 'fat_monounsaturated_g', label: 'dont mono-insaturés', unit: 'g' },
+  { key: 'fat_polyunsaturated_g', label: 'dont poly-insaturés', unit: 'g' },
   { key: 'fiber_g', label: 'Fibres', unit: 'g' },
   { key: 'sugar_g', label: 'Sucres', unit: 'g' },
   { key: 'sodium_mg', label: 'Sodium', unit: 'mg' },

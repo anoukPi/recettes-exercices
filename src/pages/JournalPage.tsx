@@ -45,6 +45,13 @@ const MICRO_GROUPS: { title: string; items: MicroLabel[] }[] = [
     ],
   },
   {
+    title: 'Lipides (détail)',
+    items: [
+      { key: 'fat_monounsaturated_g', label: 'Mono-insaturés', unit: 'g' },
+      { key: 'fat_polyunsaturated_g', label: 'Poly-insaturés', unit: 'g' },
+    ],
+  },
+  {
     title: 'Minéraux',
     items: [
       { key: 'sodium_mg', label: 'Sodium', unit: 'mg' },
@@ -205,6 +212,12 @@ export function JournalPage() {
           <MacroMeter label="Protéines" actual={dayTotals.totals.protein_g} target={dailyTargets?.protein_g} unit="g" />
           <MacroMeter label="Glucides" actual={dayTotals.totals.carbs_g} target={dailyTargets?.carbs_g} unit="g" />
           <MacroMeter label="Lipides" actual={dayTotals.totals.fat_g} target={dailyTargets?.fat_g} unit="g" />
+          <MacroMeter
+            label="dont saturés"
+            actual={dayTotals.totals.fat_saturated_g}
+            target={dailyTargets?.fat_saturated_g}
+            unit="g"
+          />
         </div>
         <p className="hint">
           Charge glycémique du jour : {Math.round(dayTotals.totals.glycemic_load)}

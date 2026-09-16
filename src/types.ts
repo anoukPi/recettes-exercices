@@ -38,6 +38,9 @@ export interface NutritionPer100g {
   protein_g: number | null;
   carbs_g: number | null;
   fat_g: number | null;
+  fat_saturated_g: number | null;
+  fat_monounsaturated_g: number | null;
+  fat_polyunsaturated_g: number | null;
   fiber_g: number | null;
   sugar_g: number | null;
   sodium_mg: number | null;
@@ -182,6 +185,9 @@ export interface NutritionTotals {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  fat_saturated_g: number;
+  fat_monounsaturated_g: number;
+  fat_polyunsaturated_g: number;
   fiber_g: number;
   sugar_g: number;
   sodium_mg: number;
