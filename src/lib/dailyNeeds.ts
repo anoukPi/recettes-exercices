@@ -8,6 +8,19 @@ const ACTIVITY_MULTIPLIERS: Record<ActivityLevel, number> = {
   tres_actif: 1.9,
 };
 
+// g de protéines par kg de poids corporel, selon le niveau d'activité —
+// plage courante dans les recommandations sportives (ISSN, ACSM/AND/DC) :
+// ~1.2g/kg pour une activité faible jusqu'à ~2g/kg pour un entraînement
+// intense fréquent. Pas propre à un sport particulier — approximation
+// générale par niveau d'activité déclaré.
+const PROTEIN_G_PER_KG: Record<ActivityLevel, number> = {
+  sedentaire: 1.2,
+  leger: 1.4,
+  modere: 1.6,
+  actif: 1.8,
+  tres_actif: 2.0,
+};
+
 // Ajustement calorique par objectif — un déficit/surplus modéré et courant
 // (≈0,5 kg/semaine en perte), pas une prescription médicale.
 const GOAL_ADJUSTMENT: Record<Goal, number> = {
@@ -106,7 +119,7 @@ export function computeDailyTargets(
   const rawCalories = tdee + adjustment;
   const calories = Math.max(floor, rawCalories);
 
-  const protein_g = profile.weight_kg * 1.8;
+  const protein_g = profile.weight_kg * PROTEIN_G_PER_KG[profile.activity_level];
   const proteinCal = protein_g * 4;
   const fatCal = calories * 0.3;
   const fat_g = fatCal / 9;
