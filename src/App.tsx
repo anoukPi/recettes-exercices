@@ -11,11 +11,13 @@ import { MealsPage } from './pages/MealsPage';
 import { ActivityPage } from './pages/ActivityPage';
 import { CyclePage } from './pages/CyclePage';
 import { TestsPage } from './pages/TestsPage';
+import { BilanPage } from './pages/BilanPage';
 
 const NAV_ITEMS = [
   { path: '/journal', label: 'Carnet' },
   { path: '/repas', label: 'Repas' },
   { path: '/activity', label: 'Activité' },
+  { path: '/bilan', label: 'Bilan' },
   { path: '/cycle', label: 'Cycle' },
   { path: '/tests', label: 'Tests' },
   { path: '/recipes', label: 'Recettes' },
@@ -67,6 +69,7 @@ function App() {
           <Route path="/activity" element={<ActivityPage />} />
           <Route path="/cycle" element={<CyclePage />} />
           <Route path="/tests" element={<TestsPage />} />
+          <Route path="/bilan" element={<BilanPage />} />
         </Routes>
       </main>
     </div>

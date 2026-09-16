@@ -6,7 +6,7 @@ import { useSession } from '../lib/auth';
 import { MonthCalendar } from '../components/MonthCalendar';
 import { listCycleEntries } from '../api/cycle';
 import { isIronReminderDay } from '../lib/cycle';
-import type { CycleEntry, NutritionTotals } from '../types';
+import { INTENSITIES, TRAINING_TYPES, type CycleEntry, type NutritionTotals } from '../types';
 
 const GI_BANDS: { max: number; label: string; className: string }[] = [
   { max: 35, label: 'très bas', className: 'gi-very-low' },
@@ -128,7 +128,8 @@ export function JournalPage() {
   const [monthKey, setMonthKey] = useState(dateKey.slice(0, 7));
   const [cycleEntries, setCycleEntries] = useState<CycleEntry[]>([]);
 
-  const { loading, error, profile, dailyTargets, dayTotals, dayGi, bilan } = useDayNutrition(dateKey);
+  const { loading, error, profile, dailyTargets, dayTotals, dayGi, bilan, activityEntries } =
+    useDayNutrition(dateKey);
 
   useEffect(() => {
     if (!session) return;
@@ -285,6 +286,20 @@ export function JournalPage() {
             {' · '}Écart : {bilan.gap >= 0 ? '+' : ''}
             {Math.round(bilan.gap)} kcal
           </p>
+        )}
+        {activityEntries.length > 0 && (
+          <ul className="activity-summary-list">
+            {activityEntries.map((a) => (
+              <li key={a.id}>
+                <span>
+                  {a.activity_type}
+                  {a.training_type && ` · ${TRAINING_TYPES.find((t) => t.value === a.training_type)?.label}`}
+                  {a.intensity && ` · ${INTENSITIES.find((i) => i.value === a.intensity)?.label}`}
+                </span>
+                <span className="hint">{a.duration_minutes} min · {Math.round(a.calories_kcal)} kcal</span>
+              </li>
+            ))}
+          </ul>
         )}
         {(dayTotals.hasPartial || dayTotals.hasWarning) && (
           <p className="hint warning-hint">

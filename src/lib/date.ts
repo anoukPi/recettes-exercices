@@ -24,3 +24,33 @@ export function formatDateKeyFr(dateKey: string): string {
   const date = new Date(year, month - 1, day);
   return date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
 }
+
+/** Lundi de la semaine contenant cette date. */
+export function startOfWeek(dateKey: string): string {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  const date = new Date(year, month - 1, day);
+  const offset = (date.getDay() + 6) % 7; // lundi = 0
+  date.setDate(date.getDate() - offset);
+  return toDateKey(date);
+}
+
+export function startOfMonth(dateKey: string): string {
+  const [year, month] = dateKey.split('-').map(Number);
+  return `${year}-${String(month).padStart(2, '0')}-01`;
+}
+
+export function endOfMonth(dateKey: string): string {
+  const [year, month] = dateKey.split('-').map(Number);
+  const lastDay = new Date(year, month, 0).getDate();
+  return `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+}
+
+export function formatDateRangeFr(startDate: string, endDate: string): string {
+  const [sy, sm, sd] = startDate.split('-').map(Number);
+  const [ey, em, ed] = endDate.split('-').map(Number);
+  const start = new Date(sy, sm - 1, sd);
+  const end = new Date(ey, em - 1, ed);
+  const startLabel = start.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  const endLabel = end.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  return `${startLabel} – ${endLabel}`;
+}

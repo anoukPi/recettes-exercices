@@ -12,6 +12,16 @@ export async function listActivityEntries(date: string): Promise<ActivityEntry[]
   return data ?? [];
 }
 
+export async function listActivityEntriesInRange(startDate: string, endDate: string): Promise<ActivityEntry[]> {
+  const { data, error } = await supabase
+    .from('activity_entries')
+    .select('*')
+    .gte('entry_date', startDate)
+    .lte('entry_date', endDate);
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function addActivityEntry(input: Omit<ActivityEntryInput, 'user_id'>): Promise<ActivityEntry> {
   const userId = await getCurrentUserId();
   if (!userId) throw new Error('Connecte-toi pour ajouter une activité.');
