@@ -404,6 +404,33 @@ h4 {
   margin-top: 0.6rem;
 }
 
+.beverage-breakdown {
+  margin-top: 0.3rem;
+}
+
+.beverage-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+}
+
+.beverage-add-row select,
+.beverage-add-row .ingredient-qty {
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.beverage-add-row .ingredient-qty {
+  width: 4rem;
+}
+
 .bilan-stat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));

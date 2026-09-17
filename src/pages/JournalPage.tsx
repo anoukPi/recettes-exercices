@@ -7,7 +7,16 @@ import { MonthCalendar } from '../components/MonthCalendar';
 import { listCycleEntries } from '../api/cycle';
 import { isIronReminderDay } from '../lib/cycle';
 import { addWaterEntry, deleteWaterEntry, listWaterEntries } from '../api/water';
-import { INTENSITIES, TRAINING_TYPES, type CycleEntry, type NutritionTotals, type Profile, type WaterEntry } from '../types';
+import {
+  BEVERAGE_TYPES,
+  INTENSITIES,
+  TRAINING_TYPES,
+  type BeverageType,
+  type CycleEntry,
+  type NutritionTotals,
+  type Profile,
+  type WaterEntry,
+} from '../types';
 
 const GI_BANDS: { max: number; label: string; className: string }[] = [
   { max: 35, label: 'très bas', className: 'gi-very-low' },
@@ -42,6 +51,15 @@ function bilanColor(gap: number): 'good' | 'over' {
 }
 
 const WATER_GLASS_ML = 250;
+const TASSE_ML = 150;
+const LITRE_ML = 1000;
+type BeverageUnit = 'tasse' | 'litre';
+const BEVERAGE_UNITS_BY_TYPE: Record<BeverageType, BeverageUnit[]> = {
+  eau: ['tasse', 'litre'],
+  café: ['tasse'],
+  thé: ['tasse', 'litre'],
+  tisane: ['tasse', 'litre'],
+};
 
 function waterTarget(profile: Profile | null): number {
   return profile?.weight_kg ? Math.round(profile.weight_kg * 30) : 2000;
@@ -141,6 +159,9 @@ export function JournalPage() {
   const [monthKey, setMonthKey] = useState(dateKey.slice(0, 7));
   const [cycleEntries, setCycleEntries] = useState<CycleEntry[]>([]);
   const [waterEntries, setWaterEntries] = useState<WaterEntry[]>([]);
+  const [beverageType, setBeverageType] = useState<BeverageType>('eau');
+  const [beverageQty, setBeverageQty] = useState('1');
+  const [beverageUnit, setBeverageUnit] = useState<BeverageUnit>('tasse');
 
   const { loading, error, profile, dailyTargets, dayTotals, dayGi, bilan, activityEntries } =
     useDayNutrition(dateKey);
@@ -169,6 +190,26 @@ export function JournalPage() {
     await deleteWaterEntry(last.id);
     setWaterEntries((prev) => prev.filter((w) => w.id !== last.id));
   };
+
+  const handleBeverageTypeChange = (type: BeverageType) => {
+    setBeverageType(type);
+    if (!BEVERAGE_UNITS_BY_TYPE[type].includes(beverageUnit)) {
+      setBeverageUnit(BEVERAGE_UNITS_BY_TYPE[type][0]);
+    }
+  };
+
+  const handleAddBeverage = async () => {
+    const qty = parseFloat(beverageQty.replace(',', '.'));
+    if (Number.isNaN(qty) || qty <= 0) return;
+    const ml = qty * (beverageUnit === 'litre' ? LITRE_ML : TASSE_ML);
+    const entry = await addWaterEntry(dateKey, ml, beverageType);
+    setWaterEntries((prev) => [...prev, entry]);
+  };
+
+  const beverageBreakdown = BEVERAGE_TYPES.map((b) => ({
+    ...b,
+    ml: waterEntries.filter((w) => w.beverage_type === b.value).reduce((sum, w) => sum + w.amount_ml, 0),
+  })).filter((b) => b.ml > 0);
 
   if (authLoading) return null;
 
@@ -358,16 +399,50 @@ export function JournalPage() {
 
       <div className="summary-card">
         <h4>Hydratation</h4>
-        <MacroMeter label="Eau" actual={waterTotalMl} target={waterTarget(profile)} unit="ml" />
+        <MacroMeter label="Total" actual={waterTotalMl} target={waterTarget(profile)} unit="ml" />
+        {beverageBreakdown.length > 0 && (
+          <p className="hint beverage-breakdown">
+            {beverageBreakdown
+              .map((b) => `${b.icon} ${Math.round(b.ml)} ml`)
+              .join(' · ')}
+          </p>
+        )}
         <div className="water-actions">
           <button type="button" onClick={handleAddWater}>
-            + un verre (250 ml)
+            + un verre d'eau (250 ml)
           </button>
           {waterEntries.length > 0 && (
             <button type="button" className="link-button" onClick={handleRemoveLastWater}>
               Annuler le dernier
             </button>
           )}
+        </div>
+        <div className="beverage-add-row">
+          <select value={beverageType} onChange={(e) => handleBeverageTypeChange(e.target.value as BeverageType)}>
+            {BEVERAGE_TYPES.map((b) => (
+              <option key={b.value} value={b.value}>
+                {b.icon} {b.label}
+              </option>
+            ))}
+          </select>
+          <input
+            type="number"
+            step="any"
+            min="0"
+            value={beverageQty}
+            onChange={(e) => setBeverageQty(e.target.value)}
+            className="ingredient-qty"
+          />
+          <select value={beverageUnit} onChange={(e) => setBeverageUnit(e.target.value as BeverageUnit)}>
+            {BEVERAGE_UNITS_BY_TYPE[beverageType].map((u) => (
+              <option key={u} value={u}>
+                {u === 'tasse' ? 'tasse(s)' : 'litre(s)'}
+              </option>
+            ))}
+          </select>
+          <button type="button" onClick={handleAddBeverage}>
+            Ajouter
+          </button>
         </div>
       </div>
 

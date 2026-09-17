@@ -238,11 +238,20 @@ export interface FitnessTest {
 
 export type FitnessTestInput = Omit<FitnessTest, 'id' | 'created_at'>;
 
+export const BEVERAGE_TYPES = [
+  { value: 'eau', label: 'Eau', icon: '💧' },
+  { value: 'café', label: 'Café', icon: '☕' },
+  { value: 'thé', label: 'Thé', icon: '🍵' },
+  { value: 'tisane', label: 'Tisane', icon: '🌿' },
+] as const;
+export type BeverageType = (typeof BEVERAGE_TYPES)[number]['value'];
+
 export interface WaterEntry {
   id: string;
   user_id: string;
   entry_date: string;
   amount_ml: number;
+  beverage_type: BeverageType;
   created_at: string;
 }
 
