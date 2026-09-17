@@ -179,16 +179,28 @@ export function JournalPage() {
   const ironReminder = isIronReminderDay(dateKey, cycleEntries);
   const waterTotalMl = waterEntries.reduce((sum, w) => sum + w.amount_ml, 0);
 
+  const [waterError, setWaterError] = useState<string | null>(null);
+
   const handleAddWater = async () => {
-    const entry = await addWaterEntry(dateKey, WATER_GLASS_ML);
-    setWaterEntries((prev) => [...prev, entry]);
+    setWaterError(null);
+    try {
+      const entry = await addWaterEntry(dateKey, WATER_GLASS_ML);
+      setWaterEntries((prev) => [...prev, entry]);
+    } catch (err) {
+      setWaterError(err instanceof Error ? err.message : 'Une erreur est survenue.');
+    }
   };
 
   const handleRemoveLastWater = async () => {
     const last = waterEntries[waterEntries.length - 1];
     if (!last) return;
-    await deleteWaterEntry(last.id);
-    setWaterEntries((prev) => prev.filter((w) => w.id !== last.id));
+    setWaterError(null);
+    try {
+      await deleteWaterEntry(last.id);
+      setWaterEntries((prev) => prev.filter((w) => w.id !== last.id));
+    } catch (err) {
+      setWaterError(err instanceof Error ? err.message : 'Une erreur est survenue.');
+    }
   };
 
   const handleBeverageTypeChange = (type: BeverageType) => {
@@ -201,9 +213,14 @@ export function JournalPage() {
   const handleAddBeverage = async () => {
     const qty = parseFloat(beverageQty.replace(',', '.'));
     if (Number.isNaN(qty) || qty <= 0) return;
-    const ml = qty * (beverageUnit === 'litre' ? LITRE_ML : TASSE_ML);
-    const entry = await addWaterEntry(dateKey, ml, beverageType);
-    setWaterEntries((prev) => [...prev, entry]);
+    setWaterError(null);
+    try {
+      const ml = qty * (beverageUnit === 'litre' ? LITRE_ML : TASSE_ML);
+      const entry = await addWaterEntry(dateKey, ml, beverageType);
+      setWaterEntries((prev) => [...prev, entry]);
+    } catch (err) {
+      setWaterError(err instanceof Error ? err.message : 'Une erreur est survenue.');
+    }
   };
 
   const beverageBreakdown = BEVERAGE_TYPES.map((b) => ({
@@ -399,6 +416,7 @@ export function JournalPage() {
 
       <div className="summary-card">
         <h4>Hydratation</h4>
+        {waterError && <p className="error">{waterError}</p>}
         <MacroMeter label="Total" actual={waterTotalMl} target={waterTarget(profile)} unit="ml" />
         {beverageBreakdown.length > 0 && (
           <p className="hint beverage-breakdown">
