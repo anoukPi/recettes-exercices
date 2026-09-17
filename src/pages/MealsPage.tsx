@@ -7,7 +7,13 @@ import { disambiguationFor } from '../lib/ingredientDisambiguation';
 import { parseIngredientLine } from '../lib/captionParser';
 import { DictationButton } from '../components/DictationButton';
 import { useDayNutrition, REASON_UNAVAILABLE } from '../lib/useDayNutrition';
-import { addJournalEntry, deleteJournalEntry, updateJournalEntryQuantity } from '../api/journal';
+import {
+  addJournalEntry,
+  deleteJournalEntry,
+  listFrequentJournalItems,
+  updateJournalEntryQuantity,
+  type FrequentJournalItem,
+} from '../api/journal';
 import { addReferenceItem, listReferenceItems, type ReferenceItem } from '../api/referenceItems';
 import { listRecipes } from '../api/recipes';
 import { useSession } from '../lib/auth';
@@ -26,6 +32,7 @@ export function MealsPage() {
   const [ingredientItems, setIngredientItems] = useState<ReferenceItem[]>([]);
   const [unitOptions, setUnitOptions] = useState<string[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [frequentItems, setFrequentItems] = useState<FrequentJournalItem[]>([]);
 
   const [ingName, setIngName] = useState('');
   const [ingQty, setIngQty] = useState('');
@@ -42,6 +49,7 @@ export function MealsPage() {
       .then((items) => setUnitOptions(items.map((i) => i.name)))
       .catch(() => {});
     listRecipes().then(setRecipes).catch(() => {});
+    listFrequentJournalItems().then(setFrequentItems).catch(() => {});
   }, []);
 
   const ingredientNameToId = useMemo(() => {
@@ -153,6 +161,20 @@ export function MealsPage() {
     } catch (err) {
       setIngError(err instanceof Error ? err.message : 'Une erreur est survenue.');
     }
+  };
+
+  const handleQuickAdd = async (item: FrequentJournalItem) => {
+    await addJournalEntry({
+      entry_date: dateKey,
+      kind: item.kind,
+      reference_item_id: item.reference_item_id,
+      recipe_id: item.recipe_id,
+      label: item.label,
+      quantity: item.quantity,
+      unit: item.unit,
+      meal: selectedMeal,
+    });
+    reload();
   };
 
   const handleDelete = async (id: string) => {
@@ -354,6 +376,24 @@ export function MealsPage() {
       </div>
 
       <div className="journal-add-forms">
+        {frequentItems.length > 0 && (
+          <div className="journal-quick-add">
+            <p className="hint">Ajout rapide :</p>
+            <div className="tag-filter">
+              {frequentItems.map((item) => (
+                <button
+                  key={`${item.kind}:${item.reference_item_id ?? item.recipe_id}`}
+                  type="button"
+                  className="tag-chip"
+                  onClick={() => handleQuickAdd(item)}
+                >
+                  {item.label} · {item.quantity} {item.kind === 'recipe' ? 'portion(s)' : item.unit}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <form className="journal-add-form" onSubmit={handleAddFood}>
           <h3>Ajouter un aliment</h3>
           <p className="hint">
@@ -362,6 +402,14 @@ export function MealsPage() {
           </p>
           {ingError && <p className="error">{ingError}</p>}
           <div className={`journal-add-row${selectedRecipe ? ' two-cols' : ''}`}>
+            <SearchableSelect
+              id="journal-ingredient"
+              value={ingName}
+              onChange={handleIngNameChange}
+              options={[...ingredientItems.map((i) => i.name), ...recipes.map((r) => r.title)]}
+              placeholder="Ingrédient ou plat"
+              onAddNew={addIngredientOption}
+            />
             <input
               type="number"
               step="any"
@@ -381,14 +429,6 @@ export function MealsPage() {
                 maxResults={40}
               />
             )}
-            <SearchableSelect
-              id="journal-ingredient"
-              value={ingName}
-              onChange={handleIngNameChange}
-              options={[...ingredientItems.map((i) => i.name), ...recipes.map((r) => r.title)]}
-              placeholder="Ingrédient ou plat"
-              onAddNew={addIngredientOption}
-            />
             {!selectedRecipe && (
               <DictationButton title="Dicter (ex: 100 grammes de riz)" onResult={handleDictateIngredient} />
             )}
