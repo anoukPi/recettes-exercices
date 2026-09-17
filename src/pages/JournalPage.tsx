@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { addDays, formatDateKeyFr, toDateKey } from '../lib/date';
 import { useDayNutrition } from '../lib/useDayNutrition';
+import type { DailyTargets } from '../lib/dailyNeeds';
 import { useSession } from '../lib/auth';
 import { MonthCalendar } from '../components/MonthCalendar';
 import { listCycleEntries } from '../api/cycle';
@@ -61,7 +62,17 @@ const BEVERAGE_UNITS_BY_TYPE: Record<BeverageType, BeverageUnit[]> = {
   tisane: ['tasse', 'litre'],
 };
 
-function waterTarget(profile: Profile | null): number {
+// Repère courant en nutrition clinique : ~1 mL d'eau par kcal dépensée —
+// englobe naturellement âge, taille, sexe, poids (via le BMR) et niveau
+// d'activité (via la dépense totale), plutôt qu'un simple ratio au poids.
+// Plancher de sécurité si le profil est incomplet.
+const ML_PER_KCAL = 1;
+const WATER_TARGET_FLOOR_ML = 1500;
+
+function waterTarget(profile: Profile | null, dailyTargets: DailyTargets | null): number {
+  if (dailyTargets) {
+    return Math.max(WATER_TARGET_FLOOR_ML, Math.round(dailyTargets.tdee_kcal * ML_PER_KCAL));
+  }
   return profile?.weight_kg ? Math.round(profile.weight_kg * 30) : 2000;
 }
 
@@ -417,7 +428,12 @@ export function JournalPage() {
       <div className="summary-card">
         <h4>Hydratation</h4>
         {waterError && <p className="error">{waterError}</p>}
-        <MacroMeter label="Total" actual={waterTotalMl} target={waterTarget(profile)} unit="ml" />
+        <MacroMeter label="Total" actual={waterTotalMl} target={waterTarget(profile, dailyTargets)} unit="ml" />
+        <p className="hint">
+          {dailyTargets
+            ? "Objectif basé sur ta dépense énergétique du jour (~1 mL/kcal) — dépend donc de ton âge, ta taille, ton sexe, ton poids et ton activité."
+            : "Renseigne ton profil dans les Paramètres pour un objectif basé sur ta dépense énergétique plutôt que sur ton poids seul."}
+        </p>
         {beverageBreakdown.length > 0 && (
           <p className="hint beverage-breakdown">
             {beverageBreakdown
