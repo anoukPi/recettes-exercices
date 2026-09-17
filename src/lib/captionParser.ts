@@ -5,6 +5,10 @@ const STEPS_HEADER = /^[^\p{L}]*(?:[ée]tapes?|pr[ée]paration|instructions)\s*:
 const HASHTAG_LINE = /^(?:\s*#\S+\s*)+$/;
 const LEADING_BULLET = /^[\s*•\-–—▪️➡️✅✔️]+/u;
 const LEADING_EMOJI = /^[\p{Emoji_Presentation}\p{Extended_Pictographic}️\s]+/gu;
+// Espaces/joints invisibles (zero-width, word joiner...) — courants dans du
+// texte copié depuis certaines apps ou reconnu par OCR, invisibles à l'oeil
+// mais ils cassent le "^" des regex suivantes si laissés en tête de ligne.
+const INVISIBLE_CHARS = /[​-‍⁠﻿]/g;
 
 // Formes longues avant les abréviations : l'alternation regex prend la première
 // qui matche, une forme courte passée avant une longue coupperait celle-ci trop tôt.
@@ -67,7 +71,11 @@ const NUMBER_WORD_PATTERN = Object.keys(NUMBER_WORDS).sort((a, b) => b.length - 
 const NUMBER_WORD_ONLY = new RegExp(`^(${NUMBER_WORD_PATTERN})\\s+(.+)$`, 'i');
 
 function stripBulletAndEmoji(line: string): string {
-  return line.replace(LEADING_BULLET, '').replace(LEADING_EMOJI, '').trim();
+  return line
+    .replace(INVISIBLE_CHARS, '')
+    .replace(LEADING_BULLET, '')
+    .replace(LEADING_EMOJI, '')
+    .trim();
 }
 
 export function parseIngredientLine(rawLine: string): RecipeIngredient | null {
@@ -110,7 +118,7 @@ export interface ParsedCaption {
 export function parseCaption(rawCaption: string): ParsedCaption {
   const lines = rawCaption
     .split('\n')
-    .map((l) => l.trim())
+    .map((l) => l.replace(INVISIBLE_CHARS, '').trim())
     .filter((l) => l.length > 0 && !HASHTAG_LINE.test(l));
 
   if (lines.length === 0) {
