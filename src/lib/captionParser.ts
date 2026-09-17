@@ -104,6 +104,15 @@ export function parseIngredientLine(rawLine: string): RecipeIngredient | null {
   return { quantity: '', unit: '', ingredient: line };
 }
 
+/** Une ligne "ressemble" à un ingrédient si elle commence par une quantité
+ * (chiffre ou nombre en toutes lettres), une fois puce/emoji retirés — utilisé
+ * quand aucun en-tête "Ingrédients" n'est trouvé (photo de recette sans ce
+ * repère textuel, fréquent avec l'OCR ou les recettes de livres). */
+function looksLikeIngredientLine(line: string): boolean {
+  const stripped = stripBulletAndEmoji(line);
+  return /^\d/.test(stripped) || NUMBER_WORD_ONLY.test(stripped);
+}
+
 export interface ParsedCaption {
   title: string;
   ingredients: RecipeIngredient[];
@@ -111,9 +120,12 @@ export interface ParsedCaption {
 }
 
 /**
- * Découpe une légende Instagram collée en titre / ingrédients / étapes.
- * Best-effort : si les en-têtes "Ingrédients" / "Étapes" ne sont pas trouvés,
- * tout le texte (hashtags retirés) atterrit dans "steps" pour édition manuelle.
+ * Découpe une légende Instagram collée (ou un texte reconnu par OCR) en
+ * titre / ingrédients / étapes. Repère d'abord les en-têtes "Ingrédients" /
+ * "Étapes" ; si "Ingrédients" est absent, repère à la place les lignes qui
+ * commencent par une quantité parmi ce qui précède "Étapes" (ou tout le
+ * texte si aucun en-tête n'est trouvé) — le reste atterrit dans "steps"
+ * pour édition manuelle.
  */
 export function parseCaption(rawCaption: string): ParsedCaption {
   const lines = rawCaption
@@ -130,20 +142,21 @@ export function parseCaption(rawCaption: string): ParsedCaption {
   const ingredientsStart = lines.findIndex((l) => INGREDIENTS_HEADER.test(l));
   const stepsStart = lines.findIndex((l) => STEPS_HEADER.test(l));
 
-  if (ingredientsStart === -1 && stepsStart === -1) {
-    return { title, ingredients: [], steps: lines.slice(1).join('\n') };
+  let ingredientLines: string[];
+  let stepLines: string[];
+
+  if (ingredientsStart === -1) {
+    const candidateLines = stepsStart === -1 ? lines.slice(1) : lines.slice(1, stepsStart);
+    const afterCandidates = stepsStart === -1 ? [] : lines.slice(stepsStart + 1);
+    ingredientLines = candidateLines.filter(looksLikeIngredientLine);
+    stepLines = [...candidateLines.filter((l) => !looksLikeIngredientLine(l)), ...afterCandidates];
+  } else {
+    ingredientLines = lines.slice(
+      ingredientsStart + 1,
+      stepsStart > ingredientsStart ? stepsStart : undefined,
+    );
+    stepLines = stepsStart === -1 ? [] : lines.slice(stepsStart + 1);
   }
-
-  const ingredientLines =
-    ingredientsStart === -1
-      ? []
-      : lines.slice(
-          ingredientsStart + 1,
-          stepsStart > ingredientsStart ? stepsStart : undefined,
-        );
-
-  const stepLines =
-    stepsStart === -1 ? [] : lines.slice(stepsStart + 1);
 
   const ingredients = ingredientLines
     .map(parseIngredientLine)
