@@ -1211,6 +1211,42 @@ h4 {
   grid-template-columns: 1.4fr 4.5rem;
 }
 
+/* Comme .journal-add-row, mais tolère un nom d'ingrédient/plat très long en
+   repassant Nb/Mesure/dictée sur une deuxième ligne plutôt que de les
+   pousser hors champ. */
+.journal-add-row-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.75rem;
+}
+
+.journal-ingredient-field {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.journal-add-row-rest {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1 1 auto;
+}
+
+.journal-add-row-rest .ingredient-qty {
+  flex: 0 0 4.5rem;
+}
+
+.journal-add-row-rest .searchable-select {
+  flex: 1 1 100px;
+  min-width: 0;
+}
+
+.journal-add-row-rest .dictation-button {
+  flex: 0 0 auto;
+}
+
 .journal-quick-add {
   max-width: 560px;
 }

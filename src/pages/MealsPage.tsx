@@ -401,37 +401,40 @@ export function MealsPage() {
             automatiquement à partir de ses ingrédients, selon le nombre de portions.
           </p>
           {ingError && <p className="error">{ingError}</p>}
-          <div className={`journal-add-row${selectedRecipe ? ' two-cols' : ''}`}>
+          <div className="journal-add-row-wrap">
             <SearchableSelect
               id="journal-ingredient"
+              className="journal-ingredient-field"
               value={ingName}
               onChange={handleIngNameChange}
               options={[...ingredientItems.map((i) => i.name), ...recipes.map((r) => r.title)]}
               placeholder="Ingrédient ou plat"
               onAddNew={addIngredientOption}
             />
-            <input
-              type="number"
-              step="any"
-              value={ingQty}
-              onChange={(e) => setIngQty(e.target.value)}
-              placeholder={selectedRecipe ? 'Portions' : 'Nb'}
-              className="ingredient-qty"
-            />
-            {!selectedRecipe && (
-              <SearchableSelect
-                id="journal-unit"
-                value={ingUnit}
-                onChange={setIngUnit}
-                options={unitOptions}
-                placeholder="Mesure"
-                onAddNew={addUnitOption}
-                maxResults={40}
+            <div className="journal-add-row-rest">
+              <input
+                type="number"
+                step="any"
+                value={ingQty}
+                onChange={(e) => setIngQty(e.target.value)}
+                placeholder={selectedRecipe ? 'Portions' : 'Nb'}
+                className="ingredient-qty"
               />
-            )}
-            {!selectedRecipe && (
-              <DictationButton title="Dicter (ex: 100 grammes de riz)" onResult={handleDictateIngredient} />
-            )}
+              {!selectedRecipe && (
+                <SearchableSelect
+                  id="journal-unit"
+                  value={ingUnit}
+                  onChange={setIngUnit}
+                  options={unitOptions}
+                  placeholder="Mesure"
+                  onAddNew={addUnitOption}
+                  maxResults={40}
+                />
+              )}
+              {!selectedRecipe && (
+                <DictationButton title="Dicter (ex: 100 grammes de riz)" onResult={handleDictateIngredient} />
+              )}
+            </div>
           </div>
           {selectedRecipe && <p className="hint">Plat de ta bibliothèque : {selectedRecipe.title}.</p>}
           {ambiguousVariants && (

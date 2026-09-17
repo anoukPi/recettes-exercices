@@ -10,6 +10,7 @@ interface SearchableSelectProps {
   onAddNew?: (value: string) => void;
   allowNew?: boolean;
   maxResults?: number;
+  className?: string;
 }
 
 export function SearchableSelect({
@@ -18,6 +19,7 @@ export function SearchableSelect({
   onChange,
   options,
   placeholder,
+  className,
   onAddNew,
   allowNew = true,
   maxResults = 8,
@@ -87,7 +89,7 @@ export function SearchableSelect({
   };
 
   return (
-    <div className="searchable-select">
+    <div className={`searchable-select${className ? ` ${className}` : ''}`}>
       <div className="searchable-select-input">
         <span className="search-icon" aria-hidden="true">
           🔍
