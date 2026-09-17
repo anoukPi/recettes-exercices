@@ -967,6 +967,11 @@ h4 {
   margin-top: 0.4rem;
 }
 
+.session-exercises-total {
+  font-weight: 600;
+  margin: 0.3rem 0 0.5rem;
+}
+
 .session-exercises-body {
   margin-top: 0.5rem;
   padding-top: 0.5rem;
@@ -993,19 +998,34 @@ h4 {
 }
 
 .session-exercises-form {
-  display: grid;
-  grid-template-columns: 1fr 4.5rem 4.5rem auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.4rem;
 }
 
-.session-exercises-form input {
+.session-exercises-form .searchable-select {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.session-exercises-form select {
   padding: 0.4rem 0.5rem;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text);
   font: inherit;
-  width: 100%;
+}
+
+.session-exercises-form input {
+  width: 4.5rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
 }
 
 .journal-entry-main {
@@ -1465,8 +1485,39 @@ a.button:hover {
   align-items: start;
 }
 
-.workout-exercise-row {
-  grid-template-columns: 1.4fr 3.5rem 3.5rem 3.5rem auto;
+.workout-exercise-row-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.workout-exercise-name-field {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.workout-exercise-row-rest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1 1 auto;
+}
+
+.workout-exercise-row-rest .ingredient-qty {
+  width: 4.5rem;
+}
+
+.workout-exercise-row-rest select {
+  padding: 0.5rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
 }
 
 .ingredient-qty {

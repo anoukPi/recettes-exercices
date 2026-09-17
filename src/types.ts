@@ -35,11 +35,28 @@ export interface Exercise {
 
 export type ExerciseInput = Omit<Exercise, 'id' | 'created_at'>;
 
+// Échelle d'effort par exercice — le MET (équivalent métabolique, voir
+// metValues.ts) varie énormément d'un exercice à l'autre (souplesse ≈ 2 MET,
+// sprint ≈ 12+ MET), donc une seule valeur par "musculation" ne suffit pas
+// au niveau de l'exercice individuel. Valeurs repères issues du Compendium
+// of Physical Activities, cohérentes avec metValues.ts.
+export const EXERCISE_INTENSITY_LEVELS = [
+  { value: 'tres_legere', label: 'Très légère (étirements, mobilité)', met: 2.3 },
+  { value: 'legere', label: 'Légère', met: 3.5 },
+  { value: 'moderee', label: 'Modérée', met: 5.0 },
+  { value: 'intense', label: 'Intense', met: 7.0 },
+  { value: 'tres_intense', label: 'Très intense', met: 9.5 },
+  { value: 'maximale', label: 'Maximale (sprint, effort explosif court)', met: 12.0 },
+] as const;
+export type ExerciseIntensity = (typeof EXERCISE_INTENSITY_LEVELS)[number]['value'];
+
 export interface WorkoutSessionExercise {
   exercise_id: string;
   sets: number | null;
   reps: number | null;
   rest_seconds: number | null;
+  duration_minutes: number | null;
+  intensity_level: ExerciseIntensity | null;
 }
 
 export interface WorkoutSession {
@@ -213,6 +230,9 @@ export interface SessionExercise {
   sets: number | null;
   reps: number | null;
   rest_seconds: number | null;
+  duration_minutes: number | null;
+  intensity_level: ExerciseIntensity | null;
+  calories_kcal: number | null;
   notes: string | null;
   created_at: string;
 }

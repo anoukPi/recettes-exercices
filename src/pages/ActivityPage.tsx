@@ -133,7 +133,7 @@ export function ActivityPage() {
 
       if (selectedWorkoutSessionId) {
         const session = workoutSessionById.get(selectedWorkoutSessionId);
-        if (session) await populateFromWorkoutSession(created.id, session);
+        if (session) await populateFromWorkoutSession(created.id, session, profile?.weight_kg ?? null);
         setLastWorkoutSessionId(selectedWorkoutSessionId);
       }
 

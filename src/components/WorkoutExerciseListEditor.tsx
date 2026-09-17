@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SearchableSelect } from './SearchableSelect';
 import { listExercises } from '../api/exercises';
-import type { Exercise, WorkoutSessionExercise } from '../types';
+import { EXERCISE_INTENSITY_LEVELS, type Exercise, type ExerciseIntensity, type WorkoutSessionExercise } from '../types';
 
 interface WorkoutExerciseListEditorProps {
   rows: WorkoutSessionExercise[];
@@ -39,7 +39,17 @@ export function WorkoutExerciseListEditor({ rows, onChange }: WorkoutExerciseLis
   };
 
   const addRow = () => {
-    onChange([...rows, { exercise_id: '', sets: null, reps: null, rest_seconds: null }]);
+    onChange([
+      ...rows,
+      {
+        exercise_id: '',
+        sets: null,
+        reps: null,
+        rest_seconds: null,
+        duration_minutes: null,
+        intensity_level: null,
+      },
+    ]);
   };
 
   return (
@@ -50,57 +60,90 @@ export function WorkoutExerciseListEditor({ rows, onChange }: WorkoutExerciseLis
           Ajoute d'abord des exercices dans ta bibliothèque pour pouvoir composer une séance.
         </p>
       )}
+      <p className="hint">
+        Durée et intensité sont indicatives (le plan) — tu pourras les ajuster au moment de loguer
+        la séance, la réalité variant souvent d'une fois à l'autre.
+      </p>
       <div className="ingredient-rows">
         {rows.map((row, index) => (
-          <div className="ingredient-row workout-exercise-row" key={index}>
+          <div className="workout-exercise-row-wrap" key={index}>
             <SearchableSelect
               id={`workout-exercise-${index}`}
+              className="workout-exercise-name-field"
               value={exerciseById.get(row.exercise_id)?.title ?? ''}
               onChange={(v) => setRowName(index, v)}
               options={exercises.map((e) => e.title)}
               placeholder="Exercice"
               allowNew={false}
             />
-            <input
-              type="number"
-              step="1"
-              min="0"
-              className="ingredient-qty"
-              value={row.sets ?? ''}
-              onChange={(e) => updateRow(index, { sets: e.target.value ? parseFloat(e.target.value) : null })}
-              placeholder="Séries"
-              aria-label="Séries"
-            />
-            <input
-              type="number"
-              step="1"
-              min="0"
-              className="ingredient-qty"
-              value={row.reps ?? ''}
-              onChange={(e) => updateRow(index, { reps: e.target.value ? parseFloat(e.target.value) : null })}
-              placeholder="Répétitions"
-              aria-label="Répétitions"
-            />
-            <input
-              type="number"
-              step="1"
-              min="0"
-              className="ingredient-qty"
-              value={row.rest_seconds ?? ''}
-              onChange={(e) =>
-                updateRow(index, { rest_seconds: e.target.value ? parseFloat(e.target.value) : null })
-              }
-              placeholder="Repos (s)"
-              aria-label="Repos en secondes"
-            />
-            <button
-              type="button"
-              className="remove-row"
-              onClick={() => removeRow(index)}
-              aria-label="Supprimer cet exercice"
-            >
-              ✕
-            </button>
+            <div className="workout-exercise-row-rest">
+              <input
+                type="number"
+                step="1"
+                min="0"
+                className="ingredient-qty"
+                value={row.sets ?? ''}
+                onChange={(e) => updateRow(index, { sets: e.target.value ? parseFloat(e.target.value) : null })}
+                placeholder="Séries"
+                aria-label="Séries"
+              />
+              <input
+                type="number"
+                step="1"
+                min="0"
+                className="ingredient-qty"
+                value={row.reps ?? ''}
+                onChange={(e) => updateRow(index, { reps: e.target.value ? parseFloat(e.target.value) : null })}
+                placeholder="Répétitions"
+                aria-label="Répétitions"
+              />
+              <input
+                type="number"
+                step="1"
+                min="0"
+                className="ingredient-qty"
+                value={row.rest_seconds ?? ''}
+                onChange={(e) =>
+                  updateRow(index, { rest_seconds: e.target.value ? parseFloat(e.target.value) : null })
+                }
+                placeholder="Repos (s)"
+                aria-label="Repos en secondes"
+              />
+              <input
+                type="number"
+                step="any"
+                min="0"
+                className="ingredient-qty"
+                value={row.duration_minutes ?? ''}
+                onChange={(e) =>
+                  updateRow(index, { duration_minutes: e.target.value ? parseFloat(e.target.value) : null })
+                }
+                placeholder="Durée (min)"
+                aria-label="Durée en minutes"
+              />
+              <select
+                value={row.intensity_level ?? ''}
+                onChange={(e) =>
+                  updateRow(index, { intensity_level: (e.target.value || null) as ExerciseIntensity | null })
+                }
+                aria-label="Intensité"
+              >
+                <option value="">Intensité</option>
+                {EXERCISE_INTENSITY_LEVELS.map((l) => (
+                  <option key={l.value} value={l.value}>
+                    {l.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="remove-row"
+                onClick={() => removeRow(index)}
+                aria-label="Supprimer cet exercice"
+              >
+                ✕
+              </button>
+            </div>
           </div>
         ))}
       </div>

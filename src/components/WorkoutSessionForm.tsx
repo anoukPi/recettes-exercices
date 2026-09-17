@@ -14,7 +14,16 @@ export function WorkoutSessionForm({ initial, onSubmit, submitLabel }: WorkoutSe
   const [exercises, setExercises] = useState(
     initial?.exercises && initial.exercises.length > 0
       ? initial.exercises
-      : [{ exercise_id: '', sets: null, reps: null, rest_seconds: null }],
+      : [
+          {
+            exercise_id: '',
+            sets: null,
+            reps: null,
+            rest_seconds: null,
+            duration_minutes: null,
+            intensity_level: null,
+          },
+        ],
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
