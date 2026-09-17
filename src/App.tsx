@@ -13,31 +13,39 @@ import { CyclePage } from './pages/CyclePage';
 import { TestsPage } from './pages/TestsPage';
 import { BilanPage } from './pages/BilanPage';
 
-const NAV_ITEMS = [
+// Toujours accessibles en un tap — l'usage du quotidien.
+const PRIMARY_NAV_ITEMS = [
   { path: '/journal', label: 'Carnet' },
   { path: '/repas', label: 'Repas' },
   { path: '/activity', label: 'Activité' },
+  { path: '/recipes', label: 'Recettes' },
+];
+
+// Moins fréquent — rangé dans le menu déroulant "Plus".
+const MORE_NAV_ITEMS = [
   { path: '/bilan', label: 'Bilan' },
   { path: '/cycle', label: 'Cycle' },
   { path: '/tests', label: 'Tests' },
-  { path: '/recipes', label: 'Recettes' },
   { path: '/exercises', label: 'Exercices' },
   { path: '/settings', label: 'Paramètres' },
 ];
 
-function AppNav() {
+function AppNavMore() {
   const navigate = useNavigate();
   const location = useLocation();
-  const current = NAV_ITEMS.find((item) => location.pathname.startsWith(item.path))?.path ?? '/journal';
+  const activeMore = MORE_NAV_ITEMS.find((item) => location.pathname.startsWith(item.path))?.path;
 
   return (
     <select
-      className="nav-select"
-      value={current}
-      onChange={(e) => navigate(e.target.value)}
-      aria-label="Navigation"
+      className="nav-select app-nav-more"
+      value={activeMore ?? ''}
+      onChange={(e) => e.target.value && navigate(e.target.value)}
+      aria-label="Plus de pages"
     >
-      {NAV_ITEMS.map((item) => (
+      <option value="" disabled>
+        Plus
+      </option>
+      {MORE_NAV_ITEMS.map((item) => (
         <option key={item.path} value={item.path}>
           {item.label}
         </option>
@@ -46,13 +54,35 @@ function AppNav() {
   );
 }
 
+function AppNavPrimary() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const activePrimary = PRIMARY_NAV_ITEMS.find((item) => location.pathname.startsWith(item.path))?.path;
+
+  return (
+    <nav className="app-nav-primary">
+      {PRIMARY_NAV_ITEMS.map((item) => (
+        <button
+          key={item.path}
+          type="button"
+          className={`app-nav-link${activePrimary === item.path ? ' active' : ''}`}
+          onClick={() => navigate(item.path)}
+        >
+          {item.label}
+        </button>
+      ))}
+    </nav>
+  );
+}
+
 function App() {
   return (
     <div className="app">
       <header className="app-header">
         <h1>Kaly</h1>
-        <AppNav />
+        <AppNavMore />
       </header>
+      <AppNavPrimary />
 
       <main>
         <Routes>
