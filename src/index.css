@@ -1467,3 +1467,19 @@ a.button:hover {
   background: var(--danger-soft);
   border-color: var(--danger);
 }
+
+.ocr-photo-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.ocr-photo-button input[type='file'] {
+  display: none;
+}

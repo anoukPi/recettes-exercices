@@ -5,6 +5,7 @@ import { formatTagList, parseTagList } from '../lib/tags';
 import { listRecipeTags } from '../api/tags';
 import { uploadRecipePhoto } from '../api/storage';
 import { parseCaption } from '../lib/captionParser';
+import { recognizeRecipePhoto } from '../lib/ocr';
 import { DictationButton } from './DictationButton';
 import type { Recipe, RecipeInput, RecipeIngredient } from '../types';
 
@@ -39,6 +40,8 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [captionInput, setCaptionInput] = useState('');
+  const [ocrLoading, setOcrLoading] = useState(false);
+  const [ocrError, setOcrError] = useState<string | null>(null);
 
   const handleExtractCaption = () => {
     if (!captionInput.trim()) return;
@@ -46,6 +49,26 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
     if (parsed.title) setTitle(parsed.title);
     if (parsed.ingredients.length > 0) setIngredients(parsed.ingredients);
     if (parsed.steps) setSteps(parsed.steps);
+  };
+
+  const handleOcrPhoto = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setOcrError(null);
+    setOcrLoading(true);
+    try {
+      const text = await recognizeRecipePhoto(file);
+      if (!text) {
+        setOcrError("Aucun texte reconnu sur cette photo — réessaie avec une image plus nette.");
+        return;
+      }
+      setCaptionInput((prev) => (prev ? `${prev}\n${text}` : text));
+    } catch (err) {
+      setOcrError(err instanceof Error ? err.message : "Erreur lors de la lecture de la photo.");
+    } finally {
+      setOcrLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -108,7 +131,9 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
       {error && <p className="error">{error}</p>}
 
       <div className="field caption-import">
-        <label htmlFor="recipe-caption">Importer depuis une légende Instagram (optionnel)</label>
+        <label htmlFor="recipe-caption">
+          Importer depuis une légende Instagram, une dictée ou une photo (optionnel)
+        </label>
         <textarea
           id="recipe-caption"
           value={captionInput}
@@ -116,6 +141,7 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
           rows={4}
           placeholder="Colle ici la légende du post — titre, Ingrédients :, Étapes : si présents"
         />
+        {ocrError && <p className="error">{ocrError}</p>}
         <div className="caption-import-actions">
           <button type="button" onClick={handleExtractCaption} disabled={!captionInput.trim()}>
             Extraire dans le formulaire
@@ -124,7 +150,22 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
             title="Dicter la légende (ingrédients, étapes...)"
             onResult={(text) => setCaptionInput((prev) => (prev ? `${prev}\n${text}` : text))}
           />
+          <label className="ocr-photo-button">
+            {ocrLoading ? 'Lecture de la photo…' : '📷 Depuis une photo'}
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleOcrPhoto}
+              disabled={ocrLoading}
+            />
+          </label>
         </div>
+        <p className="hint">
+          La reconnaissance de texte sur la photo tourne dans le navigateur et n'est pas
+          parfaite — relis et corrige le texte reconnu avant de cliquer sur "Extraire dans le
+          formulaire".
+        </p>
       </div>
 
       <div className="field">
