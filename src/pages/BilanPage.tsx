@@ -9,9 +9,11 @@ import {
   startOfWeek,
   toDateKey,
 } from '../lib/date';
-import { usePeriodSummary } from '../lib/usePeriodSummary';
+import { usePeriodSummary, type DaySummary } from '../lib/usePeriodSummary';
 import { useSession } from '../lib/auth';
+import { GapEvolutionChart, type GapPoint } from '../components/GapEvolutionChart';
 import { INTENSITIES, TRAINING_TYPES } from '../types';
+import type { DailyTargets } from '../lib/dailyNeeds';
 
 type PeriodType = 'semaine' | 'mois';
 
@@ -73,6 +75,22 @@ export function BilanPage() {
       activityRate,
       daysWithActivity,
       periodDates,
+    };
+  }, [days, dailyTargets]);
+
+  const chartSeries = useMemo(() => {
+    if (!dailyTargets) return null;
+    const toPoints = (fn: (d: DaySummary, targets: DailyTargets) => number): GapPoint[] =>
+      days.map((d) => ({ date: d.date, value: d.hasData ? fn(d, dailyTargets) : null }));
+
+    return {
+      calories: toPoints((d, t) => {
+        const expenses = d.activities.length > 0 ? t.bmr_kcal + d.activityCalories : t.tdee_kcal;
+        return d.calories - expenses;
+      }),
+      protein: toPoints((d, t) => d.protein_g - t.protein_g),
+      carbs: toPoints((d, t) => d.carbs_g - t.carbs_g),
+      fat: toPoints((d, t) => d.fat_g - t.fat_g),
     };
   }, [days, dailyTargets]);
 
@@ -159,6 +177,15 @@ export function BilanPage() {
         compare ton apport à tes dépenses réelles (métabolisme de base + activité, comme dans le
         Carnet).
       </p>
+
+      {chartSeries && (
+        <div className="gap-chart-grid">
+          <GapEvolutionChart title="Écart calories" unit="kcal" data={chartSeries.calories} />
+          <GapEvolutionChart title="Écart protéines" unit="g" data={chartSeries.protein} />
+          <GapEvolutionChart title="Écart glucides" unit="g" data={chartSeries.carbs} />
+          <GapEvolutionChart title="Écart lipides" unit="g" data={chartSeries.fat} />
+        </div>
+      )}
 
       <h3>Détail par jour</h3>
       <ul className="journal-entry-list">
