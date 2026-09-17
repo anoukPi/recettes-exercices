@@ -24,6 +24,8 @@ export interface Exercise {
   user_id: string;
   title: string;
   instagram_link: string | null;
+  photo_url: string | null;
+  video_url: string | null;
   muscles: string[];
   description: string | null;
   tags: string[];
@@ -32,6 +34,24 @@ export interface Exercise {
 }
 
 export type ExerciseInput = Omit<Exercise, 'id' | 'created_at'>;
+
+export interface WorkoutSessionExercise {
+  exercise_id: string;
+  sets: number | null;
+  reps: number | null;
+  rest_seconds: number | null;
+}
+
+export interface WorkoutSession {
+  id: string;
+  user_id: string;
+  title: string;
+  description: string | null;
+  exercises: WorkoutSessionExercise[];
+  created_at: string;
+}
+
+export type WorkoutSessionInput = Omit<WorkoutSession, 'id' | 'created_at'>;
 
 export interface NutritionPer100g {
   calories_kcal: number | null;
@@ -85,6 +105,29 @@ export const GOALS = [
 ] as const;
 export type Goal = (typeof GOALS)[number]['value'];
 
+// Disciplines proposées dans le profil — distinctes des types d'activité du
+// carnet (metValues.ts), qui sont découpés par intensité pour le calcul
+// calorique (ex: "Vélo modéré"/"Vélo intense") plutôt que par discipline.
+export const SPORTS_LIST = [
+  'Course à pied', 'Trail', 'Spartan / course d\'obstacles', 'Vélo', 'Natation',
+  'Musculation', 'Yoga', 'Étirements / Mobilité', 'Escalade de voie',
+  'Escalade de bloc', 'Football', 'Basketball', 'Tennis', 'Danse',
+  'Randonnée', 'Ski', 'HIIT / Circuit training',
+] as const;
+
+// Échelle de cotation sportive (France), la plus utilisée en salle et en
+// falaise — 6a à 9c.
+const ROUTE_GRADE_LETTERS = ['a', 'a+', 'b', 'b+', 'c', 'c+'] as const;
+export const CLIMBING_ROUTE_GRADES = [6, 7, 8, 9].flatMap((n) =>
+  ROUTE_GRADE_LETTERS.map((l) => `${n}${l}`),
+);
+
+// Couleurs de cotation bloc — l'ordre varie selon les salles, celui-ci suit
+// l'ordre donné (du plus facile au plus dur).
+export const CLIMBING_BOULDER_COLORS = [
+  'jaune', 'vert', 'turquoise', 'bleu', 'orange', 'rouge', 'noir', 'blanc',
+] as const;
+
 export interface Profile {
   id: string; // = auth.uid() de l'utilisatrice
   sex: 'homme' | 'femme' | null;
@@ -96,6 +139,8 @@ export interface Profile {
   goal_weight_change_kg: number | null;
   goal_timeframe_weeks: number | null;
   sports: string[];
+  climbing_route_level: string | null;
+  climbing_boulder_level: string | null;
   updated_at: string;
 }
 
@@ -143,6 +188,18 @@ export interface ActivityEntry {
   calories_kcal: number;
   intensity: Intensity | null;
   training_type: TrainingType | null;
+  /** Forme ressentie ce jour-là, 1 (à plat) à 5 (en pleine forme). */
+  felt_form: number | null;
+  /** Intensité perçue de la séance, 1 (très facile) à 5 (maximale) — distinct
+   * du champ "intensity" catégoriel ci-dessus. */
+  effort_intensity: number | null;
+  climbing_routes_count: number | null;
+  climbing_max_attempted: string | null;
+  climbing_max_sent: string | null;
+  climbing_hardest_color: string | null;
+  climbing_max_color_sends: number | null;
+  climbing_below_max_count: number | null;
+  workout_session_id: string | null;
   user_id: string | null;
   created_at: string;
 }
@@ -155,6 +212,7 @@ export interface SessionExercise {
   exercise_id: string;
   sets: number | null;
   reps: number | null;
+  rest_seconds: number | null;
   notes: string | null;
   created_at: string;
 }

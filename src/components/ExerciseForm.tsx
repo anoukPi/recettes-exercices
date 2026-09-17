@@ -1,7 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type ChangeEvent, type FormEvent } from 'react';
 import { TagInput } from './TagInput';
 import { formatTagList, parseTagList } from '../lib/tags';
 import { listExerciseMuscles, listExerciseTags } from '../api/tags';
+import { uploadExercisePhoto } from '../api/storage';
 import type { Exercise, ExerciseInput } from '../types';
 
 interface ExerciseFormProps {
@@ -19,6 +20,10 @@ export function ExerciseForm({ initial, onSubmit, submitLabel }: ExerciseFormPro
   const [notes, setNotes] = useState(initial?.notes ?? '');
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
   const [muscleSuggestions, setMuscleSuggestions] = useState<string[]>([]);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(initial?.photo_url ?? null);
+  const [photoRemoved, setPhotoRemoved] = useState(false);
+  const [videoUrl, setVideoUrl] = useState(initial?.video_url ?? '');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,6 +31,19 @@ export function ExerciseForm({ initial, onSubmit, submitLabel }: ExerciseFormPro
     listExerciseTags().then(setTagSuggestions).catch(() => {});
     listExerciseMuscles().then(setMuscleSuggestions).catch(() => {});
   }, []);
+
+  const handlePhotoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    setPhotoFile(file);
+    setPhotoRemoved(false);
+    if (file) setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  const handleRemovePhoto = () => {
+    setPhotoFile(null);
+    setPhotoPreview(null);
+    setPhotoRemoved(true);
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -36,9 +54,18 @@ export function ExerciseForm({ initial, onSubmit, submitLabel }: ExerciseFormPro
     setSubmitting(true);
     setError(null);
     try {
+      let photoUrl = initial?.photo_url ?? null;
+      if (photoFile) {
+        photoUrl = await uploadExercisePhoto(photoFile);
+      } else if (photoRemoved) {
+        photoUrl = null;
+      }
+
       await onSubmit({
         title: title.trim(),
         instagram_link: instagramLink.trim() || null,
+        photo_url: photoUrl,
+        video_url: videoUrl.trim() || null,
         muscles: parseTagList(muscles),
         description: description.trim() || null,
         tags: parseTagList(tags),
@@ -74,6 +101,30 @@ export function ExerciseForm({ initial, onSubmit, submitLabel }: ExerciseFormPro
           value={instagramLink}
           onChange={(e) => setInstagramLink(e.target.value)}
           placeholder="https://instagram.com/p/..."
+        />
+      </div>
+
+      <div className="field">
+        <label htmlFor="exercise-photo">Photo</label>
+        {photoPreview && (
+          <div className="photo-preview">
+            <img src={photoPreview} alt="Aperçu de l'exercice" />
+            <button type="button" className="link-button" onClick={handleRemovePhoto}>
+              Retirer la photo
+            </button>
+          </div>
+        )}
+        <input id="exercise-photo" type="file" accept="image/*" onChange={handlePhotoChange} />
+      </div>
+
+      <div className="field">
+        <label htmlFor="exercise-video">Lien vidéo (YouTube, Instagram...)</label>
+        <input
+          id="exercise-video"
+          type="text"
+          value={videoUrl}
+          onChange={(e) => setVideoUrl(e.target.value)}
+          placeholder="https://youtube.com/watch?v=..."
         />
       </div>
 

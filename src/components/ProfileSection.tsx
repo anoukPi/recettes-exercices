@@ -3,9 +3,14 @@ import { getProfile, saveProfile } from '../api/profile';
 import { computeDailyTargets } from '../lib/dailyNeeds';
 import { useMeasuredActivity } from '../lib/useMeasuredActivity';
 import { useSession } from '../lib/auth';
-import { TagInput } from './TagInput';
-import { formatTagList, parseTagList } from '../lib/tags';
-import { ACTIVITY_LEVELS, GOALS, type Profile } from '../types';
+import {
+  ACTIVITY_LEVELS,
+  CLIMBING_BOULDER_COLORS,
+  CLIMBING_ROUTE_GRADES,
+  GOALS,
+  SPORTS_LIST,
+  type Profile,
+} from '../types';
 
 export function ProfileSection() {
   const { session } = useSession();
@@ -23,7 +28,9 @@ export function ProfileSection() {
   const [goal, setGoal] = useState('');
   const [goalWeightChangeKg, setGoalWeightChangeKg] = useState('');
   const [goalTimeframeWeeks, setGoalTimeframeWeeks] = useState('');
-  const [sportsInput, setSportsInput] = useState('');
+  const [sports, setSports] = useState<string[]>([]);
+  const [climbingRouteLevel, setClimbingRouteLevel] = useState('');
+  const [climbingBoulderLevel, setClimbingBoulderLevel] = useState('');
 
   useEffect(() => {
     getProfile()
@@ -38,12 +45,21 @@ export function ProfileSection() {
           setGoal(p.goal ?? '');
           setGoalWeightChangeKg(p.goal_weight_change_kg?.toString() ?? '');
           setGoalTimeframeWeeks(p.goal_timeframe_weeks?.toString() ?? '');
-          setSportsInput(formatTagList(p.sports ?? []));
+          setSports(p.sports ?? []);
+          setClimbingRouteLevel(p.climbing_route_level ?? '');
+          setClimbingBoulderLevel(p.climbing_boulder_level ?? '');
         }
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Erreur de chargement.'))
       .finally(() => setLoading(false));
   }, []);
+
+  const toggleSport = (sport: string) => {
+    setSports((prev) => (prev.includes(sport) ? prev.filter((s) => s !== sport) : [...prev, sport]));
+  };
+
+  const practicesRouteClimbing = sports.includes('Escalade de voie');
+  const practicesBoulderClimbing = sports.includes('Escalade de bloc');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -60,7 +76,9 @@ export function ProfileSection() {
         goal: (goal || null) as Profile['goal'],
         goal_weight_change_kg: goalWeightChangeKg ? parseFloat(goalWeightChangeKg) : null,
         goal_timeframe_weeks: goalTimeframeWeeks ? parseFloat(goalTimeframeWeeks) : null,
-        sports: parseTagList(sportsInput),
+        sports,
+        climbing_route_level: practicesRouteClimbing ? climbingRouteLevel || null : null,
+        climbing_boulder_level: practicesBoulderClimbing ? climbingBoulderLevel || null : null,
       });
       setProfile(updated);
       setSaved(true);
@@ -86,7 +104,9 @@ export function ProfileSection() {
     goal: (goal || null) as Profile['goal'],
     goal_weight_change_kg: goalWeightChangeKg ? parseFloat(goalWeightChangeKg) : null,
     goal_timeframe_weeks: goalTimeframeWeeks ? parseFloat(goalTimeframeWeeks) : null,
-    sports: parseTagList(sportsInput),
+    sports,
+    climbing_route_level: climbingRouteLevel || null,
+    climbing_boulder_level: climbingBoulderLevel || null,
   };
   const targets = computeDailyTargets(draftProfile, measuredActivity.avgDailyActivityKcal ?? undefined);
 
@@ -168,13 +188,57 @@ export function ProfileSection() {
           </select>
         </div>
 
-        <TagInput
-          label="Sports pratiqués"
-          listId="profile-sports"
-          value={sportsInput}
-          onChange={setSportsInput}
-          placeholder="ex: escalade, course à pied, musculation"
-        />
+        <div className="field">
+          <label>Sports pratiqués</label>
+          <div className="sports-checklist">
+            {SPORTS_LIST.map((sport) => (
+              <label key={sport} className="sports-checklist-item">
+                <input
+                  type="checkbox"
+                  checked={sports.includes(sport)}
+                  onChange={() => toggleSport(sport)}
+                />
+                {sport}
+              </label>
+            ))}
+          </div>
+        </div>
+
+        {practicesRouteClimbing && (
+          <div className="field">
+            <label htmlFor="profile-climbing-route">Niveau max actuel en voie</label>
+            <select
+              id="profile-climbing-route"
+              value={climbingRouteLevel}
+              onChange={(e) => setClimbingRouteLevel(e.target.value)}
+            >
+              <option value="">—</option>
+              {CLIMBING_ROUTE_GRADES.map((grade) => (
+                <option key={grade} value={grade}>
+                  {grade}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {practicesBoulderClimbing && (
+          <div className="field">
+            <label htmlFor="profile-climbing-boulder">Niveau max actuel en bloc (couleur)</label>
+            <select
+              id="profile-climbing-boulder"
+              value={climbingBoulderLevel}
+              onChange={(e) => setClimbingBoulderLevel(e.target.value)}
+            >
+              <option value="">—</option>
+              {CLIMBING_BOULDER_COLORS.map((color) => (
+                <option key={color} value={color}>
+                  {color.charAt(0).toUpperCase() + color.slice(1)}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="field">
           <label htmlFor="profile-goal">Objectif</label>

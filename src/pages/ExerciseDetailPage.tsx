@@ -66,6 +66,18 @@ export function ExerciseDetailPage() {
       </Link>
       <h2>{exercise.title}</h2>
 
+      {exercise.photo_url && (
+        <img src={exercise.photo_url} alt={exercise.title} className="detail-photo" />
+      )}
+
+      {exercise.video_url && (
+        <p>
+          <a href={exercise.video_url} target="_blank" rel="noreferrer">
+            🎬 Voir la vidéo
+          </a>
+        </p>
+      )}
+
       {exercise.instagram_link && (
         <p>
           <a href={exercise.instagram_link} target="_blank" rel="noreferrer">

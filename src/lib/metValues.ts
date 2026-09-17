@@ -23,6 +23,12 @@ export const MET_VALUES: Record<string, number> = {
   Basketball: 6.5,
   'HIIT / Circuit training': 8.0,
   Ski: 7.0,
+  // Course sur terrain accidenté/dénivelé — plus coûteux qu'une course sur
+  // route à allure comparable.
+  Trail: 9.5,
+  // Course + obstacles/portés, effort mixte cardio et force proche du
+  // circuit-training à haute intensité.
+  'Spartan / course d\'obstacles': 10.5,
   'Escalade de bloc': 6.0,
   // Effort réel proche de l'escalade de bloc (~7-8 MET), mais sur une session
   // de voie environ la moitié du temps loguée est passée à assurer (effort

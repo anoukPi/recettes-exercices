@@ -16,6 +16,7 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
   const [exerciseName, setExerciseName] = useState('');
   const [sets, setSets] = useState('');
   const [reps, setReps] = useState('');
+  const [restSeconds, setRestSeconds] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -49,12 +50,14 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
         exercise_id: exercise.id,
         sets: sets ? parseFloat(sets) : null,
         reps: reps ? parseFloat(reps) : null,
+        rest_seconds: restSeconds ? parseFloat(restSeconds) : null,
         notes: null,
       });
       setSessionExercises((prev) => [...prev, created]);
       setExerciseName('');
       setSets('');
       setReps('');
+      setRestSeconds('');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue.');
     }
@@ -80,6 +83,7 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
                   <span>
                     {exerciseById.get(se.exercise_id)?.title ?? 'Exercice'}
                     {se.sets && se.reps ? ` — ${se.sets} × ${se.reps}` : ''}
+                    {se.rest_seconds ? ` (repos ${se.rest_seconds}s)` : ''}
                   </span>
                   <button type="button" className="remove-row" onClick={() => handleRemove(se.id)}>
                     ✕
@@ -110,6 +114,13 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
               value={reps}
               onChange={(e) => setReps(e.target.value)}
               placeholder="Répétitions"
+            />
+            <input
+              type="number"
+              step="any"
+              value={restSeconds}
+              onChange={(e) => setRestSeconds(e.target.value)}
+              placeholder="Repos (s)"
             />
             <button type="submit">Ajouter</button>
           </form>

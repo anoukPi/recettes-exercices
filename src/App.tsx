@@ -12,6 +12,9 @@ import { ActivityPage } from './pages/ActivityPage';
 import { CyclePage } from './pages/CyclePage';
 import { TestsPage } from './pages/TestsPage';
 import { BilanPage } from './pages/BilanPage';
+import { WorkoutSessionsPage } from './pages/WorkoutSessionsPage';
+import { NewWorkoutSessionPage } from './pages/NewWorkoutSessionPage';
+import { WorkoutSessionDetailPage } from './pages/WorkoutSessionDetailPage';
 
 // Toujours accessibles en un tap — l'usage du quotidien.
 const PRIMARY_NAV_ITEMS = [
@@ -27,6 +30,7 @@ const MORE_NAV_ITEMS = [
   { path: '/cycle', label: 'Cycle' },
   { path: '/tests', label: 'Tests' },
   { path: '/exercises', label: 'Exercices' },
+  { path: '/sessions', label: 'Séances' },
   { path: '/settings', label: 'Paramètres' },
 ];
 
@@ -100,6 +104,9 @@ function App() {
           <Route path="/cycle" element={<CyclePage />} />
           <Route path="/tests" element={<TestsPage />} />
           <Route path="/bilan" element={<BilanPage />} />
+          <Route path="/sessions" element={<WorkoutSessionsPage />} />
+          <Route path="/sessions/new" element={<NewWorkoutSessionPage />} />
+          <Route path="/sessions/:id" element={<WorkoutSessionDetailPage />} />
         </Routes>
       </main>
     </div>
