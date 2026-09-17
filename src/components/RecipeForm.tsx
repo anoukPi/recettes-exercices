@@ -4,7 +4,7 @@ import { IngredientListEditor } from './IngredientListEditor';
 import { formatTagList, parseTagList } from '../lib/tags';
 import { listRecipeTags } from '../api/tags';
 import { uploadRecipePhoto } from '../api/storage';
-import { parseCaption } from '../lib/captionParser';
+import { extractInstagramLink, parseCaption } from '../lib/captionParser';
 import { recognizeRecipePhoto } from '../lib/ocr';
 import { DictationButton } from './DictationButton';
 import type { Recipe, RecipeInput, RecipeIngredient } from '../types';
@@ -45,7 +45,9 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
 
   const handleExtractCaption = () => {
     if (!captionInput.trim()) return;
-    const parsed = parseCaption(captionInput);
+    const { link, text } = extractInstagramLink(captionInput);
+    if (link) setInstagramLink(link);
+    const parsed = parseCaption(text);
     if (parsed.title) setTitle(parsed.title);
     if (parsed.ingredients.length > 0) setIngredients(parsed.ingredients);
     if (parsed.steps) setSteps(parsed.steps);
@@ -139,7 +141,7 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
           value={captionInput}
           onChange={(e) => setCaptionInput(e.target.value)}
           rows={4}
-          placeholder="Colle ici la légende du post — titre, Ingrédients :, Étapes : si présents"
+          placeholder="Colle ici le lien Instagram et/ou la légende du post — titre, Ingrédients :, Étapes : si présents"
         />
         {ocrError && <p className="error">{ocrError}</p>}
         <div className="caption-import-actions">
@@ -156,9 +158,10 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
           </label>
         </div>
         <p className="hint">
-          La reconnaissance de texte sur la photo tourne dans le navigateur et n'est pas
-          parfaite — relis et corrige le texte reconnu avant de cliquer sur "Extraire dans le
-          formulaire".
+          Un lien Instagram collé ici est reconnu automatiquement et rempli dans "Lien
+          Instagram" plus bas. La reconnaissance de texte sur la photo tourne dans le navigateur
+          et n'est pas parfaite — relis et corrige le texte reconnu avant de cliquer sur
+          "Extraire dans le formulaire".
         </p>
       </div>
 

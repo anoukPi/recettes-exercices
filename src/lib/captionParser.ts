@@ -10,6 +10,24 @@ const LEADING_EMOJI = /^[\p{Emoji_Presentation}\p{Extended_Pictographic}️\s]+/
 // mais ils cassent le "^" des regex suivantes si laissés en tête de ligne.
 const INVISIBLE_CHARS = /[​-‍⁠﻿]/g;
 
+const INSTAGRAM_LINK = /https?:\/\/(?:www\.)?instagram\.com\/\S+/i;
+
+export interface ExtractedInstagramLink {
+  link: string | null;
+  text: string;
+}
+
+/** Repère un lien Instagram collé au milieu du texte (souvent juste avant ou
+ * après la légende copiée) et le retire du reste pour ne pas perturber le
+ * parsing du titre/ingrédients/étapes. */
+export function extractInstagramLink(rawText: string): ExtractedInstagramLink {
+  const match = rawText.match(INSTAGRAM_LINK);
+  if (!match) return { link: null, text: rawText };
+  const link = match[0].replace(/[).,;!?]+$/, '');
+  const text = rawText.replace(match[0], '').trim();
+  return { link, text };
+}
+
 // Formes longues avant les abréviations : l'alternation regex prend la première
 // qui matche, une forme courte passée avant une longue coupperait celle-ci trop tôt.
 const UNIT_WORDS = [
