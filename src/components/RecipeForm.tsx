@@ -152,13 +152,7 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
           />
           <label className="ocr-photo-button">
             {ocrLoading ? 'Lecture de la photo…' : '📷 Depuis une photo'}
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleOcrPhoto}
-              disabled={ocrLoading}
-            />
+            <input type="file" accept="image/*" onChange={handleOcrPhoto} disabled={ocrLoading} />
           </label>
         </div>
         <p className="hint">
