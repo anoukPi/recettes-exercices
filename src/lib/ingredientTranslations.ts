@@ -91,7 +91,7 @@ export const INGREDIENT_EN: Record<string, string> = {
   "flocons d'avoine": 'oatmeal', fusilli: 'fusilli pasta', lasagne: 'lasagna',
   'lentilles blondes': 'yellow lentils', 'lentilles corail': 'red lentils',
   'lentilles vertes': 'green lentils', linguine: 'linguine', macaroni: 'macaroni',
-  nouilles: 'noodles', orge: 'barley', 'orge perlé': 'pearl barley', pain: 'bread',
+  nouilles: 'noodles', 'feuille de riz': 'rice noodles dry', orge: 'barley', 'orge perlé': 'pearl barley', pain: 'bread',
   'pain complet': 'whole wheat bread', 'pain de mie': 'sandwich bread', pâtes: 'pasta',
   penne: 'penne pasta', 'pois cassés': 'split peas', 'pois chiches': 'chickpeas',
   quinoa: 'quinoa', riz: 'white rice', 'riz basmati': 'basmati rice',
