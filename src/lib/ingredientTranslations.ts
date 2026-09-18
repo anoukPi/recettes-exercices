@@ -128,7 +128,8 @@ export const INGREDIENT_EN: Record<string, string> = {
 
   // Fruits secs, oléagineux & sucré
   amandes: 'almonds', 'poudre amande': 'almonds', "poudre d'amande": 'almonds',
-  cacahuètes: 'peanuts', cacao: 'cocoa', 'chocolat au lait': 'milk chocolate',
+  cacahuètes: 'peanuts', cacao: 'cocoa', café: 'coffee brewed prepared with tap water',
+  'café déca': 'coffee brewed prepared with tap water decaffeinated', 'chocolat au lait': 'milk chocolate',
   'chocolat blanc': 'white chocolate', 'chocolat noir': 'dark chocolate',
   'graines de chia': 'chia seeds', 'graines de courge': 'pumpkin seeds',
   'graines de lin': 'flax seeds', 'graines de pavot': 'poppy seeds',
