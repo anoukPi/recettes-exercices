@@ -3,7 +3,10 @@
 
 alter table recipes add column if not exists photo_url text;
 
-alter table recipes drop column if exists ingredients;
+-- ATTENTION : ne jamais "drop column ingredients" ici — un ré-exécution de
+-- cette migration après coup (ex: script de reconciliation qui rejoue tout
+-- l'historique) effacerait le contenu réel des recettes. Le type/défaut
+-- corrects sont déjà garantis par un simple "add column if not exists".
 alter table recipes add column if not exists ingredients jsonb not null default '[]'::jsonb;
 
 insert into storage.buckets (id, name, public)
