@@ -94,6 +94,8 @@ export const PIECE_WEIGHTS_G: Record<string, number> = {
 // une "boîte" n'a pas du tout le même poids selon ce qu'il contient. Clé :
 // "unité:ingrédient" (en minuscules).
 export const UNIT_INGREDIENT_WEIGHTS_G: Record<string, number> = {
+  'cube:épinard congelé': 18,
+
   'sachet:levure': 11,
   'sachet:levure chimique': 11,
   'sachet:levure de boulanger': 7,

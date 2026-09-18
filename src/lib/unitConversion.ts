@@ -25,7 +25,7 @@ const GRAMS_PER_UNIT: Record<string, number> = {
 // Ces unités n'ont pas de poids fixe : ça dépend totalement de l'ingrédient
 // (1 oeuf ≠ 1 pastèque, 1 sachet de levure ≠ 1 sachet de sucre vanillé). On
 // regarde plutôt src/lib/pieceWeights.ts.
-const PIECE_UNIT_NAMES = new Set(['unité', 'pièce', 'sachet', 'boîte', 'botte', 'feuille', 'brin']);
+const PIECE_UNIT_NAMES = new Set(['unité', 'pièce', 'sachet', 'boîte', 'botte', 'feuille', 'brin', 'cube']);
 
 // Ces unités de masse se convertissent exactement, quel que soit l'ingrédient.
 // Toutes les autres (volume, cuillères, tranches, pièces...) reposent sur une
@@ -50,7 +50,7 @@ const UNIT_ALIASES: Record<string, string> = {
   gousses: 'gousse', poignées: 'poignée',
   unités: 'unité', u: 'unité', piece: 'pièce', pieces: 'pièce', pièces: 'pièce',
   sachets: 'sachet', boite: 'boîte', boites: 'boîte', 'boîtes': 'boîte',
-  bottes: 'botte', feuilles: 'feuille', brins: 'brin',
+  bottes: 'botte', feuilles: 'feuille', brins: 'brin', cubes: 'cube',
 };
 
 function normalizeUnit(unit: string): string {
