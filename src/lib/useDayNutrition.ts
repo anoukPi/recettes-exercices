@@ -198,36 +198,35 @@ export function useDayNutrition(dateKey: string) {
     return { totals, hasAny, hasPartial, hasWarning };
   }, [entries, nutritionByEntry]);
 
-  const dailyTargets: DailyTargets | null = useMemo(
-    () => (profile ? computeDailyTargets(profile) : null),
-    [profile],
-  );
-
   const dayActivityCalories = useMemo(
     () => activityEntries.reduce((sum, a) => sum + a.calories_kcal, 0),
     [activityEntries],
   );
 
+  // Journée avec activité loguée : BMR (dépense de base, incompressible) +
+  // l'activité réellement mesurée ce jour-là — plus précis que le
+  // multiplicateur générique du profil, et fait varier calories ET macros
+  // ensemble (une grosse séance ce jour-là relève tous les objectifs du
+  // jour, pas seulement l'écart calorique). Sans activité loguée : on
+  // retombe sur l'estimation générale du profil.
+  const dailyTargets: DailyTargets | null = useMemo(
+    () =>
+      profile
+        ? computeDailyTargets(profile, activityEntries.length > 0 ? dayActivityCalories : undefined)
+        : null,
+    [profile, activityEntries.length, dayActivityCalories],
+  );
+
   const bilan = useMemo(() => {
     if (!dailyTargets) return null;
-    // Journée avec activité loguée : BMR (dépense de base, incompressible) +
-    // l'activité réellement mesurée ce jour-là — plus précis que le
-    // multiplicateur générique du profil. Sans activité loguée : on retombe
-    // sur le TDEE estimé (BMR × niveau d'activité déclaré), pas sur l'objectif
-    // calorique d'apport (qui inclut déjà le déficit/surplus visé — ce
-    // n'est pas une dépense).
-    const hasMeasuredExpenses = activityEntries.length > 0;
-    const expenses = hasMeasuredExpenses
-      ? dailyTargets.bmr_kcal + dayActivityCalories
-      : dailyTargets.tdee_kcal;
     return {
-      expenses,
-      measured: hasMeasuredExpenses,
+      expenses: dailyTargets.tdee_kcal,
+      measured: dailyTargets.tdeeSource === 'measured',
       bmr: dailyTargets.bmr_kcal,
       activityCalories: dayActivityCalories,
-      gap: dayTotals.totals.calories_kcal - expenses,
+      gap: dayTotals.totals.calories_kcal - dailyTargets.tdee_kcal,
     };
-  }, [dailyTargets, activityEntries.length, dayActivityCalories, dayTotals.totals.calories_kcal]);
+  }, [dailyTargets, dayActivityCalories, dayTotals.totals.calories_kcal]);
 
   const dayGi = useMemo(() => {
     if (dayTotals.totals.carbs_g < 1) return null;
