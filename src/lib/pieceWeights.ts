@@ -80,7 +80,7 @@ export const PIECE_WEIGHTS_G: Record<string, number> = {
   'chou-fleur': 600,
   chou: 900,
   brocoli: 400,
-  fenouil: 300,
+  fenouil: 150,
   'pâte à gâteau': 230,
   'pâte à tarte': 230,
   'pâte brisée': 230,
