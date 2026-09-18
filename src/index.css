@@ -1306,6 +1306,12 @@ h4 {
   width: 100%;
 }
 
+.activity-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .journal-add-form button[type='submit'] {
   padding: 0.55rem 1.2rem;
   border: none;

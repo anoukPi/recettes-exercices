@@ -8,6 +8,7 @@ import {
   deleteActivityEntry,
   getLastWorkoutSessionId,
   listActivityEntries,
+  updateActivityEntry,
 } from '../api/activities';
 import { getProfile } from '../api/profile';
 import { listWorkoutSessions } from '../api/workoutSessions';
@@ -55,6 +56,7 @@ export function ActivityPage() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const [lastWorkoutSessionId, setLastWorkoutSessionId] = useState<string | null>(null);
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
 
   const isRouteClimbing = activityType === 'Escalade de voie';
   const isBoulderClimbing = activityType === 'Escalade de bloc';
@@ -86,7 +88,46 @@ export function ActivityPage() {
     [entries],
   );
 
-  const handleAddActivity = async (e: FormEvent) => {
+  const resetForm = () => {
+    setActivityType('');
+    setDuration('');
+    setIntensity('');
+    setTrainingType('');
+    setFeltForm('');
+    setEffortIntensity('');
+    setClimbingRoutesCount('');
+    setClimbingMaxAttempted('');
+    setClimbingMaxSent('');
+    setClimbingHardestColor('');
+    setClimbingMaxColorSends('');
+    setClimbingBelowMaxCount('');
+    setSelectedWorkoutSessionId('');
+    setEditingEntryId(null);
+  };
+
+  const handleStartEdit = (entry: ActivityEntry) => {
+    setEditingEntryId(entry.id);
+    setActivityType(entry.activity_type);
+    setDuration(String(entry.duration_minutes));
+    setIntensity(entry.intensity ?? '');
+    setTrainingType(entry.training_type ?? '');
+    setFeltForm(entry.felt_form != null ? String(entry.felt_form) : '');
+    setEffortIntensity(entry.effort_intensity != null ? String(entry.effort_intensity) : '');
+    setClimbingRoutesCount(entry.climbing_routes_count != null ? String(entry.climbing_routes_count) : '');
+    setClimbingMaxAttempted(entry.climbing_max_attempted ?? '');
+    setClimbingMaxSent(entry.climbing_max_sent ?? '');
+    setClimbingHardestColor(entry.climbing_hardest_color ?? '');
+    setClimbingMaxColorSends(
+      entry.climbing_max_color_sends != null ? String(entry.climbing_max_color_sends) : '',
+    );
+    setClimbingBelowMaxCount(
+      entry.climbing_below_max_count != null ? String(entry.climbing_below_max_count) : '',
+    );
+    setSelectedWorkoutSessionId(entry.workout_session_id ?? '');
+    setFormError(null);
+  };
+
+  const handleSubmitActivity = async (e: FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
@@ -109,48 +150,42 @@ export function ActivityPage() {
     const met = MET_VALUES[type] ?? customMets[type] ?? DEFAULT_MET;
     const calories = estimateCaloriesBurned(met, profile.weight_kg, minutes);
 
+    const input = {
+      entry_date: dateKey,
+      activity_type: type,
+      duration_minutes: minutes,
+      met,
+      calories_kcal: calories,
+      intensity: intensity || null,
+      training_type: trainingType || null,
+      felt_form: feltForm ? parseInt(feltForm, 10) : null,
+      effort_intensity: effortIntensity ? parseInt(effortIntensity, 10) : null,
+      climbing_routes_count: isRouteClimbing && climbingRoutesCount ? parseInt(climbingRoutesCount, 10) : null,
+      climbing_max_attempted: isRouteClimbing ? climbingMaxAttempted || null : null,
+      climbing_max_sent: isRouteClimbing ? climbingMaxSent || null : null,
+      climbing_hardest_color: isBoulderClimbing ? climbingHardestColor || null : null,
+      climbing_max_color_sends:
+        isBoulderClimbing && climbingMaxColorSends ? parseInt(climbingMaxColorSends, 10) : null,
+      climbing_below_max_count:
+        isBoulderClimbing && climbingBelowMaxCount ? parseInt(climbingBelowMaxCount, 10) : null,
+      workout_session_id: selectedWorkoutSessionId || null,
+    };
+
     try {
-      const created = await addActivityEntry({
-        entry_date: dateKey,
-        activity_type: type,
-        duration_minutes: minutes,
-        met,
-        calories_kcal: calories,
-        intensity: intensity || null,
-        training_type: trainingType || null,
-        felt_form: feltForm ? parseInt(feltForm, 10) : null,
-        effort_intensity: effortIntensity ? parseInt(effortIntensity, 10) : null,
-        climbing_routes_count: isRouteClimbing && climbingRoutesCount ? parseInt(climbingRoutesCount, 10) : null,
-        climbing_max_attempted: isRouteClimbing ? climbingMaxAttempted || null : null,
-        climbing_max_sent: isRouteClimbing ? climbingMaxSent || null : null,
-        climbing_hardest_color: isBoulderClimbing ? climbingHardestColor || null : null,
-        climbing_max_color_sends:
-          isBoulderClimbing && climbingMaxColorSends ? parseInt(climbingMaxColorSends, 10) : null,
-        climbing_below_max_count:
-          isBoulderClimbing && climbingBelowMaxCount ? parseInt(climbingBelowMaxCount, 10) : null,
-        workout_session_id: selectedWorkoutSessionId || null,
-      });
+      if (editingEntryId) {
+        const updated = await updateActivityEntry(editingEntryId, input);
+        setEntries((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+      } else {
+        const created = await addActivityEntry(input);
 
-      if (selectedWorkoutSessionId) {
-        const session = workoutSessionById.get(selectedWorkoutSessionId);
-        if (session) await populateFromWorkoutSession(created.id, session, profile?.weight_kg ?? null);
-        setLastWorkoutSessionId(selectedWorkoutSessionId);
+        if (selectedWorkoutSessionId) {
+          const session = workoutSessionById.get(selectedWorkoutSessionId);
+          if (session) await populateFromWorkoutSession(created.id, session, profile?.weight_kg ?? null);
+          setLastWorkoutSessionId(selectedWorkoutSessionId);
+        }
+        loadEntries(dateKey);
       }
-
-      setActivityType('');
-      setDuration('');
-      setIntensity('');
-      setTrainingType('');
-      setFeltForm('');
-      setEffortIntensity('');
-      setClimbingRoutesCount('');
-      setClimbingMaxAttempted('');
-      setClimbingMaxSent('');
-      setClimbingHardestColor('');
-      setClimbingMaxColorSends('');
-      setClimbingBelowMaxCount('');
-      setSelectedWorkoutSessionId('');
-      loadEntries(dateKey);
+      resetForm();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Une erreur est survenue.');
     }
@@ -159,6 +194,7 @@ export function ActivityPage() {
   const handleDelete = async (id: string) => {
     await deleteActivityEntry(id);
     setEntries((prev) => prev.filter((e) => e.id !== id));
+    if (editingEntryId === id) resetForm();
   };
 
   const addCustomActivity = (name: string) => {
@@ -248,6 +284,9 @@ export function ActivityPage() {
                 </span>
               </div>
               <span className="journal-entry-kcal">{Math.round(entry.calories_kcal)} kcal</span>
+              <button type="button" className="link-button" onClick={() => handleStartEdit(entry)}>
+                Modifier
+              </button>
               <button
                 type="button"
                 className="remove-row"
@@ -282,8 +321,8 @@ export function ActivityPage() {
       </ul>
 
       <div className="journal-add-forms">
-        <form className="journal-add-form" onSubmit={handleAddActivity}>
-          <h3>Ajouter une activité</h3>
+        <form className="journal-add-form" onSubmit={handleSubmitActivity}>
+          <h3>{editingEntryId ? "Modifier l'activité" : 'Ajouter une activité'}</h3>
           {formError && <p className="error">{formError}</p>}
           <div className="journal-add-row two-cols">
             <input
@@ -438,7 +477,14 @@ export function ActivityPage() {
             </div>
           )}
 
-          <button type="submit">Ajouter</button>
+          <div className="activity-form-actions">
+            <button type="submit">{editingEntryId ? 'Enregistrer les modifications' : 'Ajouter'}</button>
+            {editingEntryId && (
+              <button type="button" className="link-button" onClick={resetForm}>
+                Annuler
+              </button>
+            )}
+          </div>
         </form>
       </div>
     </section>

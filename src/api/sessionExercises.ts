@@ -22,6 +22,20 @@ export async function addSessionExercise(input: SessionExerciseInput): Promise<S
   return data;
 }
 
+export async function updateSessionExercise(
+  id: string,
+  input: Omit<SessionExerciseInput, 'activity_entry_id' | 'exercise_id'>,
+): Promise<SessionExercise> {
+  const { data, error } = await supabase
+    .from('activity_session_exercises')
+    .update(input)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
 export async function deleteSessionExercise(id: string): Promise<void> {
   const { error } = await supabase.from('activity_session_exercises').delete().eq('id', id);
   if (error) throw error;

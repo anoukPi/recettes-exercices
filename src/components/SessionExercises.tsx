@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { SearchableSelect } from './SearchableSelect';
 import { listExercises } from '../api/exercises';
-import { addSessionExercise, deleteSessionExercise, listSessionExercises } from '../api/sessionExercises';
+import {
+  addSessionExercise,
+  deleteSessionExercise,
+  listSessionExercises,
+  updateSessionExercise,
+} from '../api/sessionExercises';
 import { getProfile } from '../api/profile';
 import { estimateCaloriesBurned } from '../lib/metValues';
 import { EXERCISE_INTENSITY_LEVELS, type Exercise, type ExerciseIntensity, type SessionExercise } from '../types';
@@ -16,6 +21,7 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
   const [sessionExercises, setSessionExercises] = useState<SessionExercise[]>([]);
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [weightKg, setWeightKg] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [exerciseName, setExerciseName] = useState('');
   const [sets, setSets] = useState('');
   const [reps, setReps] = useState('');
@@ -44,7 +50,28 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
 
   const totalCalories = sessionExercises.reduce((sum, se) => sum + (se.calories_kcal ?? 0), 0);
 
-  const handleAdd = async (e: FormEvent) => {
+  const resetForm = () => {
+    setEditingId(null);
+    setExerciseName('');
+    setSets('');
+    setReps('');
+    setRestSeconds('');
+    setDuration('');
+    setIntensity('');
+  };
+
+  const handleStartEdit = (se: SessionExercise) => {
+    setEditingId(se.id);
+    setExerciseName(exerciseById.get(se.exercise_id)?.title ?? '');
+    setSets(se.sets != null ? String(se.sets) : '');
+    setReps(se.reps != null ? String(se.reps) : '');
+    setRestSeconds(se.rest_seconds != null ? String(se.rest_seconds) : '');
+    setDuration(se.duration_minutes != null ? String(se.duration_minutes) : '');
+    setIntensity(se.intensity_level ?? '');
+    setError(null);
+  };
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     const exercise = exerciseByTitle.get(exerciseName.trim().toLowerCase());
@@ -56,25 +83,28 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
     const met = intensity ? EXERCISE_INTENSITY_LEVELS.find((l) => l.value === intensity)?.met : null;
     const calories =
       durationMinutes && met && weightKg ? estimateCaloriesBurned(met, weightKg, durationMinutes) : null;
+    const input = {
+      sets: sets ? parseFloat(sets) : null,
+      reps: reps ? parseFloat(reps) : null,
+      rest_seconds: restSeconds ? parseFloat(restSeconds) : null,
+      duration_minutes: durationMinutes,
+      intensity_level: intensity || null,
+      calories_kcal: calories,
+      notes: null,
+    };
     try {
-      const created = await addSessionExercise({
-        activity_entry_id: activityEntryId,
-        exercise_id: exercise.id,
-        sets: sets ? parseFloat(sets) : null,
-        reps: reps ? parseFloat(reps) : null,
-        rest_seconds: restSeconds ? parseFloat(restSeconds) : null,
-        duration_minutes: durationMinutes,
-        intensity_level: intensity || null,
-        calories_kcal: calories,
-        notes: null,
-      });
-      setSessionExercises((prev) => [...prev, created]);
-      setExerciseName('');
-      setSets('');
-      setReps('');
-      setRestSeconds('');
-      setDuration('');
-      setIntensity('');
+      if (editingId) {
+        const updated = await updateSessionExercise(editingId, input);
+        setSessionExercises((prev) => prev.map((se) => (se.id === updated.id ? updated : se)));
+      } else {
+        const created = await addSessionExercise({
+          activity_entry_id: activityEntryId,
+          exercise_id: exercise.id,
+          ...input,
+        });
+        setSessionExercises((prev) => [...prev, created]);
+      }
+      resetForm();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue.');
     }
@@ -83,6 +113,7 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
   const handleRemove = async (id: string) => {
     await deleteSessionExercise(id);
     setSessionExercises((prev) => prev.filter((se) => se.id !== id));
+    if (editingId === id) resetForm();
   };
 
   return (
@@ -112,6 +143,9 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
                         ` · ${EXERCISE_INTENSITY_LEVELS.find((l) => l.value === se.intensity_level)?.label.split(' (')[0]}`}
                       {se.calories_kcal ? ` · ${Math.round(se.calories_kcal)} kcal` : ''}
                     </span>
+                    <button type="button" className="link-button" onClick={() => handleStartEdit(se)}>
+                      Modifier
+                    </button>
                     <button type="button" className="remove-row" onClick={() => handleRemove(se.id)}>
                       ✕
                     </button>
@@ -125,7 +159,7 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
               )}
             </>
           )}
-          <form className="session-exercises-form" onSubmit={handleAdd}>
+          <form className="session-exercises-form" onSubmit={handleSubmit}>
             <SearchableSelect
               id={`session-exercise-${activityEntryId}`}
               value={exerciseName}
@@ -170,7 +204,14 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
                 </option>
               ))}
             </select>
-            <button type="submit">Ajouter</button>
+            <div className="activity-form-actions">
+              <button type="submit">{editingId ? 'Enregistrer' : 'Ajouter'}</button>
+              {editingId && (
+                <button type="button" className="link-button" onClick={resetForm}>
+                  Annuler
+                </button>
+              )}
+            </div>
           </form>
         </div>
       )}
