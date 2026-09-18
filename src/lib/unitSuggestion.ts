@@ -18,5 +18,5 @@ export function suggestUnit(ingredientName: string): string | null {
   if (PINCH_PATTERNS.test(name)) return 'pincée';
   if (LIQUID_ML_PATTERNS.test(name)) return 'ml';
 
-  return 'g';
+  return 'unité';
 }
