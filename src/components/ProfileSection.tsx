@@ -189,19 +189,36 @@ export function ProfileSection() {
         </div>
 
         <div className="field">
-          <label>Sports pratiqués</label>
-          <div className="sports-checklist">
-            {SPORTS_LIST.map((sport) => (
-              <label key={sport} className="sports-checklist-item">
-                <input
-                  type="checkbox"
-                  checked={sports.includes(sport)}
-                  onChange={() => toggleSport(sport)}
-                />
+          <label htmlFor="profile-sport-select">Sports pratiqués</label>
+          <select
+            id="profile-sport-select"
+            value=""
+            onChange={(e) => {
+              if (e.target.value) toggleSport(e.target.value);
+            }}
+          >
+            <option value="">+ Ajouter un sport</option>
+            {SPORTS_LIST.filter((sport) => !sports.includes(sport)).map((sport) => (
+              <option key={sport} value={sport}>
                 {sport}
-              </label>
+              </option>
             ))}
-          </div>
+          </select>
+          {sports.length > 0 && (
+            <div className="sports-selected-list">
+              {sports.map((sport) => (
+                <button
+                  key={sport}
+                  type="button"
+                  className="tag-chip"
+                  onClick={() => toggleSport(sport)}
+                  title="Retirer"
+                >
+                  {sport} ✕
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {practicesRouteClimbing && (
