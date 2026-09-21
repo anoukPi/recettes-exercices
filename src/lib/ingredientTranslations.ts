@@ -118,7 +118,7 @@ export const INGREDIENT_EN: Record<string, string> = {
   'bouillon de boeuf': 'beef broth', 'bouillon de légumes': 'vegetable broth',
   'bouillon de poulet': 'chicken broth', câpres: 'capers', harissa: 'harissa',
   "huile d'arachide": 'peanut oil', 'huile de colza': 'canola oil', 'huile de noix': 'walnut oil',
-  'huile de sésame': 'sesame oil', 'huile de tournesol': 'sunflower oil',
+  'huile de sésame': 'sesame oil', 'huile de tournesol': 'sunflower oil', 'huile de coco': 'coconut oil',
   "huile d'olive": 'olive oil', ketchup: 'ketchup', mayonnaise: 'mayonnaise', miel: 'honey',
   moutarde: 'mustard prepared yellow', "moutarde à l'ancienne": 'whole grain mustard', 'nuoc-mâm': 'fish sauce',
   pesto: 'pesto', 'sauce barbecue': 'barbecue sauce', 'sauce hoisin': 'hoisin sauce',
