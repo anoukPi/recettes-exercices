@@ -22,6 +22,18 @@ function pick(nutrients: UsdaNutrient[], match: (n: UsdaNutrient) => boolean): n
   return found ? found.value : null;
 }
 
+// Oméga-3 = somme des acides gras individuels que l'USDA rapporte séparément
+// (ALA/EPA/DHA) — souvent absents des fiches USDA "de base" (Foundation/SR
+// Legacy n'ont pas toujours le détail), d'où null pour beaucoup d'aliments
+// plutôt qu'une estimation inventée.
+const OMEGA3_PATTERNS = [/18:3 n-3/i, /20:5 n-3/i, /22:6 n-3/i];
+
+function pickOmega3(nutrients: UsdaNutrient[]): number | null {
+  const matches = nutrients.filter((n) => OMEGA3_PATTERNS.some((p) => p.test(n.nutrientName)));
+  if (matches.length === 0) return null;
+  return matches.reduce((sum, n) => sum + n.value, 0);
+}
+
 function parseNutrition(food: UsdaFood): NutritionPer100g {
   const n = food.foodNutrients ?? [];
   return {
@@ -45,6 +57,7 @@ function parseNutrition(food: UsdaFood): NutritionPer100g {
     vitamin_d_mcg: pick(n, (x) => x.nutrientName.startsWith('Vitamin D')),
     vitamin_e_mg: pick(n, (x) => x.nutrientName.includes('Vitamin E')),
     vitamin_b12_mcg: pick(n, (x) => x.nutrientName.includes('Vitamin B-12')),
+    omega3_g: pickOmega3(n),
   };
 }
 

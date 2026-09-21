@@ -79,6 +79,7 @@ export function ProfileSection() {
         sports,
         climbing_route_level: practicesRouteClimbing ? climbingRouteLevel || null : null,
         climbing_boulder_level: practicesBoulderClimbing ? climbingBoulderLevel || null : null,
+        period_length_days: profile?.period_length_days ?? null,
       });
       setProfile(updated);
       setSaved(true);
@@ -107,6 +108,7 @@ export function ProfileSection() {
     sports,
     climbing_route_level: climbingRouteLevel || null,
     climbing_boulder_level: climbingBoulderLevel || null,
+    period_length_days: profile?.period_length_days ?? null,
   };
   const targets = computeDailyTargets(draftProfile, measuredActivity.avgDailyActivityKcal ?? undefined);
 

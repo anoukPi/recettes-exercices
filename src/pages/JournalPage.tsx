@@ -6,7 +6,8 @@ import type { DailyTargets } from '../lib/dailyNeeds';
 import { useSession } from '../lib/auth';
 import { MonthCalendar } from '../components/MonthCalendar';
 import { listCycleEntries } from '../api/cycle';
-import { isIronReminderDay } from '../lib/cycle';
+import { getProfile } from '../api/profile';
+import { isLutealPhase, isOnPeriod } from '../lib/cycle';
 import { addWaterEntry, deleteWaterEntry, listWaterEntries } from '../api/water';
 import {
   BEVERAGE_TYPES,
@@ -50,6 +51,21 @@ function giAppreciation(avgGi: number): { label: string; className: string } {
 function bilanColor(gap: number): 'good' | 'over' {
   return gap > 0 ? 'over' : 'good';
 }
+
+// Apports de référence (ANSES/EFSA, femme adulte) — repères indicatifs, pas
+// une prescription individuelle. Le fer reflète déjà les pertes menstruelles
+// moyennes (d'où le rappel spécifique pendant les règles plutôt qu'une cible
+// qui grimperait encore plus ce jour-là). La vitamine C aide l'absorption du
+// fer non héminique (végétal) — utile de les regarder ensemble.
+const CYCLE_NUTRIENT_TARGETS = {
+  iron_mg: 16,
+  vitamin_c_mg: 110,
+  magnesium_mg: 300,
+  omega3_g: 1.1,
+};
+// Repère courant pour le magnésium en phase lutéale (crampes, rétention...) —
+// pas de cible officielle distincte, juste un peu de marge indicative.
+const LUTEAL_MAGNESIUM_EXTRA_MG = 30;
 
 const WATER_GLASS_ML = 250;
 const TASSE_ML = 150;
@@ -169,25 +185,39 @@ export function JournalPage() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [monthKey, setMonthKey] = useState(dateKey.slice(0, 7));
   const [cycleEntries, setCycleEntries] = useState<CycleEntry[]>([]);
+  const [periodLengthDays, setPeriodLengthDays] = useState<number | null>(null);
   const [waterEntries, setWaterEntries] = useState<WaterEntry[]>([]);
   const [beverageType, setBeverageType] = useState<BeverageType>('eau');
   const [beverageQty, setBeverageQty] = useState('1');
   const [beverageUnit, setBeverageUnit] = useState<BeverageUnit>('tasse');
 
-  const { loading, error, profile, dailyTargets, dayTotals, dayGi, bilan, activityEntries } =
-    useDayNutrition(dateKey);
-
   useEffect(() => {
     if (!session) return;
     listCycleEntries().then(setCycleEntries).catch(() => {});
+    // Fetch séparé du profil (léger) : nécessaire avant même d'appeler
+    // useDayNutrition, qui a besoin de l'ajustement calorique de phase
+    // lutéale en entrée plutôt qu'en sortie.
+    getProfile()
+      .then((p) => setPeriodLengthDays(p?.period_length_days ?? null))
+      .catch(() => {});
   }, [session]);
+
+  const onPeriod = isOnPeriod(dateKey, cycleEntries, periodLengthDays);
+  const lutealPhase = isLutealPhase(dateKey, cycleEntries, periodLengthDays);
+  // Repère courant : ~100-300 kcal/jour en plus pendant la semaine précédant
+  // les règles (phase lutéale), pas pendant les règles elles-mêmes — 200
+  // comme milieu de fourchette, pas une mesure individuelle.
+  const lutealPhaseExtraKcal = lutealPhase ? 200 : 0;
+
+  const { loading, error, profile, dailyTargets, dayTotals, dayGi, bilan, activityEntries } =
+    useDayNutrition(dateKey, lutealPhaseExtraKcal);
 
   useEffect(() => {
     if (!session) return;
     listWaterEntries(dateKey).then(setWaterEntries).catch(() => {});
   }, [session, dateKey]);
 
-  const ironReminder = isIronReminderDay(dateKey, cycleEntries);
+  const ironReminder = onPeriod;
   const waterTotalMl = waterEntries.reduce((sum, w) => sum + w.amount_ml, 0);
 
   const [waterError, setWaterError] = useState<string | null>(null);
@@ -356,6 +386,13 @@ export function JournalPage() {
           <Link to="/cycle">Gérer le suivi du cycle</Link>
         </p>
       )}
+      {lutealPhase && (
+        <p className="hint warning-hint">
+          🌙 Semaine avant les règles — besoin énergétique généralement un peu plus élevé (inclus
+          dans ton objectif calorique aujourd'hui), et magnésium/oméga-3 souvent plus sollicités.{' '}
+          <Link to="/cycle">Gérer le suivi du cycle</Link>
+        </p>
+      )}
 
       <div className="summary-card">
         <h4>Alimentation</h4>
@@ -400,6 +437,44 @@ export function JournalPage() {
           </p>
         )}
       </div>
+
+      {profile?.sex === 'femme' && (
+        <div className="summary-card">
+          <h4>Fer, vitamine C, magnésium, oméga-3</h4>
+          <div className="meter-group">
+            <MacroMeter
+              label="Fer"
+              actual={dayTotals.totals.iron_mg}
+              target={CYCLE_NUTRIENT_TARGETS.iron_mg}
+              unit="mg"
+            />
+            <MacroMeter
+              label="Vitamine C"
+              actual={dayTotals.totals.vitamin_c_mg}
+              target={CYCLE_NUTRIENT_TARGETS.vitamin_c_mg}
+              unit="mg"
+            />
+            <MacroMeter
+              label="Magnésium"
+              actual={dayTotals.totals.magnesium_mg}
+              target={CYCLE_NUTRIENT_TARGETS.magnesium_mg + (lutealPhase ? LUTEAL_MAGNESIUM_EXTRA_MG : 0)}
+              unit="mg"
+            />
+            <MacroMeter
+              label="Oméga-3"
+              actual={dayTotals.totals.omega3_g}
+              target={CYCLE_NUTRIENT_TARGETS.omega3_g}
+              unit="g"
+            />
+          </div>
+          <p className="hint">
+            Repères généraux (femme adulte, ANSES/EFSA), pas une prescription individuelle. La
+            vitamine C aide l'absorption du fer d'origine végétale — pratique de les manger
+            ensemble. L'oméga-3 manque encore de données pour beaucoup d'ingrédients (peu
+            renseigné dans la base USDA) — un "0 g" peut vouloir dire "non mesuré", pas "absent".
+          </p>
+        </div>
+      )}
 
       {(activityEntries.length > 0 || bilan) && (
         <div className="summary-card">

@@ -22,6 +22,7 @@ const PER100G_KEYS: (keyof NutritionPer100g)[] = [
   'vitamin_d_mcg',
   'vitamin_e_mg',
   'vitamin_b12_mcg',
+  'omega3_g',
 ];
 
 // Tous les champs d'un total agrégé, y compris ceux calculés à part (charge

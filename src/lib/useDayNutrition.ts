@@ -30,7 +30,7 @@ export type EntryNutritionState =
     }
   | { status: 'unavailable' };
 
-export function useDayNutrition(dateKey: string) {
+export function useDayNutrition(dateKey: string, lutealPhaseExtraKcal = 0) {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -212,9 +212,13 @@ export function useDayNutrition(dateKey: string) {
   const dailyTargets: DailyTargets | null = useMemo(
     () =>
       profile
-        ? computeDailyTargets(profile, activityEntries.length > 0 ? dayActivityCalories : undefined)
+        ? computeDailyTargets(
+            profile,
+            activityEntries.length > 0 ? dayActivityCalories : undefined,
+            lutealPhaseExtraKcal,
+          )
         : null,
-    [profile, activityEntries.length, dayActivityCalories],
+    [profile, activityEntries.length, dayActivityCalories, lutealPhaseExtraKcal],
   );
 
   const bilan = useMemo(() => {

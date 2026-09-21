@@ -92,10 +92,15 @@ export function isProfileComplete(profile: Profile | null): profile is Profile &
  * d'activité réellement loguées sur une période récente (voir
  * useMeasuredActivity) — remplace le multiplicateur générique du niveau
  * d'activité déclaré par BMR + cette moyenne mesurée, plus fidèle à ce que
- * la personne fait vraiment. */
+ * la personne fait vraiment.
+ *
+ * `lutealPhaseExtraKcal` (optionnel) : besoin énergétique en plus pendant la
+ * semaine précédant les règles (~100-300 kcal/jour couramment cité) — ajouté
+ * à l'objectif d'apport, pas à la dépense (voir lib/cycle.ts isLutealPhase). */
 export function computeDailyTargets(
   profile: Profile,
   measuredAvgActivityKcal?: number,
+  lutealPhaseExtraKcal = 0,
 ): DailyTargets | null {
   if (!isProfileComplete(profile)) return null;
 
@@ -116,7 +121,7 @@ export function computeDailyTargets(
       ? (profile.goal_weight_change_kg * 7700) / (profile.goal_timeframe_weeks * 7)
       : GOAL_ADJUSTMENT[profile.goal];
 
-  const rawCalories = tdee + adjustment;
+  const rawCalories = tdee + adjustment + lutealPhaseExtraKcal;
   const calories = Math.max(floor, rawCalories);
 
   const protein_g = profile.weight_kg * PROTEIN_G_PER_KG[profile.activity_level];
