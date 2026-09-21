@@ -88,6 +88,8 @@ export const INGREDIENT_EN: Record<string, string> = {
   farine: 'flour', 'farine complète': 'whole wheat flour', 'farine de blé': 'wheat flour',
   'farine de châtaigne': 'chestnut flour', 'farine de maïs': 'corn flour',
   'farine de riz': 'rice flour', 'farine de sarrasin': 'buckwheat flour',
+  'farine de pois chiche': 'chickpea flour', chapelure: 'dry bread crumbs',
+  'graine de chanvre': 'hemp seeds hulled',
   "flocons d'avoine": 'oatmeal', fusilli: 'fusilli pasta', lasagne: 'lasagna',
   'lentilles blondes': 'yellow lentils', 'lentilles corail': 'red lentils',
   'lentilles vertes': 'green lentils', linguine: 'linguine', macaroni: 'macaroni',
