@@ -438,9 +438,9 @@ export function JournalPage() {
         )}
       </div>
 
-      {profile?.sex === 'femme' && (
+      {onPeriod && (
         <div className="summary-card">
-          <h4>Fer, vitamine C, magnésium, oméga-3</h4>
+          <h4>Cycle menstruel</h4>
           <div className="meter-group">
             <MacroMeter
               label="Fer"
