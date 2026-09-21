@@ -131,7 +131,12 @@ export const INGREDIENT_EN: Record<string, string> = {
   // Fruits secs, oléagineux & sucré
   amandes: 'almonds', 'poudre amande': 'almonds', "poudre d'amande": 'almonds',
   cacahuètes: 'peanuts', cacao: 'cocoa', café: 'coffee brewed prepared with tap water',
+  café: 'coffee brewed prepared with tap water',
   'café déca': 'coffee brewed prepared with tap water decaffeinated', 'chocolat au lait': 'milk chocolate',
+  aquafaba: 'aquafaba', 'cranberries séchées': 'cranberries dried sweetened',
+  'farine de patate douce': 'flour potato', matcha: 'matcha tea powder', 'gomme de guar': 'guar gum',
+  "lait d'avoine": 'oat milk unsweetened plain refrigerated', 'fécule de pomme de terre': 'potato starch',
+  'tomate séchée': 'tomatoes sun dried', 'beurre de cacahuète': 'peanut butter smooth without salt',
   'chocolat blanc': 'white chocolate', 'chocolat noir': 'dark chocolate',
   'graines de chia': 'chia seeds', 'graines de courge': 'pumpkin seeds',
   'graines de lin': 'flax seeds', 'graines de pavot': 'poppy seeds',
