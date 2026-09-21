@@ -7,7 +7,7 @@ import { uploadRecipePhoto } from '../api/storage';
 import { extractInstagramLink, parseCaption } from '../lib/captionParser';
 import { recognizeRecipePhoto } from '../lib/ocr';
 import { DictationButton } from './DictationButton';
-import type { Recipe, RecipeInput, RecipeIngredient } from '../types';
+import { RECIPE_CATEGORIES, type Recipe, type RecipeInput, type RecipeIngredient } from '../types';
 
 // Suggestions de départ toujours proposées, même avant d'avoir jamais été
 // utilisées sur une recette — catégories de plat + régimes courants.
@@ -33,6 +33,7 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
   const [steps, setSteps] = useState(initial?.steps ?? '');
   const [tags, setTags] = useState(formatTagList(initial?.tags ?? []));
   const [notes, setNotes] = useState(initial?.notes ?? '');
+  const [category, setCategory] = useState(initial?.category ?? '');
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(initial?.photo_url ?? null);
@@ -120,6 +121,7 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
         steps: steps.trim() || null,
         tags: parseTagList(tags),
         notes: notes.trim() || null,
+        category: category || null,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue.');
@@ -198,6 +200,18 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
           onChange={(e) => setInstagramLink(e.target.value)}
           placeholder="https://instagram.com/p/..."
         />
+      </div>
+
+      <div className="field">
+        <label htmlFor="recipe-category">Catégorie</label>
+        <select id="recipe-category" value={category} onChange={(e) => setCategory(e.target.value)}>
+          <option value="">—</option>
+          {RECIPE_CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
       </div>
 
       <IngredientListEditor ingredients={ingredients} onChange={setIngredients} />

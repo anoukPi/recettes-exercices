@@ -14,10 +14,33 @@ export interface Recipe {
   steps: string | null;
   tags: string[];
   notes: string | null;
+  category: string | null;
   created_at: string;
 }
 
 export type RecipeInput = Omit<Recipe, 'id' | 'created_at'>;
+
+export const RECIPE_CATEGORIES = [
+  'Pain', 'Banana bread', 'Gâteau', 'Cookie', 'Dessert', 'Viande', 'Poisson',
+  'Entrée', 'Plat', 'Salade', 'Petit-déjeuner', 'Sauce', 'Boisson', 'Autre',
+] as const;
+
+export const RECIPE_CATEGORY_EMOJI: Record<string, string> = {
+  Pain: '🍞',
+  'Banana bread': '🍌',
+  Gâteau: '🎂',
+  Cookie: '🍪',
+  Dessert: '🍰',
+  Viande: '🍗',
+  Poisson: '🐟',
+  Entrée: '🥗',
+  Plat: '🍽️',
+  Salade: '🥙',
+  'Petit-déjeuner': '🌅',
+  Sauce: '🥣',
+  Boisson: '🥤',
+  Autre: '📦',
+};
 
 export interface Exercise {
   id: string;

@@ -10,7 +10,7 @@ import {
 } from '../api/endorsements';
 import { useSession } from '../lib/auth';
 import { useRecipeNutrition } from '../lib/useRecipeNutrition';
-import type { Recipe, RecipeInput } from '../types';
+import { RECIPE_CATEGORY_EMOJI, type Recipe, type RecipeInput } from '../types';
 
 export function RecipeDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -93,7 +93,11 @@ export function RecipeDetailPage() {
       <Link to="/recipes" className="back-link">
         ← Recettes
       </Link>
-      <h2>{recipe.title}</h2>
+      <h2>
+        {recipe.category && <span title={recipe.category}>{RECIPE_CATEGORY_EMOJI[recipe.category] ?? '📦'} </span>}
+        {recipe.title}
+      </h2>
+      {recipe.category && <p className="hint">{recipe.category}</p>}
 
       {recipe.photo_url && (
         <img src={recipe.photo_url} alt={recipe.title} className="detail-photo" />

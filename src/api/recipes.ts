@@ -64,3 +64,27 @@ export async function deleteRecipe(id: string): Promise<void> {
   const { error } = await supabase.from('recipes').delete().eq('id', id);
   if (error) throw error;
 }
+
+/** Les 5 recettes les plus loguées dans le carnet ces 30 derniers jours. */
+export async function getFavoriteRecipeIds(days = 30, limit = 5): Promise<string[]> {
+  const since = new Date();
+  since.setDate(since.getDate() - days);
+  const sinceKey = since.toISOString().slice(0, 10);
+
+  const { data, error } = await supabase
+    .from('journal_entries')
+    .select('recipe_id')
+    .eq('kind', 'recipe')
+    .gte('entry_date', sinceKey);
+  if (error) throw error;
+
+  const countByRecipeId = new Map<string, number>();
+  for (const row of data ?? []) {
+    if (!row.recipe_id) continue;
+    countByRecipeId.set(row.recipe_id, (countByRecipeId.get(row.recipe_id) ?? 0) + 1);
+  }
+  return [...countByRecipeId.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([id]) => id);
+}
