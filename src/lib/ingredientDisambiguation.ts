@@ -44,6 +44,8 @@ export const AMBIGUOUS_INGREDIENTS: Record<string, string[]> = {
   tofu: ['Tofu ferme', 'Tofu soyeux', 'Tofu fumé'],
   levure: ['Levure chimique', 'Levure fraîche', 'Levure sèche'],
   citron: ['Citron', 'Jus de citron', 'Zeste de citron'],
+  // En Suisse, « pruneau » désigne la prune fraîche ; en France, le fruit séché.
+  pruneau: ['Pruneau frais avec noyau', 'Pruneau sec'],
 };
 
 export function disambiguationFor(name: string): string[] | null {

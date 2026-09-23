@@ -44,6 +44,8 @@ export const PIECE_WEIGHTS_G: Record<string, number> = {
   figue: 50,
   datte: 8,
   pruneau: 10,
+  'pruneau sec': 10,
+  'pruneau frais avec noyau': 40, // pesé entier, noyau compris (déduit dans le calcul)
   prune: 40,
   kaki: 170,
   grenade: 250,

@@ -39,6 +39,8 @@ export const INGREDIENT_FDC_ID: Record<string, number> = {
   pêche: 325430, // Peaches, yellow, raw
   physalis: 173043, // Groundcherries, raw
   pruneau: 168162, // Plums, dried (prunes), uncooked
+  'pruneau sec': 168162,
+  'pruneau frais avec noyau': 169949, // Plums, raw — pesé avec noyau, voir EDIBLE_FRACTION
   raisin: 174683, // Grapes, red or green, raw
   'noix de coco': 170170, // Nuts, coconut meat, dried (desiccated), not sweetened
   'noix de coco râpée': 170170,
@@ -232,4 +234,11 @@ export const INGREDIENT_FDC_ID: Record<string, number> = {
   'tofu fumé': 172475,
   'tofu soyeux': 172461, // Tofu, silken, firm
   'algues nori': 168458, // Seaweed, laver, raw
+};
+
+// Part comestible quand l'ingrédient est pesé avec ses déchets (noyaux…) :
+// les valeurs USDA sont données pour la partie comestible, on les ramène au
+// poids pesé. Taux de déchet USDA (champ "Refuse" de la fiche).
+export const EDIBLE_FRACTION: Record<string, number> = {
+  'pruneau frais avec noyau': 0.94, // Plums, raw : 6 % de noyaux
 };

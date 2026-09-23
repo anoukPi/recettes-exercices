@@ -8,7 +8,7 @@
 //   3. recherche USDA texte via la traduction anglaise (ingredientTranslations.ts)
 // Sans aucune de ces trois sources : null (pas de recherche sur le nom
 // français, qui renvoyait un aliment arbitraire, ex: "Dulce de Leche").
-import { INGREDIENT_FDC_ID } from './ingredientPins';
+import { EDIBLE_FRACTION, INGREDIENT_FDC_ID } from './ingredientPins';
 import { INGREDIENT_EN } from './ingredientTranslations';
 import { referenceNutritionFor } from './referenceNutrition';
 import { fromAbridged, parseNutrition, pickBestFood, type UsdaAbridgedFood, type UsdaFood } from './usdaMatch';
@@ -89,5 +89,17 @@ export async function lookupNutrition(name: string, apiKey: string | undefined):
   }
   const food = pinned !== undefined ? await fetchUsdaById(pinned, apiKey) : await searchUsda(query, apiKey);
   if (!food) return null;
-  return { source: 'usda', fdc_id: food.fdcId, fdc_description: food.description, values: parseNutrition(food) };
+  const values = parseNutrition(food);
+  const edible = EDIBLE_FRACTION[key];
+  if (edible === undefined) {
+    return { source: 'usda', fdc_id: food.fdcId, fdc_description: food.description, values };
+  }
+  const scaled = {} as NutritionPer100g;
+  for (const k of NUTRIENT_KEYS) scaled[k] = values[k] === null ? null : values[k] * edible;
+  return {
+    source: 'usda',
+    fdc_id: food.fdcId,
+    fdc_description: `${food.description} — pesé avec déchets, ${Math.round(edible * 100)} % comestible`,
+    values: scaled,
+  };
 }
