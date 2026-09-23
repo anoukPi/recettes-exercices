@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { addTotals, emptyTotals, scaleNutrition } from './nutritionCalc';
 import { gramsForQuantity, isApproxUnit } from './unitConversion';
-import { hasKnownTranslation } from './ingredientTranslations';
+import { hasNutritionSource } from './nutritionLookup';
 import { giFor } from './glycemicIndex';
 import { computeDailyTargets, type DailyTargets } from './dailyNeeds';
 import { listJournalEntries } from '../api/journal';
@@ -13,7 +13,7 @@ import { listActivityEntries } from '../api/activities';
 import { MEALS, type ActivityEntry, type JournalEntry, type NutritionTotals, type Profile } from '../types';
 
 export const REASON_APPROX_UNIT = 'mesure convertie par une moyenne approximative (ex: 1 càs ≈ 15g), pas la densité réelle de cet ingrédient';
-export const REASON_UNKNOWN_TRANSLATION = "ingrédient sans traduction connue — la recherche dans la base USDA s'est faite avec le nom français tel quel, résultat non garanti";
+export const REASON_UNKNOWN_TRANSLATION = "ingrédient sans source nutritionnelle connue — valeurs d'une ancienne recherche USDA sur le nom français, résultat non garanti";
 export const REASON_PARTIAL_RECIPE = "certains ingrédients de la recette n'ont pas pu être calculés (mesure non convertible ou ingrédient introuvable) et sont exclus du total";
 export const REASON_UNAVAILABLE = 'mesure non convertible en grammes, ou ingrédient introuvable dans la base USDA — aucune valeur calculable';
 export const REASON_UNKNOWN_GI = "indice glycémique inconnu pour cet ingrédient — non compté dans la charge glycémique du jour";
@@ -92,7 +92,7 @@ export function useDayNutrition(dateKey: string, lutealPhaseExtraKcal = 0) {
           if (!totals) return { status: 'unavailable' };
           const warnings: string[] = [];
           if (isApproxUnit(entry.unit)) warnings.push(REASON_APPROX_UNIT);
-          if (!hasKnownTranslation(entry.label)) warnings.push(REASON_UNKNOWN_TRANSLATION);
+          if (nutrition.source !== 'manual' && !hasNutritionSource(entry.label)) warnings.push(REASON_UNKNOWN_TRANSLATION);
           const gi = giFor(entry.label);
           if (gi !== null) {
             totals.glycemic_load = (gi * totals.carbs_g) / 100;
@@ -147,7 +147,7 @@ export function useDayNutrition(dateKey: string, lutealPhaseExtraKcal = 0) {
           sum = addTotals(sum, scaled);
           anyFound = true;
           if (isApproxUnit(ing.unit)) anyApproxUnit = true;
-          if (!hasKnownTranslation(ing.ingredient)) anyUnknownTranslation = true;
+          if (nutrition.source !== 'manual' && !hasNutritionSource(ing.ingredient)) anyUnknownTranslation = true;
         }
 
         if (!anyFound) return { status: 'unavailable' };

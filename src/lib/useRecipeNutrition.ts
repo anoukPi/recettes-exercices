@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { addTotals, emptyTotals, scaleNutrition } from './nutritionCalc';
 import { gramsForQuantity } from './unitConversion';
-import { hasKnownTranslation } from './ingredientTranslations';
+import { hasNutritionSource } from './nutritionLookup';
 import { giFor } from './glycemicIndex';
 import { getIngredientNutrition } from '../api/nutrition';
 import { listReferenceItems } from '../api/referenceItems';
@@ -70,7 +70,7 @@ export function useRecipeNutrition(recipe: Recipe | null) {
             if (gi !== null) scaled.glycemic_load = (gi * scaled.carbs_g) / 100;
             sum = addTotals(sum, scaled);
             anyFound = true;
-            if (!hasKnownTranslation(ing.ingredient)) partial = true;
+            if (nutrition.source !== 'manual' && !hasNutritionSource(ing.ingredient)) partial = true;
           } catch {
             partial = true;
           }
