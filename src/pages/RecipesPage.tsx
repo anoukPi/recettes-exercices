@@ -3,23 +3,26 @@ import { LibraryView } from '../components/LibraryView';
 import { listRecipes, getFavoriteRecipeIds } from '../api/recipes';
 import { listMyEndorsedRecipeIds } from '../api/endorsements';
 import { useSession } from '../lib/auth';
-import { useRecipesNutrition } from '../lib/useRecipesNutrition';
+import { useRecipesNutrition, type RecipeCardNutrition } from '../lib/useRecipesNutrition';
 import { RECIPE_CATEGORIES, RECIPE_CATEGORY_EMOJI, type Recipe } from '../types';
 
 function recipeSubtitle(
   recipe: Recipe,
   isTested: boolean,
   isFavorite: boolean,
-  n: { calories: number; proteinPct: number; carbsPct: number; fatPct: number; avgGi: number | null } | undefined,
+  n: RecipeCardNutrition | undefined,
 ): string {
   const badges: string[] = [];
   if (recipe.category) badges.push(`${RECIPE_CATEGORY_EMOJI[recipe.category] ?? '📦'} ${recipe.category}`);
   if (isTested) badges.push('✅ Testée');
   if (isFavorite) badges.push('⭐ Favorite');
   const nutritionParts = n
-    ? [`${Math.round(n.calories)} kcal`, `${n.proteinPct}% P`, `${n.carbsPct}% G`, `${n.fatPct}% L`]
+    ? [`${n.approx ? '≈ ' : ''}${Math.round(n.calories)} kcal`, `${n.proteinPct}% P`, `${n.carbsPct}% G`, `${n.fatPct}% L`]
     : [];
   if (n?.avgGi !== null && n?.avgGi !== undefined) nutritionParts.push(`IG ${Math.round(n.avgGi)}`);
+  // Signal de fiabilité visible dans le pool partagé : une recette mal saisie par
+  // une autre ne doit pas fausser silencieusement le bilan de celle qui l'utilise.
+  if (n?.partial) nutritionParts.push('⚠️ calcul partiel');
   return [...badges, ...nutritionParts].join(' · ');
 }
 

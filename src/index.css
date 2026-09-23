@@ -1210,6 +1210,49 @@ h4 {
   margin-top: 0.5rem;
 }
 
+.account-data {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.account-data h4 {
+  margin: 0;
+}
+
+.account-data > button:not(.link-button),
+.account-delete-confirm > button:not(.link-button) {
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.account-data .link-button.danger {
+  color: var(--danger);
+}
+
+.account-delete-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.account-delete-confirm > button.danger {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.account-delete-confirm > button.danger:disabled {
+  opacity: 0.5;
+}
+
 .auth-status button[type='submit'] {
   align-self: flex-start;
   padding: 0.55rem 1.2rem;

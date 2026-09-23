@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { addDays, formatDateKeyFr, toDateKey } from '../lib/date';
 import { useDayNutrition } from '../lib/useDayNutrition';
-import type { DailyTargets } from '../lib/dailyNeeds';
+import { targetsBlockedReason, type DailyTargets } from '../lib/dailyNeeds';
 import { useSession } from '../lib/auth';
 import { MonthCalendar } from '../components/MonthCalendar';
 import { listCycleEntries } from '../api/cycle';
@@ -372,6 +372,9 @@ export function JournalPage() {
           Renseigne ton <Link to="/settings">profil dans les Paramètres</Link> pour voir tes
           objectifs journaliers ici.
         </p>
+      )}
+      {targetsBlockedReason(profile) && (
+        <p className="hint warning-hint">{targetsBlockedReason(profile)}</p>
       )}
       {dailyTargets?.flooredBySafety && (
         <p className="hint warning-hint">

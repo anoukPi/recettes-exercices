@@ -170,6 +170,12 @@ export function RecipeDetailPage() {
                   </li>
                 </ul>
               </details>
+              {nutrition.approx && (
+                <p className="hint">
+                  ≈ Valeurs approximatives — certaines quantités sont en pièces, cuillères ou tasses,
+                  converties avec un poids moyen.
+                </p>
+              )}
               {nutrition.partial && (
                 <p className="hint warning-hint">
                   ⚠️ Calcul partiel — certains ingrédients n'ont pas pu être trouvés ou convertis

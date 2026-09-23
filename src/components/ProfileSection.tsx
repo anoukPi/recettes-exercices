@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { getProfile, saveProfile } from '../api/profile';
-import { computeDailyTargets } from '../lib/dailyNeeds';
+import { computeDailyTargets, profileWarnings, targetsBlockedReason } from '../lib/dailyNeeds';
 import { useMeasuredActivity } from '../lib/useMeasuredActivity';
 import { useSession } from '../lib/auth';
 import {
@@ -8,6 +8,7 @@ import {
   CLIMBING_BOULDER_COLORS,
   CLIMBING_ROUTE_GRADES,
   GOALS,
+  SPECIAL_SITUATIONS,
   SPORTS_LIST,
   type Profile,
 } from '../types';
@@ -31,6 +32,7 @@ export function ProfileSection() {
   const [sports, setSports] = useState<string[]>([]);
   const [climbingRouteLevel, setClimbingRouteLevel] = useState('');
   const [climbingBoulderLevel, setClimbingBoulderLevel] = useState('');
+  const [specialSituation, setSpecialSituation] = useState('');
 
   useEffect(() => {
     getProfile()
@@ -48,6 +50,7 @@ export function ProfileSection() {
           setSports(p.sports ?? []);
           setClimbingRouteLevel(p.climbing_route_level ?? '');
           setClimbingBoulderLevel(p.climbing_boulder_level ?? '');
+          setSpecialSituation(p.special_situation ?? '');
         }
       })
       .catch((err) => setError(err instanceof Error ? err.message : 'Erreur de chargement.'))
@@ -80,6 +83,7 @@ export function ProfileSection() {
         climbing_route_level: practicesRouteClimbing ? climbingRouteLevel || null : null,
         climbing_boulder_level: practicesBoulderClimbing ? climbingBoulderLevel || null : null,
         period_length_days: profile?.period_length_days ?? null,
+        special_situation: sex === 'femme' ? ((specialSituation || null) as Profile['special_situation']) : null,
       });
       setProfile(updated);
       setSaved(true);
@@ -109,8 +113,11 @@ export function ProfileSection() {
     climbing_route_level: climbingRouteLevel || null,
     climbing_boulder_level: climbingBoulderLevel || null,
     period_length_days: profile?.period_length_days ?? null,
+    special_situation: sex === 'femme' ? ((specialSituation || null) as Profile['special_situation']) : null,
   };
   const targets = computeDailyTargets(draftProfile, measuredActivity.avgDailyActivityKcal ?? undefined);
+  const blockedReason = targetsBlockedReason(draftProfile);
+  const warnings = profileWarnings(draftProfile);
 
   if (loading) return <p>Chargement…</p>;
 
@@ -151,6 +158,24 @@ export function ProfileSection() {
             onChange={(e) => setBirthDate(e.target.value)}
           />
         </div>
+
+        {sex === 'femme' && (
+          <div className="field">
+            <label htmlFor="profile-special">Grossesse / allaitement</label>
+            <select
+              id="profile-special"
+              value={specialSituation}
+              onChange={(e) => setSpecialSituation(e.target.value)}
+            >
+              <option value="">Non concernée</option>
+              {SPECIAL_SITUATIONS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="field">
           <label htmlFor="profile-height">Taille (cm)</label>
@@ -303,11 +328,21 @@ export function ProfileSection() {
           </p>
         )}
 
+        {warnings.length > 0 && (
+          <ul className="hint warning-hint">
+            {warnings.map((w) => (
+              <li key={w}>⚠️ {w}</li>
+            ))}
+          </ul>
+        )}
+
         <button type="submit" disabled={saving}>
           {saving ? 'Enregistrement…' : 'Enregistrer le profil'}
         </button>
         {saved && <span className="profile-saved-hint">Enregistré ✓</span>}
       </form>
+
+      {blockedReason && <p className="hint warning-hint">{blockedReason}</p>}
 
       {targets && (
         <div className="profile-targets">

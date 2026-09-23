@@ -6,7 +6,8 @@ export interface RecipeIngredient {
 
 export interface Recipe {
   id: string;
-  user_id: string;
+  /** null = autrice qui a supprimé son compte : la recette reste dans le pool. */
+  user_id: string | null;
   title: string;
   instagram_link: string | null;
   photo_url: string | null;
@@ -44,7 +45,8 @@ export const RECIPE_CATEGORY_EMOJI: Record<string, string> = {
 
 export interface Exercise {
   id: string;
-  user_id: string;
+  /** null = autrice qui a supprimé son compte : l'exercice reste dans le pool. */
+  user_id: string | null;
   title: string;
   instagram_link: string | null;
   photo_url: string | null;
@@ -187,8 +189,16 @@ export interface Profile {
   /** Durée moyenne des règles (jours) — pour savoir si on est dedans et
    * estimer la fin, en plus du seul jour de début déjà noté. */
   period_length_days: number | null;
+  /** Grossesse/allaitement : pas d'objectifs chiffrés (Mifflin-St Jeor ne s'applique pas). */
+  special_situation: SpecialSituation | null;
   updated_at: string;
 }
+
+export const SPECIAL_SITUATIONS = [
+  { value: 'enceinte', label: 'Enceinte' },
+  { value: 'allaitante', label: 'Allaitante' },
+] as const;
+export type SpecialSituation = (typeof SPECIAL_SITUATIONS)[number]['value'];
 
 export type ProfileInput = Omit<Profile, 'id' | 'updated_at'>;
 

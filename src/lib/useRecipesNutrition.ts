@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { addTotals, emptyTotals, scaleNutrition } from './nutritionCalc';
-import { gramsForQuantity } from './unitConversion';
+import { gramsForQuantity, isApproxUnit } from './unitConversion';
+import { hasNutritionSource } from './nutritionLookup';
 import { giFor } from './glycemicIndex';
 import { getIngredientNutrition } from '../api/nutrition';
 import { listReferenceItems } from '../api/referenceItems';
@@ -12,6 +13,10 @@ export interface RecipeCardNutrition {
   carbsPct: number;
   fatPct: number;
   avgGi: number | null;
+  /** Des ingrédients n'ont pas pu être comptés : le total est sous-estimé. */
+  partial: boolean;
+  /** Unités approximatives (pièce, cuillère…) ou valeurs non vérifiées. */
+  approx: boolean;
 }
 
 /** Nutrition résumée pour chaque recette d'une liste — pour un sous-titre de
@@ -43,23 +48,40 @@ export function useRecipesNutrition(recipes: Recipe[]) {
         for (const recipe of recipes) {
           let sum = emptyTotals();
           let anyFound = false;
+          let partial = false;
+          let approx = false;
 
           for (const ing of recipe.ingredients) {
             try {
               const qty = parseFloat(ing.quantity.replace(',', '.'));
               const refId = ingredientNameToId.get(ing.ingredient.trim().toLowerCase());
-              if (!refId || Number.isNaN(qty) || !ing.unit) continue;
+              if (!refId || Number.isNaN(qty) || !ing.unit) {
+                partial = true;
+                continue;
+              }
               const grams = gramsForQuantity(qty, ing.unit, ing.ingredient, pieceWeights.get(ing.ingredient.trim().toLowerCase()));
-              if (grams === null) continue;
+              if (grams === null) {
+                partial = true;
+                continue;
+              }
               const nutrition = await getIngredientNutrition(refId, ing.ingredient);
-              if (!nutrition) continue;
+              if (!nutrition) {
+                partial = true;
+                continue;
+              }
               const scaled = scaleNutrition(nutrition, grams);
-              if (!scaled) continue;
+              if (!scaled) {
+                partial = true;
+                continue;
+              }
               const gi = giFor(ing.ingredient);
               if (gi !== null) scaled.glycemic_load = (gi * scaled.carbs_g) / 100;
               sum = addTotals(sum, scaled);
               anyFound = true;
+              if (isApproxUnit(ing.unit)) approx = true;
+              if (nutrition.source !== 'manual' && !hasNutritionSource(ing.ingredient)) approx = true;
             } catch {
+              partial = true;
               // Un ingrédient qui échoue (recherche USDA en erreur, etc.) ne
               // doit pas bloquer le calcul des autres ingrédients/recettes.
             }
@@ -73,6 +95,8 @@ export function useRecipesNutrition(recipes: Recipe[]) {
             carbsPct: Math.round(((sum.carbs_g * 4) / sum.calories_kcal) * 100),
             fatPct: Math.round(((sum.fat_g * 9) / sum.calories_kcal) * 100),
             avgGi: sum.carbs_g >= 1 ? (sum.glycemic_load / sum.carbs_g) * 100 : null,
+            partial,
+            approx,
           };
         }
 

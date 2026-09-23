@@ -66,6 +66,7 @@ export function CyclePage() {
         climbing_route_level: profile.climbing_route_level,
         climbing_boulder_level: profile.climbing_boulder_level,
         period_length_days: days,
+        special_situation: profile.special_situation,
       });
       setProfile(updated);
     } catch (err) {

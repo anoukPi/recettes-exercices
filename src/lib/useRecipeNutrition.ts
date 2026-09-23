@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { addTotals, emptyTotals, scaleNutrition } from './nutritionCalc';
-import { gramsForQuantity } from './unitConversion';
+import { gramsForQuantity, isApproxUnit } from './unitConversion';
 import { hasNutritionSource } from './nutritionLookup';
 import { giFor } from './glycemicIndex';
 import { getIngredientNutrition } from '../api/nutrition';
@@ -10,6 +10,8 @@ import type { NutritionTotals, Recipe } from '../types';
 export interface RecipeNutritionResult {
   totals: NutritionTotals;
   partial: boolean;
+  /** Au moins un ingrédient mesuré en unité approximative (pièce, cuillère, tasse…). */
+  approx: boolean;
   anyFound: boolean;
   avgGi: number | null;
 }
@@ -42,6 +44,7 @@ export function useRecipeNutrition(recipe: Recipe | null) {
         let sum = emptyTotals();
         let anyFound = false;
         let partial = false;
+        let approx = false;
 
         for (const ing of recipe.ingredients) {
           try {
@@ -70,6 +73,7 @@ export function useRecipeNutrition(recipe: Recipe | null) {
             if (gi !== null) scaled.glycemic_load = (gi * scaled.carbs_g) / 100;
             sum = addTotals(sum, scaled);
             anyFound = true;
+            if (isApproxUnit(ing.unit)) approx = true;
             if (nutrition.source !== 'manual' && !hasNutritionSource(ing.ingredient)) partial = true;
           } catch {
             partial = true;
@@ -78,7 +82,7 @@ export function useRecipeNutrition(recipe: Recipe | null) {
 
         const avgGi = sum.carbs_g >= 1 ? (sum.glycemic_load / sum.carbs_g) * 100 : null;
 
-        if (!cancelled) setResult({ totals: sum, partial, anyFound, avgGi });
+        if (!cancelled) setResult({ totals: sum, partial, approx, anyFound, avgGi });
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

@@ -65,6 +65,51 @@ export function ageFromBirthDate(birthDate: string): number {
   return age;
 }
 
+const MIN_ADULT_AGE = 18;
+
+/** Raison pour laquelle aucun objectif chiffré n'est calculé, même avec un
+ * profil complet : situations où Mifflin-St Jeor ne s'applique pas (besoins
+ * fondamentalement différents, pas un simple ajustement). null sinon. */
+export function targetsBlockedReason(profile: Profile | null): string | null {
+  if (!profile) return null;
+  if (profile.special_situation === 'enceinte' || profile.special_situation === 'allaitante') {
+    return "Pendant la grossesse et l'allaitement, les besoins changent trop pour cette formule : Kaly n'affiche pas d'objectifs chiffrés. Tu peux continuer à noter tes repas ; pour des repères adaptés, parles-en à ta sage-femme, ton médecin ou un·e diététicien·ne.";
+  }
+  if (profile.birth_date && ageFromBirthDate(profile.birth_date) < MIN_ADULT_AGE) {
+    return "Avant 18 ans, les besoins sont liés à la croissance et cette formule ne s'applique pas : Kaly n'affiche pas d'objectifs chiffrés. Pour des repères adaptés, parles-en à ton médecin ou un·e diététicien·ne.";
+  }
+  return null;
+}
+
+/** Alertes non bloquantes sur des valeurs de profil peu plausibles (faute de
+ * frappe probable) ou un rythme de variation de poids trop rapide. */
+export function profileWarnings(profile: Profile): string[] {
+  const warnings: string[] = [];
+  if (profile.height_cm != null && (profile.height_cm < 120 || profile.height_cm > 230)) {
+    warnings.push(`Taille de ${profile.height_cm} cm : vérifie la saisie (en centimètres).`);
+  }
+  if (profile.weight_kg != null && (profile.weight_kg < 30 || profile.weight_kg > 250)) {
+    warnings.push(`Poids de ${profile.weight_kg} kg : vérifie la saisie (en kilos).`);
+  }
+  if (profile.birth_date) {
+    const age = ageFromBirthDate(profile.birth_date);
+    if (age > 100 || age < 0) warnings.push(`Date de naissance donnant ${age} ans : vérifie la saisie.`);
+  }
+  if (profile.goal_weight_change_kg && profile.goal_timeframe_weeks && profile.goal_timeframe_weeks > 0) {
+    const perWeek = profile.goal_weight_change_kg / profile.goal_timeframe_weeks;
+    if (perWeek < -1) {
+      warnings.push(
+        `Rythme visé : ${Math.abs(perWeek).toFixed(1)} kg perdus par semaine. Au-delà d'environ 1 kg/semaine, la perte se fait aussi sur les muscles et se maintient mal — un rythme de 0,5 kg/semaine est plus sûr.`,
+      );
+    } else if (perWeek > 0.5) {
+      warnings.push(
+        `Rythme visé : ${perWeek.toFixed(1)} kg pris par semaine. Au-delà d'environ 0,5 kg/semaine, la prise se fait surtout en masse grasse.`,
+      );
+    }
+  }
+  return warnings;
+}
+
 export function isProfileComplete(profile: Profile | null): profile is Profile & {
   sex: 'homme' | 'femme';
   birth_date: string;
@@ -102,7 +147,7 @@ export function computeDailyTargets(
   measuredAvgActivityKcal?: number,
   lutealPhaseExtraKcal = 0,
 ): DailyTargets | null {
-  if (!isProfileComplete(profile)) return null;
+  if (!isProfileComplete(profile) || targetsBlockedReason(profile)) return null;
 
   const age = ageFromBirthDate(profile.birth_date);
   const base = 10 * profile.weight_kg + 6.25 * profile.height_cm - 5 * age;

@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { signInWithPassword, signOut, signUpWithPassword, useSession } from '../lib/auth';
+import { AccountDataSection } from './AccountDataSection';
 
 export function AuthStatus() {
   const { session, loading } = useSession();
@@ -40,6 +41,7 @@ export function AuthStatus() {
         <button type="button" onClick={() => signOut()}>
           Se déconnecter
         </button>
+        <AccountDataSection />
       </section>
     );
   }
