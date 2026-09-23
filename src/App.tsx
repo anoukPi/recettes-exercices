@@ -12,6 +12,7 @@ import { ActivityPage } from './pages/ActivityPage';
 import { CyclePage } from './pages/CyclePage';
 import { TestsPage } from './pages/TestsPage';
 import { BilanPage } from './pages/BilanPage';
+import { ComparePage } from './pages/ComparePage';
 import { WorkoutSessionsPage } from './pages/WorkoutSessionsPage';
 import { NewWorkoutSessionPage } from './pages/NewWorkoutSessionPage';
 import { WorkoutSessionDetailPage } from './pages/WorkoutSessionDetailPage';
@@ -27,6 +28,7 @@ const PRIMARY_NAV_ITEMS = [
 // Moins fréquent — rangé dans le menu déroulant "Plus".
 const MORE_NAV_ITEMS = [
   { path: '/bilan', label: 'Bilan' },
+  { path: '/comparer', label: 'Comparer' },
   { path: '/cycle', label: 'Cycle' },
   { path: '/tests', label: 'Tests' },
   { path: '/exercises', label: 'Exercices' },
@@ -104,6 +106,7 @@ function App() {
           <Route path="/cycle" element={<CyclePage />} />
           <Route path="/tests" element={<TestsPage />} />
           <Route path="/bilan" element={<BilanPage />} />
+          <Route path="/comparer" element={<ComparePage />} />
           <Route path="/sessions" element={<WorkoutSessionsPage />} />
           <Route path="/sessions/new" element={<NewWorkoutSessionPage />} />
           <Route path="/sessions/:id" element={<WorkoutSessionDetailPage />} />

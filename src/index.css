@@ -1879,3 +1879,148 @@ a.button:hover {
 .ocr-photo-button input[type='file'] {
   display: none;
 }
+
+/* Page Comparer */
+.compare-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.compare-controls .field {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.compare-controls .compare-grams {
+  flex: 0 0 6rem;
+}
+
+.compare-controls button[type='submit'] {
+  padding: 0.55rem 1.2rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+}
+
+.compare-controls button[type='submit']:disabled {
+  opacity: 0.6;
+}
+
+.compare-questions {
+  margin-bottom: 1rem;
+}
+
+.compare-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.compare-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.compare-table th,
+.compare-table td {
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.compare-table tbody tr:last-child th,
+.compare-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.compare-table .compare-name-col {
+  text-align: left;
+  font-weight: 500;
+  white-space: normal;
+  min-width: 10rem;
+  position: sticky;
+  left: 0;
+  background: var(--surface);
+}
+
+.compare-table tbody .compare-name-col {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.compare-sort {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.compare-sort.active,
+.compare-table td.active {
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.compare-pin {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--primary);
+  font-size: 1rem;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.compare-best th,
+.compare-best td,
+.compare-table .compare-best .compare-name-col {
+  background: var(--warning-soft);
+}
+
+.compare-status {
+  color: var(--text-muted);
+  text-align: left !important;
+}
+
+.compare-usda {
+  margin-top: 2rem;
+}
+
+.compare-usda-results {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.compare-usda-results li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.compare-usda-results li > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}

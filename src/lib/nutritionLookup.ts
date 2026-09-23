@@ -103,3 +103,23 @@ export async function lookupNutrition(name: string, apiKey: string | undefined):
     values: scaled,
   };
 }
+
+/** Recherche libre dans l'USDA (page Comparer) : renvoie les premiers
+ * résultats bruts, pour que l'utilisatrice choisisse elle-même la bonne fiche
+ * plutôt que de laisser l'heuristique décider. Requête en anglais de préférence. */
+export async function searchUsdaCandidates(
+  query: string,
+  apiKey: string | undefined,
+): Promise<{ fdcId: number; description: string; values: NutritionPer100g }[]> {
+  if (!apiKey) {
+    throw new Error('Clé USDA manquante. Ajoute VITE_USDA_API_KEY dans .env.local.');
+  }
+  const data = (await fetchJson(
+    `${API}/foods/search?api_key=${encodeURIComponent(apiKey)}` +
+      `&query=${encodeURIComponent(query)}&pageSize=12&dataType=Foundation,SR%20Legacy`,
+  )) as { foods?: UsdaFood[] };
+  return (data.foods ?? [])
+    .map((f) => ({ fdcId: f.fdcId, description: f.description, values: parseNutrition(f) }))
+    .filter((f) => f.values.calories_kcal !== null);
+}
+
