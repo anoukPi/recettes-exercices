@@ -55,6 +55,9 @@ export const GI_VALUES: Record<string, number> = {
   farine: 75, 'farine complète': 60, 'farine de blé': 75,
   'farine de châtaigne': 65, 'farine de maïs': 70, 'farine de riz': 95,
   'farine de sarrasin': 40, 'fécule de maïs': 85, pain: 70,
+  // Hors guide de référence (demandées par Anouk pour la page Comparer) :
+  // valeurs courantes des tables d'IG françaises, même prudence que le reste.
+  "farine de pois chiche": 35, "farine d'avoine": 45, 'farine de patate douce': 50,
   'pain complet': 65, 'pain de mie': 85, lasagne: 65,
 
   // Sucres, sucreries & condiments sucrés
