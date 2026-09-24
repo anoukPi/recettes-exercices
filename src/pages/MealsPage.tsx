@@ -220,7 +220,7 @@ export function MealsPage() {
 
       <div className="journal-date-nav">
         <button type="button" onClick={() => setDateKey(addDays(dateKey, -1))}>
-          ← Veille
+          ← <span className="date-nav-word">Veille</span>
         </button>
         <div className="journal-date-label">
           <strong>{formatDateKeyFr(dateKey)}</strong>
@@ -238,7 +238,7 @@ export function MealsPage() {
           )}
         </div>
         <button type="button" onClick={() => setDateKey(addDays(dateKey, 1))}>
-          Lendemain →
+          <span className="date-nav-word">Lendemain</span> →
         </button>
       </div>
 

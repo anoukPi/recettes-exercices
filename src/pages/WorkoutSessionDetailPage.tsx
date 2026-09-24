@@ -114,6 +114,15 @@ export function WorkoutSessionDetailPage() {
       </p>
 
       <div className="actions">
+        {session && (
+          <button
+            type="button"
+            className="primary"
+            onClick={() => navigate(`/activity?seance=${workoutSession.id}#ajouter`)}
+          >
+            ✓ Je l'ai faite aujourd'hui
+          </button>
+        )}
         {session?.user.id === workoutSession.user_id ? (
           <>
             <button type="button" onClick={() => setEditing(true)}>

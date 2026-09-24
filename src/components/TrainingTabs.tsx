@@ -1,9 +1,11 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 
-// Espace « Entraînement » : Séances et Exercices réunis (décision UX du
-// 24/09/2026) — on construit sa bibliothèque d'exercices, puis on compose
-// autant de séances qu'on veut avec.
+// Espace « Entraînement » : activité, séances et exercices réunis (décisions
+// UX du 24/09/2026) — on construit sa bibliothèque d'exercices, on compose
+// autant de séances qu'on veut, puis on note ce qu'on a fait tel jour (une
+// séance ou une activité libre).
 const TABS = [
+  { path: '/activity', label: 'Mon activité' },
   { path: '/sessions', label: 'Séances' },
   { path: '/exercises', label: 'Exercices' },
 ];

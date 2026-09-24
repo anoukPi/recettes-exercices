@@ -2328,17 +2328,26 @@ a.button:hover {
   margin-bottom: 1rem;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 700px) {
   .journal-blocks {
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
     align-items: start;
+  }
+
+  /* Le bloc calories, le plus important, garde toute la largeur. */
+  .journal-blocks .block-calories {
+    grid-column: 1 / -1;
   }
 }
 
 @media (min-width: 1200px) {
   .journal-blocks {
     grid-template-columns: repeat(3, 1fr);
+  }
+
+  .journal-blocks .block-calories {
+    grid-column: auto;
   }
 }
 
@@ -2658,4 +2667,100 @@ a.button,
   .grid {
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
   }
+}
+
+/* Action principale d'une fiche (ex. « Je l'ai faite aujourd'hui ») : corail = agir */
+.actions button.primary {
+  background: var(--corail);
+  border-color: var(--corail);
+  color: var(--noir);
+  font-weight: 800;
+}
+
+/* Sélecteur de date compact sur petit écran : flèches seules */
+@media (max-width: 480px) {
+  .date-nav-word {
+    display: none;
+  }
+
+  .journal-date-nav button {
+    min-width: 44px;
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+/* Formulaires d'ajout : deux colonnes égales, une seule sur petit écran */
+.journal-add-row.two-cols {
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 480px) {
+  .journal-add-row.two-cols {
+    grid-template-columns: 1fr;
+  }
+}
+
+.journal-add-row input,
+.journal-add-row select,
+.journal-add-row .searchable-select-input {
+  min-width: 0;
+}
+
+/* Boutons de l'hydratation (étaient restés en style navigateur par défaut) */
+.water-actions button:not(.link-button),
+.beverage-add-row button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--eau);
+  color: var(--noir);
+  font-weight: 800;
+}
+
+.beverage-add-row {
+  align-items: center;
+}
+
+.feeling-btn {
+  min-width: 36px;
+  min-height: 36px;
+}
+
+.journal-add-row > button:not(.link-button):not(.remove-row) {
+  padding: 0.55rem 1rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 800;
+}
+
+.journal-add-row > button:disabled {
+  opacity: 0.5;
+}
+
+/* Recherche avec loupe : une seule bordure (celle du conteneur) */
+.field .searchable-select-input input,
+.searchable-select-input input {
+  border: none;
+  box-shadow: none;
+}
+
+.searchable-select-input:focus-within {
+  border-color: var(--petrole);
+}
+
+.recipe-category-filters select,
+.journal-meal-picker select {
+  padding: 0.45rem 0.7rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+}
+
+.training-header + .hint {
+  margin-bottom: 0.75rem;
 }

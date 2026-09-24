@@ -33,13 +33,13 @@ interface NavItem {
 
 const NAV_CARNET: NavItem = { path: '/journal', label: 'Carnet', icon: 'carnet' };
 const NAV_REPAS: NavItem = { path: '/repas', label: 'Repas', icon: 'repas' };
+// Activité, Séances et Exercices forment un seul espace (onglets).
 const NAV_ENTRAINEMENT: NavItem = {
-  path: '/sessions',
+  path: '/activity',
   label: 'Entraînement',
   icon: 'entrainement',
-  alsoActiveOn: ['/exercises'],
+  alsoActiveOn: ['/sessions', '/exercises'],
 };
-const NAV_ACTIVITE: NavItem = { path: '/activity', label: 'Activité', icon: 'activite' };
 const NAV_RECETTES: NavItem = { path: '/recipes', label: 'Recettes', icon: 'recettes' };
 const NAV_COMPARER: NavItem = { path: '/comparer', label: 'Comparer', icon: 'comparer' };
 const NAV_BILAN: NavItem = { path: '/bilan', label: 'Bilan', icon: 'bilan' };
@@ -50,7 +50,6 @@ const NAV_PARAMETRES: NavItem = { path: '/settings', label: 'Paramètres', icon:
 const SIDEBAR_ITEMS = [
   NAV_CARNET,
   NAV_REPAS,
-  NAV_ACTIVITE,
   NAV_ENTRAINEMENT,
   NAV_RECETTES,
   NAV_COMPARER,
@@ -59,12 +58,12 @@ const SIDEBAR_ITEMS = [
   NAV_TESTS,
 ];
 // Rangé dans la feuille « Plus » sur mobile.
-const MORE_ITEMS = [NAV_RECETTES, NAV_ACTIVITE, NAV_COMPARER, NAV_BILAN, NAV_CYCLE, NAV_TESTS, NAV_PARAMETRES];
+const MORE_ITEMS = [NAV_RECETTES, NAV_COMPARER, NAV_BILAN, NAV_CYCLE, NAV_TESTS, NAV_PARAMETRES];
 
 // Raccourcis du bouton + (une couleur = un sens, voir DESIGN.md).
 const ADD_ACTIONS = [
   { path: '/repas', label: 'Un repas', hint: 'Aliment ou recette', className: 'b-petrole' },
-  { path: '/activity', label: 'Une activité', hint: 'Sport, séance', className: 'b-corail' },
+  { path: '/activity#ajouter', label: 'Une activité', hint: 'Sport ou séance faite', className: 'b-corail' },
   { path: '/journal#hydratation', label: 'De l\'eau', hint: 'Eau, café, thé', className: 'b-eau' },
   { path: '/recipes/new', label: 'Une recette', hint: 'Dans ta bibliothèque', className: '' },
 ];
@@ -255,7 +254,7 @@ function App() {
           <Route path="/tests" element={<TestsPage />} />
           <Route path="/bilan" element={<BilanPage />} />
           <Route path="/comparer" element={<ComparePage />} />
-          <Route path="/entrainement" element={<Navigate to="/sessions" replace />} />
+          <Route path="/entrainement" element={<Navigate to="/activity" replace />} />
           <Route path="/sessions" element={<WorkoutSessionsPage />} />
           <Route path="/sessions/new" element={<NewWorkoutSessionPage />} />
           <Route path="/sessions/:id" element={<WorkoutSessionDetailPage />} />

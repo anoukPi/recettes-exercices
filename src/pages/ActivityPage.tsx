@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { addDays, formatDateKeyFr, toDateKey } from '../lib/date';
 import { DEFAULT_MET, MET_VALUES, estimateCaloriesBurned, metForActivity } from '../lib/metValues';
@@ -15,6 +15,7 @@ import { listWorkoutSessions } from '../api/workoutSessions';
 import { populateFromWorkoutSession } from '../api/sessionExercises';
 import { useSession } from '../lib/auth';
 import { SessionExercises } from '../components/SessionExercises';
+import { TrainingTabs } from '../components/TrainingTabs';
 import {
   CLIMBING_BOULDER_COLORS,
   CLIMBING_ROUTE_GRADES,
@@ -52,7 +53,9 @@ export function ActivityPage() {
   const [climbingMaxColorSends, setClimbingMaxColorSends] = useState('');
   const [climbingBelowMaxCount, setClimbingBelowMaxCount] = useState('');
   const [workoutSessions, setWorkoutSessions] = useState<WorkoutSession[]>([]);
-  const [selectedWorkoutSessionId, setSelectedWorkoutSessionId] = useState('');
+  const [searchParams] = useSearchParams();
+  // « Je l'ai faite aujourd'hui » depuis une séance : /activity?seance=<id>
+  const [selectedWorkoutSessionId, setSelectedWorkoutSessionId] = useState(searchParams.get('seance') ?? '');
   const [formError, setFormError] = useState<string | null>(null);
 
   const [lastWorkoutSessionId, setLastWorkoutSessionId] = useState<string | null>(null);
@@ -207,6 +210,7 @@ export function ActivityPage() {
   if (!session) {
     return (
       <section className="journal">
+        <TrainingTabs />
         <p className="hint">
           Connecte-toi dans <Link to="/settings">Paramètres</Link> pour voir et remplir ton carnet
           d'activité.
@@ -217,9 +221,10 @@ export function ActivityPage() {
 
   return (
     <section className="journal">
+      <TrainingTabs />
       <div className="journal-date-nav">
         <button type="button" onClick={() => setDateKey((d) => addDays(d, -1))}>
-          ← Veille
+          ← <span className="date-nav-word">Veille</span>
         </button>
         <div className="journal-date-label">
           <strong>{formatDateKeyFr(dateKey)}</strong>
@@ -237,7 +242,7 @@ export function ActivityPage() {
           )}
         </div>
         <button type="button" onClick={() => setDateKey((d) => addDays(d, 1))}>
-          Lendemain →
+          <span className="date-nav-word">Lendemain</span> →
         </button>
       </div>
 
@@ -321,9 +326,40 @@ export function ActivityPage() {
       </ul>
 
       <div className="journal-add-forms">
-        <form className="journal-add-form" onSubmit={handleSubmitActivity}>
-          <h3>{editingEntryId ? "Modifier l'activité" : 'Ajouter une activité'}</h3>
+        <form className="journal-add-form" id="ajouter" onSubmit={handleSubmitActivity}>
+          <h3>{editingEntryId ? "Modifier l'activité" : "Qu'as-tu fait ce jour-là ?"}</h3>
           {formError && <p className="error">{formError}</p>}
+          {!editingEntryId && (
+            <p className="hint">
+              Une de tes séances, ou une activité libre (escalade, course, vélo…) — précise ensuite le
+              type d'activité et la durée pour estimer les calories.
+            </p>
+          )}
+          {workoutSessions.length > 0 && (
+            <div className="journal-add-row two-cols">
+              <select
+                value={selectedWorkoutSessionId}
+                onChange={(e) => setSelectedWorkoutSessionId(e.target.value)}
+              >
+                <option value="">J'ai fait une séance… (optionnel)</option>
+                {workoutSessions.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.title}
+                  </option>
+                ))}
+              </select>
+              {lastWorkoutSessionId && workoutSessionById.get(lastWorkoutSessionId) && (
+                <button
+                  type="button"
+                  className="link-button"
+                  onClick={() => setSelectedWorkoutSessionId(lastWorkoutSessionId)}
+                >
+                  ↻ Répéter « {workoutSessionById.get(lastWorkoutSessionId)?.title} »
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="journal-add-row two-cols">
             <input
               type="number"
@@ -451,31 +487,6 @@ export function ActivityPage() {
               </div>
             </div>
           </div>
-
-          {workoutSessions.length > 0 && (
-            <div className="journal-add-row two-cols">
-              <select
-                value={selectedWorkoutSessionId}
-                onChange={(e) => setSelectedWorkoutSessionId(e.target.value)}
-              >
-                <option value="">Séance faite (optionnel)</option>
-                {workoutSessions.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.title}
-                  </option>
-                ))}
-              </select>
-              {lastWorkoutSessionId && workoutSessionById.get(lastWorkoutSessionId) && (
-                <button
-                  type="button"
-                  className="link-button"
-                  onClick={() => setSelectedWorkoutSessionId(lastWorkoutSessionId)}
-                >
-                  ↻ Répéter « {workoutSessionById.get(lastWorkoutSessionId)?.title} »
-                </button>
-              )}
-            </div>
-          )}
 
           <div className="activity-form-actions">
             <button type="submit">{editingEntryId ? 'Enregistrer les modifications' : 'Ajouter'}</button>

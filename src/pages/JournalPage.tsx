@@ -131,13 +131,16 @@ interface MeterStatus {
   className: 'meter-under' | 'meter-ok' | 'meter-over' | 'meter-far';
 }
 
-/** Best-effort : pas un jugement médical, juste un repère visuel — en dessous
- * de 60% ou au-dessus de 140% de l'objectif, l'écart est mis en avant. */
+/** Best-effort : pas un jugement médical, juste un repère visuel. Seul un
+ * dépassement est mis en avant (corail) : être en dessous de l'objectif en
+ * cours de journée est normal, pas une alerte (revue UX : bilan jamais
+ * culpabilisant). */
 function meterStatus(actual: number, target: number): MeterStatus {
   const pct = target > 0 ? (actual / target) * 100 : 0;
   let className: MeterStatus['className'] = 'meter-ok';
-  if (pct < 60 || pct > 140) className = 'meter-far';
-  else if (pct < 85 || pct > 115) className = pct < 85 ? 'meter-under' : 'meter-over';
+  if (pct > 140) className = 'meter-far';
+  else if (pct > 115) className = 'meter-over';
+  else if (pct < 85) className = 'meter-under';
   return { percent: Math.min(pct, 100), className };
 }
 
@@ -282,7 +285,7 @@ export function JournalPage() {
     <section className="journal">
       <div className="journal-date-nav">
         <button type="button" onClick={() => setDateKey(addDays(dateKey, -1))}>
-          ← Veille
+          ← <span className="date-nav-word">Veille</span>
         </button>
         <div className="journal-date-label">
           <strong>{formatDateKeyFr(dateKey)}</strong>
@@ -300,7 +303,7 @@ export function JournalPage() {
           )}
         </div>
         <button type="button" onClick={() => setDateKey(addDays(dateKey, 1))}>
-          Lendemain →
+          <span className="date-nav-word">Lendemain</span> →
         </button>
       </div>
 
