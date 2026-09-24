@@ -21,7 +21,8 @@ type SortKey =
   | 'fat_g'
   | 'fiber_g'
   | 'sugar_g'
-  | 'gi';
+  | 'gi'
+  | 'unsat_share';
 
 const COLUMNS: { key: SortKey; label: string }[] = [
   { key: 'calories_kcal', label: 'kcal' },
@@ -32,6 +33,7 @@ const COLUMNS: { key: SortKey; label: string }[] = [
   { key: 'sugar_g', label: 'Sucres' },
   { key: 'gi', label: 'IG' },
   { key: 'protein_density', label: 'Prot./100 kcal' },
+  { key: 'unsat_share', label: '% insat.' },
 ];
 
 // Les questions qu'on se pose le plus souvent, en un tap.
@@ -43,6 +45,7 @@ const QUESTIONS: { label: string; key: SortKey; dir: 'asc' | 'desc' }[] = [
   { label: "L'IG le plus bas", key: 'gi', dir: 'asc' },
   { label: 'Le moins gras', key: 'fat_g', dir: 'asc' },
   { label: 'Le plus de fibres', key: 'fiber_g', dir: 'desc' },
+  { label: 'Les meilleurs lipides', key: 'unsat_share', dir: 'desc' },
   { label: 'Le moins sucré', key: 'sugar_g', dir: 'asc' },
 ];
 
@@ -50,7 +53,7 @@ const QUESTIONS: { label: string; key: SortKey; dir: 'asc' | 'desc' }[] = [
 // aliment une fois ses valeurs connues, et classement par défaut (ce qui rend
 // une source « intéressante » : beaucoup de protéines pour peu de calories ;
 // des glucides à IG bas).
-type Goal = 'proteines' | 'glucides';
+type Goal = 'proteines' | 'glucides' | 'fibres' | 'lipides';
 const GOALS: Record<
   Goal,
   {
@@ -89,11 +92,47 @@ const GOALS: Record<
     dir: 'asc',
     hint: 'Céréales, féculents, farines et légumineuses dont au moins 40 % des calories viennent des glucides, classés par IG (le plus bas en premier). Regarde aussi les fibres.',
   },
+  fibres: {
+    label: 'Une source de fibres',
+    categories: [
+      'Légumineuses',
+      'Céréales & féculents',
+      'Farines',
+      'Fruits',
+      'Légumes',
+      'Oléagineux & graines',
+    ],
+    // Seuil de l'allégation européenne « source de fibres » : 3 g / 100 g.
+    keep: (v) => (v.fiber_g ?? 0) >= 3,
+    sort: 'fiber_g',
+    dir: 'desc',
+    hint: 'Aliments avec au moins 3 g de fibres pour 100 g (seuil européen « source de fibres » ; « riche en fibres » dès 6 g), classés du plus riche au moins riche.',
+  },
+  lipides: {
+    label: 'Une source de bons lipides',
+    categories: [
+      'Oléagineux & graines',
+      'Matières grasses',
+      'Poissons & fruits de mer',
+      'Fruits',
+      'Légumes',
+      'Œufs & produits laitiers',
+    ],
+    // « Bons » lipides = majoritairement insaturés (mono + poly : huile d'olive,
+    // avocat, noix, poissons gras…) ; exclut beurre, huile de coco, crème.
+    keep: (v) => {
+      const share = unsaturatedShare(v);
+      return (v.fat_g ?? 0) >= 5 && share !== null && share >= 65;
+    },
+    sort: 'unsat_share',
+    dir: 'desc',
+    hint: "Aliments avec au moins 5 g de lipides pour 100 g, dont au moins 65 % d'acides gras insaturés (mono + poly), classés par part d'insaturés. Pour les oméga-3, pense aux poissons gras, noix, graines de lin et de chia.",
+  },
 };
 
 const MAX_MATCHES = 40;
 const MAX_LISTED = 250;
-const PER_100G_ONLY: SortKey[] = ['gi', 'protein_density'];
+const PER_100G_ONLY: SortKey[] = ['gi', 'protein_density', 'unsat_share'];
 
 type RowState = FoodValues | null | 'loading' | 'error';
 
@@ -108,10 +147,18 @@ function giForFood(food: ComparableFood): number | null {
   return giFor(food.name) ?? giFor(baseNameForGi(food.name));
 }
 
-/** Valeur pour 100 g ; la densité protéique (g de protéines pour 100 kcal) et
- * l'IG ne dépendent pas de la quantité. */
+/** Part des lipides qui sont insaturés (mono + poly), en %. null si le détail
+ * des acides gras manque (valeurs de référence saisies à la main, par ex.). */
+function unsaturatedShare(v: NutritionPer100g): number | null {
+  if (!v.fat_g || v.fat_monounsaturated_g === null || v.fat_polyunsaturated_g === null) return null;
+  return Math.min(100, ((v.fat_monounsaturated_g + v.fat_polyunsaturated_g) / v.fat_g) * 100);
+}
+
+/** Valeur pour 100 g ; la densité protéique (g de protéines pour 100 kcal),
+ * l'IG et la part d'insaturés ne dépendent pas de la quantité. */
 function metric(values: NutritionPer100g, key: SortKey, gi: number | null): number | null {
   if (key === 'gi') return gi;
+  if (key === 'unsat_share') return unsaturatedShare(values);
   if (key === 'protein_density') {
     if (!values.calories_kcal || values.protein_g === null) return null;
     return (values.protein_g / values.calories_kcal) * 100;
@@ -122,6 +169,7 @@ function metric(values: NutritionPer100g, key: SortKey, gi: number | null): numb
 function formatValue(value: number | null, key: SortKey): string {
   if (value === null) return '—';
   if (key === 'calories_kcal' || key === 'gi') return String(Math.round(value));
+  if (key === 'unsat_share') return `${Math.round(value)} %`;
   return (Math.round(value * 10) / 10).toLocaleString('fr-CH');
 }
 
@@ -216,6 +264,34 @@ export function ComparePage() {
       }
       list.push({ food, state, gi: giForFood(food) });
     }
+    // Alias d'un même aliment (« graine » / « graines de chanvre », « poudre
+    // amande » / « poudre d'amande ») : mêmes valeurs, une seule ligne — on
+    // garde le nom de la liste d'ingrédients, sinon le plus court.
+    const byValues = new Map<string, Row>();
+    const deduped: Row[] = [];
+    for (const row of list) {
+      if (!row.state || typeof row.state !== 'object' || pinnedKeys.has(row.food.key)) {
+        deduped.push(row);
+        continue;
+      }
+      const v = row.state.values;
+      const sig = [row.state.sourceLabel, v.calories_kcal, v.protein_g, v.carbs_g, v.fat_g, v.fiber_g].join('|');
+      const kept = byValues.get(sig);
+      if (!kept) {
+        byValues.set(sig, row);
+        deduped.push(row);
+        continue;
+      }
+      const better =
+        (row.food.referenceItemId && !kept.food.referenceItemId) ||
+        (!!row.food.referenceItemId === !!kept.food.referenceItemId && row.food.name.length < kept.food.name.length);
+      if (better) {
+        deduped[deduped.indexOf(kept)] = row;
+        byValues.set(sig, row);
+      }
+    }
+    list.length = 0;
+    list.push(...deduped);
     const valueOf = (r: Row) => (r.state && typeof r.state === 'object' ? metric(r.state.values, sortKey, r.gi) : null);
     list.sort((a, b) => {
       const va = valueOf(a);

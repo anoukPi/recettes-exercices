@@ -63,6 +63,15 @@ const RULES: [FoodCategory, string[]][] = [
     'emmental', 'comte', 'gruyere', 'parmesan', 'mozzarella', 'feta', 'ricotta', 'chevre', 'buche de chevre',
     'brie', 'camembert', 'roquefort',
   ]],
+  // Avant Fruits/Légumes : « piment d'Espelette » est une épice, pas un légume.
+  ['Condiments, épices & boissons', [
+    'piment d espelette', 'piment de cayenne', 'sel', 'poivre', 'vinaigre', 'moutarde', 'ketchup', 'sauce', 'bouillon', 'pesto', 'harissa', 'tabasco',
+    'nuoc mam', 'capres', 'levure', 'bicarbonate', 'poudre a lever', 'gelatine', 'agar', 'vanille', 'essence',
+    'extrait', 'cannelle', 'cumin', 'curcuma', 'curry', 'paprika', 'muscade', 'herbes', 'thym', 'romarin', 'basilic',
+    'persil', 'coriandre', 'menthe', 'aneth', 'ciboulette', 'origan', 'laurier', 'sauge', 'estragon', 'cerfeuil',
+    'marjolaine', 'sarriette', 'safran', 'cardamome', 'clou', 'anis', 'fenugrec', 'quatre epices', 'zaatar',
+    'wasabi', 'citronnelle', 'eau', 'cafe', 'matcha',
+  ]],
   ['Fruits', [
     'abricot', 'ananas', 'avocat', 'banane', 'cassis', 'cerise', 'citron', 'clementine', 'coing', 'corossol', 'datte',
     'figue', 'fraise', 'framboise', 'fruit', 'goyave', 'grenade', 'groseille', 'kaki', 'kiwi', 'kumquat', 'litchi',
@@ -76,14 +85,6 @@ const RULES: [FoodCategory, string[]][] = [
     'echalote', 'endive', 'epinard', 'fenouil', 'gingembre', 'haricot', 'laitue', 'mais', 'navet', 'oignon', 'olive',
     'oseille', 'panais', 'petit pois', 'piment', 'poireau', 'pois mange tout', 'poivron', 'potimarron', 'potiron',
     'radis', 'raifort', 'roquette', 'rutabaga', 'salade', 'salsifis', 'tomate', 'topinambour', 'truffe', 'algues',
-  ]],
-  ['Condiments, épices & boissons', [
-    'sel', 'poivre', 'vinaigre', 'moutarde', 'ketchup', 'sauce', 'bouillon', 'pesto', 'harissa', 'tabasco',
-    'nuoc mam', 'capres', 'levure', 'bicarbonate', 'poudre a lever', 'gelatine', 'agar', 'vanille', 'essence',
-    'extrait', 'cannelle', 'cumin', 'curcuma', 'curry', 'paprika', 'muscade', 'herbes', 'thym', 'romarin', 'basilic',
-    'persil', 'coriandre', 'menthe', 'aneth', 'ciboulette', 'origan', 'laurier', 'sauge', 'estragon', 'cerfeuil',
-    'marjolaine', 'sarriette', 'safran', 'cardamome', 'clou', 'anis', 'fenugrec', 'quatre epices', 'zaatar',
-    'wasabi', 'citronnelle', 'eau', 'cafe', 'matcha',
   ]],
 ];
 
