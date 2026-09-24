@@ -119,6 +119,10 @@ export interface NutritionPer100g {
   /** Oméga-3 (ALA+EPA+DHA) — souvent absent des données USDA de base : reste
    * null pour beaucoup d'aliments plutôt qu'une estimation inventée. */
   omega3_g: number | null;
+  /** Oméga-6 (surtout acide linoléique) — même prudence que les oméga-3. */
+  omega6_g: number | null;
+  /** Oméga-9 (surtout acide oléique : huile d'olive, avocat, noisettes…). */
+  omega9_g: number | null;
 }
 
 export interface IngredientNutrition extends NutritionPer100g {
@@ -336,5 +340,7 @@ export interface NutritionTotals {
   vitamin_e_mg: number;
   vitamin_b12_mcg: number;
   omega3_g: number;
+  omega6_g: number;
+  omega9_g: number;
   glycemic_load: number;
 }

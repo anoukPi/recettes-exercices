@@ -72,6 +72,9 @@ export function BilanPage() {
       avgProteinGap: average(proteinGaps),
       avgCarbsGap: average(carbsGaps),
       avgFatGap: average(fatGaps),
+      avgOmega3: average(daysWithData.map((d) => d.omega3_g)),
+      avgOmega6: average(daysWithData.map((d) => d.omega6_g)),
+      avgOmega9: average(daysWithData.map((d) => d.omega9_g)),
       activityRate,
       daysWithActivity,
       periodDates,
@@ -153,6 +156,21 @@ export function BilanPage() {
           <span className="bilan-stat-label">Écart lipides (moyenne/jour)</span>
           <span className="bilan-stat-value">{formatGap(stats.avgFatGap, 'g')}</span>
         </div>
+        {(
+          [
+            ['Oméga-3', stats.avgOmega3, dailyTargets?.omega3_g],
+            ['Oméga-6', stats.avgOmega6, dailyTargets?.omega6_g],
+            ['Oméga-9', stats.avgOmega9, dailyTargets?.omega9_g],
+          ] as const
+        ).map(([label, avg, target]) => (
+          <div className="bilan-stat-card" key={label}>
+            <span className="bilan-stat-label">{label} (moyenne/jour)</span>
+            <span className="bilan-stat-value">
+              {avg === null ? '—' : `${(Math.round(avg * 10) / 10).toLocaleString('fr-CH')} g`}
+              {target ? <span className="hint"> / repère {(Math.round(target * 10) / 10).toLocaleString('fr-CH')} g</span> : null}
+            </span>
+          </div>
+        ))}
         <div className="bilan-stat-card">
           <span className="bilan-stat-label">Taux d'activité physique</span>
           <span className="bilan-stat-value">

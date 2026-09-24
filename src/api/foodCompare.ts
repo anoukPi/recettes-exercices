@@ -102,7 +102,7 @@ async function limited<T>(task: () => Promise<T>): Promise<T> {
 // Cache navigateur des aliments calculés à la volée (hors liste d'ingrédients,
 // donc sans cache Supabase) — évite de refaire les appels USDA à chaque visite.
 // Préfixe versionné : à incrémenter si la logique de calcul change.
-const LOCAL_CACHE_PREFIX = 'kaly-compare-v2:';
+const LOCAL_CACHE_PREFIX = 'kaly-compare-v3:';
 const LOCAL_CACHE_TTL_MS = 30 * 24 * 3600 * 1000;
 
 function readLocal(key: string): FoodValues | null | undefined {

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { addDays, formatDateKeyFr, toDateKey } from '../lib/date';
 import { useDayNutrition } from '../lib/useDayNutrition';
-import { targetsBlockedReason, type DailyTargets } from '../lib/dailyNeeds';
+import { OMEGA6_OMEGA3_RATIO_MAX, targetsBlockedReason, type DailyTargets } from '../lib/dailyNeeds';
 import { useSession } from '../lib/auth';
 import { MonthCalendar } from '../components/MonthCalendar';
 import { listCycleEntries } from '../api/cycle';
@@ -101,6 +101,9 @@ const MICRO_GROUPS: { title: string; items: MicroLabel[] }[] = [
     items: [
       { key: 'fat_monounsaturated_g', label: 'Mono-insaturés', unit: 'g' },
       { key: 'fat_polyunsaturated_g', label: 'Poly-insaturés', unit: 'g' },
+      { key: 'omega3_g', label: 'Oméga-3', unit: 'g' },
+      { key: 'omega6_g', label: 'Oméga-6', unit: 'g' },
+      { key: 'omega9_g', label: 'Oméga-9', unit: 'g' },
     ],
   },
   {
@@ -156,13 +159,16 @@ function MacroMeter({
   unit: string;
 }) {
   const status = target ? meterStatus(actual, target) : null;
+  // Petites quantités (oméga-3…) : une décimale, sinon « 1 / 3 g » ne dit rien.
+  const decimals = target !== undefined && target < 10 ? 1 : 0;
+  const fmt = (v: number) => v.toLocaleString('fr-CH', { maximumFractionDigits: decimals, minimumFractionDigits: decimals });
   return (
     <div className="meter-row">
       <div className="meter-row-header">
         <span>{label}</span>
         <span className="meter-row-value">
-          {Math.round(actual)}
-          {target ? ` / ${Math.round(target)} ${unit}` : ` ${unit}`}
+          {fmt(actual)}
+          {target ? ` / ${fmt(target)} ${unit}` : ` ${unit}`}
         </span>
       </div>
       {status && (
@@ -462,6 +468,30 @@ export function JournalPage() {
           )}
         </div>
 
+        {dayTotals.hasAny && (
+          <div className="block b-blanc block-omegas">
+            <h4 className="block-label">Oméga 3 · 6 · 9</h4>
+            <div className="meter-group">
+              <MacroMeter label="Oméga-3" actual={dayTotals.totals.omega3_g} target={dailyTargets?.omega3_g} unit="g" />
+              <MacroMeter label="Oméga-6" actual={dayTotals.totals.omega6_g} target={dailyTargets?.omega6_g} unit="g" />
+              <MacroMeter label="Oméga-9" actual={dayTotals.totals.omega9_g} target={dailyTargets?.omega9_g} unit="g" />
+            </div>
+            {dayTotals.totals.omega3_g > 0 && (
+              <p className="omega-ratio">
+                Rapport oméga-6 / oméga-3 :{' '}
+                <strong>{(dayTotals.totals.omega6_g / dayTotals.totals.omega3_g).toLocaleString('fr-CH', { maximumFractionDigits: 1 })}</strong>{' '}
+                <span className="hint">(repère : moins de {OMEGA6_OMEGA3_RATIO_MAX})</span>
+              </p>
+            )}
+            <p className="hint">
+              Repères ANSES adaptés à ton objectif calorique : oméga-3 = 1 % des calories + 0,5 g
+              d'EPA/DHA (poissons gras) ; oméga-6 = 4 % ; oméga-9 = 15 à 20 %
+              {dailyTargets ? ` (jusqu'à ${Math.round(dailyTargets.omega9_max_g)} g)` : ''}. Un « 0 » peut
+              vouloir dire « non mesuré » : le détail des acides gras manque pour certains aliments.
+            </p>
+          </div>
+        )}
+
         {(activityEntries.length > 0 || bilan) && (
           <div className="block b-corail block-activite">
             <h4 className="block-label">Activité</h4>
@@ -573,7 +603,7 @@ export function JournalPage() {
               <MacroMeter
                 label="Oméga-3"
                 actual={dayTotals.totals.omega3_g}
-                target={CYCLE_NUTRIENT_TARGETS.omega3_g}
+                target={dailyTargets?.omega3_g ?? CYCLE_NUTRIENT_TARGETS.omega3_g}
                 unit="g"
               />
             </div>

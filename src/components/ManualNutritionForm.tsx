@@ -20,6 +20,9 @@ const FIELDS: {
     | 'fat_saturated_g'
     | 'fat_monounsaturated_g'
     | 'fat_polyunsaturated_g'
+    | 'omega3_g'
+    | 'omega6_g'
+    | 'omega9_g'
     | 'fiber_g'
     | 'sugar_g'
     | 'sodium_mg';
@@ -33,6 +36,9 @@ const FIELDS: {
   { key: 'fat_saturated_g', label: 'dont saturés', unit: 'g' },
   { key: 'fat_monounsaturated_g', label: 'dont mono-insaturés', unit: 'g' },
   { key: 'fat_polyunsaturated_g', label: 'dont poly-insaturés', unit: 'g' },
+  { key: 'omega3_g', label: 'dont oméga-3', unit: 'g' },
+  { key: 'omega6_g', label: 'dont oméga-6', unit: 'g' },
+  { key: 'omega9_g', label: 'dont oméga-9', unit: 'g' },
   { key: 'fiber_g', label: 'Fibres', unit: 'g' },
   { key: 'sugar_g', label: 'Sucres', unit: 'g' },
   { key: 'sodium_mg', label: 'Sodium', unit: 'mg' },

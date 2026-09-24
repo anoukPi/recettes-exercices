@@ -20,16 +20,57 @@ function pick(nutrients: UsdaNutrient[], match: (n: UsdaNutrient) => boolean): n
   return found ? found.value : null;
 }
 
-// Oméga-3 = somme des acides gras individuels que l'USDA rapporte séparément
-// (ALA/EPA/DHA) — souvent absents des fiches USDA "de base" (Foundation/SR
-// Legacy n'ont pas toujours le détail), d'où null pour beaucoup d'aliments
-// plutôt qu'une estimation inventée.
-const OMEGA3_PATTERNS = [/18:3 n-3/i, /20:5 n-3/i, /22:6 n-3/i];
+// Oméga-3, 6 et 9 = sommes d'acides gras individuels. L'USDA les nomme par
+// longueur de chaîne (« PUFA 18:2 »…), parfois avec la famille précisée
+// (« PUFA 18:3 n-3 c,c,c (ALA) »), parfois non (« PUFA 18:3 » tout court,
+// fréquent pour les végétaux, où c'est quasi exclusivement de l'ALA). On
+// prend la forme précisée quand elle existe, sinon la forme globale — jamais
+// les deux (double compte). null si aucun acide gras n'est détaillé : pas
+// d'estimation inventée.
+function fattyAcid(nutrients: UsdaNutrient[], ...names: string[]): number | null {
+  for (const name of names) {
+    const found = nutrients.find((x) => x.nutrientName === name && x.unitName.toUpperCase() === 'G');
+    if (found) return found.value;
+  }
+  return null;
+}
 
-function pickOmega3(nutrients: UsdaNutrient[]): number | null {
-  const matches = nutrients.filter((n) => OMEGA3_PATTERNS.some((p) => p.test(n.nutrientName)));
-  if (matches.length === 0) return null;
-  return matches.reduce((sum, n) => sum + n.value, 0);
+function sumOrNull(values: (number | null)[]): number | null {
+  const present = values.filter((v): v is number => v !== null);
+  if (present.length === 0) return null;
+  return Math.max(0, present.reduce((a, b) => a + b, 0));
+}
+
+function pickOmega3(n: UsdaNutrient[]): number | null {
+  const alaDetailed = fattyAcid(n, 'PUFA 18:3 n-3 c,c,c (ALA)');
+  const all183 = fattyAcid(n, 'PUFA 18:3');
+  // 18:3 global = ALA (n-3) + GLA (n-6, rare) : on retire le GLA s'il est connu.
+  const ala = alaDetailed ?? (all183 !== null ? all183 - (fattyAcid(n, 'PUFA 18:3 n-6 c,c,c') ?? 0) : null);
+  return sumOrNull([
+    ala,
+    fattyAcid(n, 'PUFA 18:4'),
+    fattyAcid(n, 'PUFA 20:5 n-3 (EPA)'),
+    fattyAcid(n, 'PUFA 22:5 n-3 (DPA)'),
+    fattyAcid(n, 'PUFA 22:6 n-3 (DHA)'),
+  ]);
+}
+
+function pickOmega6(n: UsdaNutrient[]): number | null {
+  return sumOrNull([
+    fattyAcid(n, 'PUFA 18:2 n-6 c,c', 'PUFA 18:2'), // acide linoléique
+    fattyAcid(n, 'PUFA 18:3 n-6 c,c,c'), // GLA
+    fattyAcid(n, 'PUFA 20:2 n-6 c,c'),
+    fattyAcid(n, 'PUFA 20:3 n-6'),
+    fattyAcid(n, 'PUFA 20:4 n-6', 'PUFA 20:4'), // acide arachidonique
+  ]);
+}
+
+function pickOmega9(n: UsdaNutrient[]): number | null {
+  return sumOrNull([
+    fattyAcid(n, 'MUFA 18:1 c', 'MUFA 18:1'), // acide oléique
+    fattyAcid(n, 'MUFA 20:1 c', 'MUFA 20:1'),
+    fattyAcid(n, 'MUFA 22:1 c', 'MUFA 22:1'),
+  ]);
 }
 
 export function parseNutrition(food: UsdaFood): NutritionPer100g {
@@ -63,6 +104,8 @@ export function parseNutrition(food: UsdaFood): NutritionPer100g {
     vitamin_e_mg: pick(n, (x) => x.nutrientName === 'Vitamin E (alpha-tocopherol)'),
     vitamin_b12_mcg: pick(n, (x) => x.nutrientName === 'Vitamin B-12'),
     omega3_g: pickOmega3(n),
+    omega6_g: pickOmega6(n),
+    omega9_g: pickOmega9(n),
   };
 }
 

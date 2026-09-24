@@ -44,6 +44,14 @@ export interface DailyTargets {
   fat_g: number;
   /** Repère indicatif (OMS/ANSES : ~10% des calories) — pas une limite stricte. */
   fat_saturated_g: number;
+  /** Acides gras essentiels — apports de référence ANSES (2011) pour l'adulte,
+   * rapportés à l'objectif calorique du jour : oméga-3 = ALA 1 % de l'énergie
+   * + 0,5 g d'EPA+DHA ; oméga-6 (acide linoléique) = 4 % ; oméga-9 (acide
+   * oléique) = 15 à 20 %. Repères, pas des prescriptions. */
+  omega3_g: number;
+  omega6_g: number;
+  omega9_g: number;
+  omega9_max_g: number;
   flooredBySafety: boolean;
   /** Métabolisme de base — calories brûlées au repos complet, avant tout mouvement. */
   bmr_kcal: number;
@@ -66,6 +74,12 @@ export function ageFromBirthDate(birthDate: string): number {
 }
 
 const MIN_ADULT_AGE = 18;
+
+// ANSES : 250 mg de DHA + 250 mg d'EPA par jour, en plus de l'ALA.
+const OMEGA3_EPA_DHA_G = 0.5;
+
+/** Rapport oméga-6 / oméga-3 recommandé : moins de 5 (ANSES). */
+export const OMEGA6_OMEGA3_RATIO_MAX = 5;
 
 /** Raison pour laquelle aucun objectif chiffré n'est calculé, même avec un
  * profil complet : situations où Mifflin-St Jeor ne s'applique pas (besoins
@@ -176,6 +190,10 @@ export function computeDailyTargets(
   const carbsCal = Math.max(0, calories - proteinCal - fatCal);
   const carbs_g = carbsCal / 4;
   const fat_saturated_g = (calories * 0.1) / 9;
+  const omega3_g = (calories * 0.01) / 9 + OMEGA3_EPA_DHA_G;
+  const omega6_g = (calories * 0.04) / 9;
+  const omega9_g = (calories * 0.15) / 9;
+  const omega9_max_g = (calories * 0.2) / 9;
 
   return {
     calories_kcal: calories,
@@ -183,6 +201,10 @@ export function computeDailyTargets(
     carbs_g,
     fat_g,
     fat_saturated_g,
+    omega3_g,
+    omega6_g,
+    omega9_g,
+    omega9_max_g,
     flooredBySafety: rawCalories < floor,
     bmr_kcal: bmr,
     tdee_kcal: tdee,

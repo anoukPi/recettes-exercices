@@ -16,6 +16,9 @@ export interface DaySummary {
   protein_g: number;
   carbs_g: number;
   fat_g: number;
+  omega3_g: number;
+  omega6_g: number;
+  omega9_g: number;
   activityCalories: number;
   activities: ActivityEntry[];
   hasData: boolean;
@@ -58,7 +61,7 @@ export function usePeriodSummary(startDate: string, endDate: string) {
         );
 
         const nutritionForEntry = async (entry: JournalEntry) => {
-          const empty = { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
+          const empty = { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, omega3_g: 0, omega6_g: 0, omega9_g: 0 };
           if (entry.kind === 'ingredient') {
             if (!entry.reference_item_id || !entry.unit) return empty;
             const grams = gramsForQuantity(
@@ -76,13 +79,16 @@ export function usePeriodSummary(startDate: string, endDate: string) {
               protein_g: (nutrition.protein_g ?? 0) * factor,
               carbs_g: (nutrition.carbs_g ?? 0) * factor,
               fat_g: (nutrition.fat_g ?? 0) * factor,
+              omega3_g: (nutrition.omega3_g ?? 0) * factor,
+              omega6_g: (nutrition.omega6_g ?? 0) * factor,
+              omega9_g: (nutrition.omega9_g ?? 0) * factor,
             };
           }
 
           if (!entry.recipe_id) return empty;
           const recipe = recipesById.get(entry.recipe_id);
           if (!recipe) return empty;
-          let sum = { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0 };
+          let sum = { ...empty };
           for (const ing of recipe.ingredients) {
             try {
               const qty = parseFloat(ing.quantity.replace(',', '.'));
@@ -98,6 +104,9 @@ export function usePeriodSummary(startDate: string, endDate: string) {
                 protein_g: sum.protein_g + (nutrition.protein_g ?? 0) * factor,
                 carbs_g: sum.carbs_g + (nutrition.carbs_g ?? 0) * factor,
                 fat_g: sum.fat_g + (nutrition.fat_g ?? 0) * factor,
+                omega3_g: sum.omega3_g + (nutrition.omega3_g ?? 0) * factor,
+                omega6_g: sum.omega6_g + (nutrition.omega6_g ?? 0) * factor,
+                omega9_g: sum.omega9_g + (nutrition.omega9_g ?? 0) * factor,
               };
             } catch {
               // un ingrédient en échec ne doit pas casser le calcul du jour entier
@@ -109,6 +118,9 @@ export function usePeriodSummary(startDate: string, endDate: string) {
             protein_g: sum.protein_g * portionFactor,
             carbs_g: sum.carbs_g * portionFactor,
             fat_g: sum.fat_g * portionFactor,
+            omega3_g: sum.omega3_g * portionFactor,
+            omega6_g: sum.omega6_g * portionFactor,
+            omega9_g: sum.omega9_g * portionFactor,
           };
         };
 
@@ -121,6 +133,9 @@ export function usePeriodSummary(startDate: string, endDate: string) {
               protein_g: 0,
               carbs_g: 0,
               fat_g: 0,
+              omega3_g: 0,
+              omega6_g: 0,
+              omega9_g: 0,
               activityCalories: 0,
               activities: [],
               hasData: false,
@@ -138,6 +153,9 @@ export function usePeriodSummary(startDate: string, endDate: string) {
             day.protein_g += nutrition.protein_g;
             day.carbs_g += nutrition.carbs_g;
             day.fat_g += nutrition.fat_g;
+            day.omega3_g += nutrition.omega3_g;
+            day.omega6_g += nutrition.omega6_g;
+            day.omega9_g += nutrition.omega9_g;
             day.hasData = true;
           } catch {
             // une entrée en échec ne doit pas casser le résumé de toute la période

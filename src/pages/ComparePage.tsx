@@ -22,7 +22,10 @@ type SortKey =
   | 'fiber_g'
   | 'sugar_g'
   | 'gi'
-  | 'unsat_share';
+  | 'unsat_share'
+  | 'omega3_g'
+  | 'omega6_g'
+  | 'omega9_g';
 
 const COLUMNS: { key: SortKey; label: string }[] = [
   { key: 'calories_kcal', label: 'kcal' },
@@ -34,6 +37,9 @@ const COLUMNS: { key: SortKey; label: string }[] = [
   { key: 'gi', label: 'IG' },
   { key: 'protein_density', label: 'Prot./100 kcal' },
   { key: 'unsat_share', label: '% insat.' },
+  { key: 'omega3_g', label: 'Ω-3' },
+  { key: 'omega6_g', label: 'Ω-6' },
+  { key: 'omega9_g', label: 'Ω-9' },
 ];
 
 // Les questions qu'on se pose le plus souvent, en un tap.
@@ -46,6 +52,7 @@ const QUESTIONS: { label: string; key: SortKey; dir: 'asc' | 'desc' }[] = [
   { label: 'Le moins gras', key: 'fat_g', dir: 'asc' },
   { label: 'Le plus de fibres', key: 'fiber_g', dir: 'desc' },
   { label: 'Les meilleurs lipides', key: 'unsat_share', dir: 'desc' },
+  { label: "Le plus d'oméga-3", key: 'omega3_g', dir: 'desc' },
   { label: 'Le moins sucré', key: 'sugar_g', dir: 'asc' },
 ];
 

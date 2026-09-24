@@ -168,6 +168,18 @@ export function RecipeDetailPage() {
                     <span>dont saturés</span>
                     <span>{Math.round(nutrition.totals.fat_saturated_g * 10) / 10} g</span>
                   </li>
+                  <li>
+                    <span>Oméga-3</span>
+                    <span>{Math.round(nutrition.totals.omega3_g * 10) / 10} g</span>
+                  </li>
+                  <li>
+                    <span>Oméga-6</span>
+                    <span>{Math.round(nutrition.totals.omega6_g * 10) / 10} g</span>
+                  </li>
+                  <li>
+                    <span>Oméga-9</span>
+                    <span>{Math.round(nutrition.totals.omega9_g * 10) / 10} g</span>
+                  </li>
                 </ul>
               </details>
               {nutrition.approx && (

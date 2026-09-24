@@ -27,7 +27,7 @@ const NUTRIENT_KEYS: (keyof NutritionPer100g)[] = [
   'calories_kcal', 'protein_g', 'carbs_g', 'fat_g', 'fat_saturated_g', 'fat_monounsaturated_g',
   'fat_polyunsaturated_g', 'fiber_g', 'sugar_g', 'sodium_mg', 'calcium_mg', 'iron_mg', 'potassium_mg',
   'magnesium_mg', 'zinc_mg', 'vitamin_a_mcg', 'vitamin_c_mg', 'vitamin_d_mcg', 'vitamin_e_mg',
-  'vitamin_b12_mcg', 'omega3_g',
+  'vitamin_b12_mcg', 'omega3_g', 'omega6_g', 'omega9_g',
 ];
 
 function fillNulls(values: Partial<NutritionPer100g>): NutritionPer100g {
