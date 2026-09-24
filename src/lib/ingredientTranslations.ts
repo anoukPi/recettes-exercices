@@ -22,7 +22,7 @@ export const INGREDIENT_EN: Record<string, string> = {
   'oignon jaune': 'yellow onion', 'oignon rouge': 'red onion',
   'olive verte': 'green olive', panais: 'parsnip',
   'petit pois': 'green peas', piment: 'chili pepper',
-  'piment doux': 'sweet pepper', poireau: 'leek',
+  'piment doux': 'sweet pepper',
   'poivron jaune': 'sweet pepper yellow raw', 'poivron rouge': 'sweet pepper red raw',
   'poivron vert': 'sweet pepper green raw', 'pomme de terre': 'potato flesh and skin raw',
   potiron: 'pumpkin', raifort: 'horseradish',

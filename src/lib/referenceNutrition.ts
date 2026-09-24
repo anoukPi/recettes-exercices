@@ -120,6 +120,13 @@ export const REFERENCE_NUTRITION: Record<string, ReferenceNutrition> = {
   'viande sechée': VIANDE_SECHEE,
   'viande des grisons': VIANDE_SECHEE,
 
+  // La fiche USDA « Leeks, raw » (61 kcal) décrit surtout le blanc, plus dense
+  // (83 % d'eau) ; le poireau frais entier en contient ~91 %.
+  poireau: {
+    label: 'Poireau frais, cru (CIQUAL)',
+    values: { calories_kcal: 27, protein_g: 1.2, carbs_g: 3.1, fat_g: 0.3, fiber_g: 3.3, sugar_g: 2.8 },
+  },
+
   'farine de châtaigne': {
     label: 'Farine de châtaigne',
     values: { calories_kcal: 360, protein_g: 6, carbs_g: 70, fat_g: 3.7, fiber_g: 11, sugar_g: 20 },
