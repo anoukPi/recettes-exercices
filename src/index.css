@@ -1,58 +1,82 @@
+/* Kaly — direction « Color block » (voir DESIGN.md de l'atelier UX du
+   24/09/2026). Palette d'Anouk : vert d'eau, bleu pétrole, corail, beige,
+   noir. Exclus : brun, rose, vert basique, orange, rouge — y compris pour les
+   erreurs (texte noir + repère corail). Une couleur = un sens : pétrole =
+   calories/données, vert d'eau = macros/sélection, corail = activité/ajout,
+   noir = navigation/actions. */
 :root {
   color-scheme: light;
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: 'Nunito', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+  font-weight: 500;
   line-height: 1.5;
 
-  --bg: #faf8f3;
+  --petrole: #0e4e5c;
+  --petrole-deep: #093a45;
+  --eau: #9edbcf;
+  --eau-soft: #ddf2ec;
+  --corail: #ff6f61;
+  --corail-soft: #ffe0d9;
+  --noir: #121212;
+  --on-dark: #ffffff;
+
+  --bg: #f2ece3;
+  --bg-deep: #e8dfd2;
   --surface: #ffffff;
-  --surface-muted: #f3f1ea;
-  --text: #201f1a;
-  --text-muted: #6f6a5e;
-  --border: #e6e1d4;
+  --surface-muted: #f7f3ed;
+  --text: #121212;
+  --text-muted: #5c5a56;
+  --border: #e4dcd0;
 
-  --primary: #2f6b4f;
-  --primary-hover: #244f3b;
-  --primary-soft: #e4efe7;
-  --accent: #c96a35;
-  --accent-soft: #f7e6d8;
+  /* Rôles sémantiques (utilisés partout dans la feuille) */
+  --primary: #121212;
+  --primary-hover: #2b2b2b;
+  --primary-soft: #ddf2ec;
+  --on-primary: #ffffff;
+  --accent: #2c8a7b;
+  --accent-soft: #ddf2ec;
 
-  --success: #2f6b4f;
-  --success-soft: #e4efe7;
-  --warning: #9a6b00;
-  --warning-soft: #fdf1d6;
-  --danger: #b23b2e;
-  --danger-soft: #fbe8e5;
+  --success: #0e4e5c;
+  --success-soft: #ddf2ec;
+  --warning: #ff6f61;
+  --warning-soft: #ffe0d9;
+  --danger: #e2574a;
+  --danger-soft: #ffe0d9;
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --shadow-card: 0 1px 2px rgba(32, 31, 26, 0.04), 0 2px 8px rgba(32, 31, 26, 0.05);
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --shadow-card: 0 2px 10px rgba(18, 18, 18, 0.05);
 
-  --font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --font-display: 'Nunito', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+  --sidebar-width: 232px;
+  --tabbar-height: 68px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --bg: #17181a;
-    --surface: #202225;
-    --surface-muted: #26282b;
-    --text: #ede9e0;
-    --text-muted: #9a9689;
-    --border: #34363a;
+    --bg: #0f0f0f;
+    --bg-deep: #181818;
+    --surface: #1c1c1c;
+    --surface-muted: #232323;
+    --text: #f2ece3;
+    --text-muted: #a8a39b;
+    --border: #2c2c2c;
 
-    --primary: #5ea582;
-    --primary-hover: #7ec19f;
-    --primary-soft: #22362c;
-    --accent: #e08b54;
-    --accent-soft: #3a2c22;
+    --primary: #9edbcf;
+    --primary-hover: #b8e6dd;
+    --primary-soft: #1f3a36;
+    --on-primary: #121212;
+    --accent: #9edbcf;
+    --accent-soft: #1f3a36;
 
-    --success: #5ea582;
-    --success-soft: #22362c;
-    --warning: #e0b34d;
-    --warning-soft: #3a3117;
-    --danger: #e2796a;
-    --danger-soft: #3a221f;
+    --success: #9edbcf;
+    --success-soft: #1f3a36;
+    --warning: #ff6f61;
+    --warning-soft: #3a2320;
+    --danger: #ff8a7e;
+    --danger-soft: #3a2320;
+    --shadow-card: none;
   }
 }
 
@@ -71,65 +95,305 @@ h2,
 h3,
 h4 {
   font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
+
+h2 {
+  font-size: 1.65rem;
+  line-height: 1.15;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--eau);
+  outline-offset: 2px;
+}
+
+/* ---------- Structure de l'app : barre du bas (mobile) / menu latéral ---------- */
 
 .app {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 1.5rem;
+  min-height: 100vh;
 }
 
-.app-header {
+.app-main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.1rem 1rem calc(var(--tabbar-height) + 2.5rem);
+}
+
+.app-topbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.85rem;
+  padding: 0.9rem 1rem 0;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
-.app-header h1 {
-  font-size: 1.4rem;
-  margin: 0;
-  color: var(--primary);
-}
-
-.nav-select {
-  padding: 0.55rem 1rem;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: var(--surface);
+.app-logo {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.55rem;
+  letter-spacing: -0.03em;
   color: var(--text);
-  font-size: 0.95rem;
-  font-weight: 500;
-  box-shadow: var(--shadow-card);
+  margin: 0;
 }
 
-.app-nav-primary {
+.app-logo span {
+  color: var(--corail);
+}
+
+.app-sidebar {
+  display: none;
+}
+
+.app-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 40;
+  height: calc(var(--tabbar-height) + env(safe-area-inset-bottom));
+  padding: 0 0.5rem env(safe-area-inset-bottom);
+  background: var(--noir);
+  border-radius: 24px 24px 0 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+}
+
+.tab-item {
+  background: none;
+  border: none;
+  color: #a8a39b;
+  font-size: 0.68rem;
+  font-weight: 700;
   display: flex;
-  gap: 0.4rem;
-  overflow-x: auto;
-  margin-bottom: 1.75rem;
-  padding-bottom: 0.1rem;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 0;
+  cursor: pointer;
 }
 
-.app-nav-link {
-  flex: 1 1 0;
-  white-space: nowrap;
-  padding: 0.5rem 0.55rem;
-  border-radius: 999px;
-  border: 1px solid var(--border);
+.tab-item svg {
+  width: 22px;
+  height: 22px;
+}
+
+.tab-item.active {
+  color: var(--eau);
+}
+
+.tab-add {
+  justify-self: center;
+  width: 56px;
+  height: 56px;
+  margin-top: -30px;
+  border-radius: 50%;
+  border: 4px solid var(--bg);
+  background: var(--corail);
+  color: var(--noir);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 8px 20px rgba(255, 111, 97, 0.45);
+  cursor: pointer;
+}
+
+.tab-add svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* Feuille (menu « Plus » et « Ajouter ») qui monte depuis le bas */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(18, 18, 18, 0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sheet {
+  width: 100%;
+  max-width: 520px;
   background: var(--surface);
-  color: var(--text-muted);
-  font-size: 0.82rem;
-  font-weight: 600;
-  text-align: center;
+  border-radius: 28px 28px 0 0;
+  padding: 0.75rem 1rem calc(1.25rem + env(safe-area-inset-bottom));
 }
 
-.app-nav-link.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: #fff;
+.sheet-handle {
+  width: 40px;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--border);
+  margin: 0 auto 0.9rem;
+}
+
+.sheet h3 {
+  margin: 0 0.25rem 0.75rem;
+  font-size: 1.1rem;
+}
+
+.sheet-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.6rem;
+}
+
+.sheet-link {
+  border: none;
+  border-radius: 20px;
+  padding: 1rem;
+  text-align: left;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--noir);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  cursor: pointer;
+}
+
+.sheet-link svg {
+  width: 24px;
+  height: 24px;
+}
+
+.sheet-grid.three {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.sheet-grid.three .sheet-link {
+  align-items: center;
+  text-align: center;
+  font-size: 0.85rem;
+  padding: 0.9rem 0.5rem;
+}
+
+.sheet-link small {
+  font-weight: 600;
+  font-size: 0.75rem;
+  opacity: 0.72;
+}
+
+.sheet-link.b-petrole {
+  background: var(--petrole);
+  color: var(--on-dark);
+}
+
+.sheet-link.b-eau {
+  background: var(--eau);
+}
+
+.sheet-link.b-corail {
+  background: var(--corail);
+}
+
+.sheet-link.active {
+  outline: 3px solid var(--noir);
+}
+
+@media (min-width: 900px) {
+  .app {
+    display: grid;
+    grid-template-columns: var(--sidebar-width) 1fr;
+  }
+
+  .app-topbar,
+  .app-tabbar {
+    display: none;
+  }
+
+  .app-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    padding: 1.6rem 1rem;
+    background: var(--noir);
+    color: var(--on-dark);
+  }
+
+  .app-sidebar .app-logo {
+    color: var(--eau);
+    margin: 0 0.75rem 1.5rem;
+    font-size: 1.8rem;
+  }
+
+  .sidebar-add {
+    margin: 0 0.25rem 1.25rem;
+    padding: 0.7rem 1rem;
+    border: none;
+    border-radius: 999px;
+    background: var(--corail);
+    color: var(--noir);
+    font-weight: 800;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    cursor: pointer;
+  }
+
+  .sidebar-add svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.62rem 0.9rem;
+    border: none;
+    border-radius: 999px;
+    background: none;
+    color: #bdb8b0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .sidebar-link svg {
+    width: 20px;
+    height: 20px;
+    flex: none;
+  }
+
+  .sidebar-link:hover {
+    color: var(--on-dark);
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .sidebar-link.active {
+    background: var(--eau);
+    color: var(--noir);
+  }
+
+  .sidebar-spacer {
+    flex: 1;
+  }
+
+  .app-main {
+    max-width: 1280px;
+    width: 100%;
+    padding: 2rem 2.25rem 3rem;
+  }
 }
 
 .reference-manager {
@@ -213,7 +477,7 @@ h4 {
   border: none;
   border-radius: var(--radius-sm);
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .reference-add-form button:hover {
@@ -956,7 +1220,7 @@ h4 {
 .feeling-btn.active {
   background: var(--primary);
   border-color: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .activity-detail-line {
@@ -1088,7 +1352,7 @@ h4 {
 
 .endorsement button.endorsed {
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .profile-section {
@@ -1133,7 +1397,7 @@ h4 {
   border: none;
   border-radius: 999px;
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .profile-form button[type='submit']:hover {
@@ -1259,7 +1523,7 @@ h4 {
   border: none;
   border-radius: 999px;
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .journal-add-forms {
@@ -1360,7 +1624,7 @@ h4 {
   border: none;
   border-radius: 999px;
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .journal-add-form button[type='submit']:hover {
@@ -1384,7 +1648,7 @@ a.button {
   display: inline-block;
   padding: 0.55rem 1.2rem;
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
   border-radius: 999px;
   text-decoration: none;
   font-weight: 500;
@@ -1435,7 +1699,7 @@ a.button:hover {
 
 .tag-chip.selected {
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
   border-color: var(--primary);
 }
 
@@ -1766,7 +2030,7 @@ a.button:hover {
   align-self: flex-start;
   padding: 0.6rem 1.3rem;
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
   border: none;
   border-radius: 999px;
 }
@@ -1928,7 +2192,7 @@ a.button:hover {
   border: none;
   border-radius: 999px;
   background: var(--primary);
-  color: #fff;
+  color: var(--on-primary);
 }
 
 .compare-controls button[type='submit']:disabled {
@@ -2048,4 +2312,350 @@ a.button:hover {
   flex-direction: column;
   gap: 0.15rem;
   min-width: 0;
+}
+
+/* ======================================================================
+   Color block — blocs de couleur pleine, cartes, harmonisation générale
+   (DESIGN.md de l'atelier UX du 24/09/2026). Placé en fin de feuille pour
+   primer sur les styles historiques de même spécificité.
+   ====================================================================== */
+
+/* --- Carnet : grille de blocs --- */
+.journal-blocks {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+@media (min-width: 900px) {
+  .journal-blocks {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    align-items: start;
+  }
+}
+
+@media (min-width: 1200px) {
+  .journal-blocks {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.block {
+  border-radius: var(--radius-lg);
+  padding: 1.15rem 1.2rem;
+  min-width: 0;
+}
+
+.block-label {
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.block-number-line {
+  margin: 0 0 0.6rem;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.5rem;
+}
+
+.block-number {
+  font-family: var(--font-display);
+  font-size: 2.75rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+.block-caption {
+  font-size: 0.9rem;
+  font-weight: 700;
+  opacity: 0.8;
+}
+
+.block-meta {
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+.block-progress {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  overflow: hidden;
+  margin-bottom: 0.25rem;
+}
+
+.block-progress > div {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--eau);
+}
+
+/* Couleurs pleines : le texte est fixé (pas de var(--text)) pour rester
+   lisible dans les deux modes — les blocs gardent leurs teintes en sombre. */
+.b-petrole {
+  background: var(--petrole);
+  color: var(--on-dark);
+}
+
+.b-eau {
+  background: var(--eau);
+  color: var(--noir);
+}
+
+.b-corail {
+  background: var(--corail);
+  color: var(--noir);
+}
+
+.b-noir {
+  background: var(--noir);
+  color: var(--on-dark);
+}
+
+.b-blanc {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-card);
+}
+
+.b-petrole a,
+.b-noir a {
+  color: var(--eau);
+}
+
+.b-eau a,
+.b-corail a {
+  color: var(--noir);
+  font-weight: 700;
+}
+
+.b-petrole .hint,
+.b-noir .hint {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.b-eau .hint,
+.b-corail .hint {
+  color: rgba(18, 18, 18, 0.72);
+}
+
+.b-eau .meter-row-value,
+.b-corail .meter-row-value {
+  color: var(--noir);
+  font-weight: 700;
+}
+
+.b-eau .meter-track,
+.b-corail .meter-track {
+  background: rgba(18, 18, 18, 0.12);
+}
+
+.b-eau .gi-appreciation,
+.b-corail .gi-appreciation {
+  color: var(--noir);
+  font-weight: 800;
+}
+
+.b-eau .warning-hint,
+.b-corail .warning-hint {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.b-corail .activity-summary-list li {
+  border-color: rgba(18, 18, 18, 0.15);
+}
+
+.b-corail .activity-summary-list .hint {
+  color: var(--noir);
+}
+
+/* --- Jauges : pétrole = dans la cible, corail = écart (jamais de rouge) --- */
+.meter-track {
+  height: 10px;
+}
+
+.meter-fill.meter-ok {
+  background: var(--petrole);
+}
+
+.meter-fill.meter-under {
+  background: rgba(14, 78, 92, 0.45);
+}
+
+.meter-fill.meter-over,
+.meter-fill.meter-far {
+  background: var(--corail);
+}
+
+@media (prefers-color-scheme: dark) {
+  .b-blanc .meter-fill.meter-ok {
+    background: var(--eau);
+  }
+}
+
+.meter-row-header {
+  font-weight: 700;
+}
+
+/* --- Alertes et erreurs : texte noir + repère corail --- */
+.warning-hint {
+  color: var(--text);
+  background: var(--warning-soft);
+  border: none;
+  border-left: 4px solid var(--corail);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.85rem;
+  font-weight: 600;
+}
+
+.error {
+  color: var(--text);
+  background: var(--danger-soft);
+  border-left: 4px solid var(--corail);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.8rem;
+  font-weight: 700;
+}
+
+/* --- Sélecteur de date du Carnet --- */
+.journal-date-nav {
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 0.35rem;
+  box-shadow: var(--shadow-card);
+}
+
+.journal-date-nav button {
+  border: none;
+  border-radius: 999px;
+  background: var(--bg);
+  font-weight: 700;
+  padding: 0.5rem 0.9rem;
+}
+
+.journal-date-label strong {
+  font-weight: 800;
+  font-size: 1.05rem;
+}
+
+.journal-date-picker {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+/* --- Cartes, listes, boutons --- */
+.summary-card,
+.card,
+.journal-entry,
+.detail,
+.auth-status {
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.card {
+  padding: 1.1rem 1.2rem;
+}
+
+.card h3 {
+  font-weight: 800;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(18, 18, 18, 0.1);
+}
+
+.library-header h2 {
+  margin: 0;
+}
+
+a.button,
+.entry-form > button[type='submit'],
+.profile-form button[type='submit'],
+.auth-status button[type='submit'],
+.journal-add-form button[type='submit'],
+.compare-controls button[type='submit'] {
+  font-weight: 800;
+  border-radius: 999px;
+}
+
+.tag-chip {
+  font-weight: 700;
+  padding: 0.4rem 0.9rem;
+  border-color: transparent;
+  box-shadow: var(--shadow-card);
+}
+
+.tag-chip.selected {
+  box-shadow: none;
+}
+
+.field input,
+.field textarea,
+.field select,
+.search-input {
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus,
+.search-input:focus {
+  border-color: var(--petrole);
+  outline: none;
+}
+
+/* --- Espace Entraînement (Séances + Exercices) --- */
+.training-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.training-header h2 {
+  margin: 0;
+}
+
+.section-tabs {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* --- Feuilles sur grand écran : fenêtre centrée plutôt que bas d'écran --- */
+@media (min-width: 900px) {
+  .sheet-backdrop {
+    align-items: center;
+  }
+
+  .sheet {
+    border-radius: 28px;
+    max-width: 460px;
+    padding-bottom: 1.25rem;
+  }
+
+  .sheet-handle {
+    display: none;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
 }

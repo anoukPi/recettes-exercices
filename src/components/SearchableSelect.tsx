@@ -9,6 +9,8 @@ interface SearchableSelectProps {
   placeholder?: string;
   onAddNew?: (value: string) => void;
   allowNew?: boolean;
+  /** Libellé du choix de création (défaut : « Ajouter »). */
+  newLabel?: string;
   maxResults?: number;
   className?: string;
 }
@@ -22,6 +24,7 @@ export function SearchableSelect({
   className,
   onAddNew,
   allowNew = true,
+  newLabel = 'Ajouter',
   maxResults = 8,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
@@ -117,7 +120,7 @@ export function SearchableSelect({
           {showAddNew && (
             <li className="add-new-option">
               <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={handleAddNew}>
-                + Ajouter « {trimmedValue} »
+                + {newLabel} « {trimmedValue} »
               </button>
             </li>
           )}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SearchableSelect } from './SearchableSelect';
-import { listExercises } from '../api/exercises';
+import { createExercise, listExercises } from '../api/exercises';
 import { EXERCISE_INTENSITY_LEVELS, type Exercise, type ExerciseIntensity, type WorkoutSessionExercise } from '../types';
 
 interface WorkoutExerciseListEditorProps {
@@ -8,12 +8,16 @@ interface WorkoutExerciseListEditorProps {
   onChange: (rows: WorkoutSessionExercise[]) => void;
 }
 
-/** Compose une séance en choisissant des exercices de la bibliothèque —
- * même logique que les ingrédients d'une recette, mais on sélectionne dans
- * une liste fermée (pas de création à la volée, un exercice mérite sa propre
- * fiche avec photo/description). */
+/** Compose une séance en choisissant des exercices de la bibliothèque. Un
+ * exercice absent peut être créé sur place (décision UX du 24/09/2026) : il
+ * rejoint la bibliothèque avec son seul nom, à compléter plus tard dans sa
+ * fiche (photo, muscles, description). */
 export function WorkoutExerciseListEditor({ rows, onChange }: WorkoutExerciseListEditorProps) {
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  // Texte tapé dans chaque ligne, tant qu'il ne correspond pas (encore) à un
+  // exercice de la bibliothèque — sans ça, le champ se vidait à chaque lettre.
+  const [drafts, setDrafts] = useState<Record<number, string>>({});
+  const [createError, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
     listExercises().then(setExercises).catch(() => {});
@@ -31,11 +35,54 @@ export function WorkoutExerciseListEditor({ rows, onChange }: WorkoutExerciseLis
 
   const setRowName = (index: number, name: string) => {
     const match = exerciseByTitle.get(name.trim().toLowerCase());
+    setDrafts((prev) => ({ ...prev, [index]: name }));
     updateRow(index, { exercise_id: match?.id ?? '' });
+  };
+
+  const createAndSelect = async (index: number, name: string) => {
+    const title = name.trim();
+    if (!title) return;
+    const existing = exerciseByTitle.get(title.toLowerCase());
+    if (existing) {
+      updateRow(index, { exercise_id: existing.id });
+      return;
+    }
+    setCreateError(null);
+    try {
+      const created = await createExercise({
+        title,
+        instagram_link: null,
+        photo_url: null,
+        video_url: null,
+        muscles: [],
+        description: null,
+        tags: [],
+        notes: null,
+      });
+      setExercises((prev) => [created, ...prev]);
+      setDrafts((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
+      updateRow(index, { exercise_id: created.id });
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "L'exercice n'a pas pu être créé.");
+    }
   };
 
   const removeRow = (index: number) => {
     onChange(rows.filter((_, i) => i !== index));
+    // Les brouillons sont indexés par position : on décale ceux d'après.
+    setDrafts((prev) => {
+      const next: Record<number, string> = {};
+      for (const [k, v] of Object.entries(prev)) {
+        const i = Number(k);
+        if (i < index) next[i] = v;
+        else if (i > index) next[i - 1] = v;
+      }
+      return next;
+    });
   };
 
   const addRow = () => {
@@ -55,11 +102,11 @@ export function WorkoutExerciseListEditor({ rows, onChange }: WorkoutExerciseLis
   return (
     <div className="field">
       <label>Exercices de la séance</label>
-      {exercises.length === 0 && (
-        <p className="hint">
-          Ajoute d'abord des exercices dans ta bibliothèque pour pouvoir composer une séance.
-        </p>
-      )}
+      <p className="hint">
+        Tape le nom d'un exercice : choisis-le dans ta bibliothèque, ou crée-le sur place s'il
+        n'existe pas encore (tu pourras compléter sa fiche plus tard).
+      </p>
+      {createError && <p className="error">{createError}</p>}
       <p className="hint">
         Durée et intensité sont indicatives (le plan) — tu pourras les ajuster au moment de loguer
         la séance, la réalité variant souvent d'une fois à l'autre.
@@ -70,11 +117,13 @@ export function WorkoutExerciseListEditor({ rows, onChange }: WorkoutExerciseLis
             <SearchableSelect
               id={`workout-exercise-${index}`}
               className="workout-exercise-name-field"
-              value={exerciseById.get(row.exercise_id)?.title ?? ''}
+              value={exerciseById.get(row.exercise_id)?.title ?? drafts[index] ?? ''}
               onChange={(v) => setRowName(index, v)}
+              onAddNew={(v) => void createAndSelect(index, v)}
               options={exercises.map((e) => e.title)}
               placeholder="Exercice"
-              allowNew={false}
+              newLabel="Créer l'exercice"
+
             />
             <div className="workout-exercise-row-rest">
               <input

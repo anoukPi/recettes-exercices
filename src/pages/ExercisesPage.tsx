@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { LibraryView } from '../components/LibraryView';
+import { TrainingTabs } from '../components/TrainingTabs';
 import { listExercises } from '../api/exercises';
 import type { Exercise } from '../types';
 
@@ -18,10 +18,8 @@ export function ExercisesPage() {
 
   return (
     <>
-      <p className="hint">
-        <Link to="/sessions">Voir mes séances →</Link> (des exercices assemblés avec séries,
-        répétitions et repos, à reloguer facilement)
-      </p>
+      <TrainingTabs />
+      <p className="hint">Ta bibliothèque d'exercices, à assembler ensuite en séances.</p>
       <LibraryView
         title="Exercices"
         items={items}

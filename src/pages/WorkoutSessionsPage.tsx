@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { LibraryView } from '../components/LibraryView';
+import { TrainingTabs } from '../components/TrainingTabs';
 import { listWorkoutSessions } from '../api/workoutSessions';
 import type { WorkoutSession } from '../types';
 
@@ -22,14 +23,21 @@ export function WorkoutSessionsPage() {
   }));
 
   return (
-    <LibraryView
-      title="Séances"
-      items={items}
-      loading={loading}
-      error={error}
-      newPath="/sessions/new"
-      newLabel="+ Créer une séance"
-      detailPath={(id) => `/sessions/${id}`}
-    />
+    <>
+      <TrainingTabs />
+      <p className="hint">
+        Assemble tes exercices en séances (séries, répétitions, repos) — autant que tu veux, et tu
+        peux créer un nouvel exercice directement en composant une séance.
+      </p>
+      <LibraryView
+        title="Séances"
+        items={items}
+        loading={loading}
+        error={error}
+        newPath="/sessions/new"
+        newLabel="+ Créer une séance"
+        detailPath={(id) => `/sessions/${id}`}
+      />
+    </>
   );
 }
