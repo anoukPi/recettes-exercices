@@ -35,7 +35,11 @@ function pickOmega3(nutrients: UsdaNutrient[]): number | null {
 export function parseNutrition(food: UsdaFood): NutritionPer100g {
   const n = food.foodNutrients ?? [];
   return {
-    calories_kcal: pick(n, (x) => x.nutrientName === 'Energy' && x.unitName === 'KCAL'),
+    // Les fiches Foundation récentes n'ont parfois que « Energy (Atwater General
+    // Factors) » : repli seulement si la valeur « Energy » classique manque.
+    calories_kcal:
+      pick(n, (x) => x.nutrientName === 'Energy' && x.unitName === 'KCAL') ??
+      pick(n, (x) => x.nutrientName === 'Energy (Atwater General Factors)' && x.unitName === 'KCAL'),
     protein_g: pick(n, (x) => x.nutrientName.startsWith('Protein')),
     carbs_g: pick(n, (x) => x.nutrientName.startsWith('Carbohydrate, by difference')),
     fat_g: pick(n, (x) => x.nutrientName === 'Total lipid (fat)'),

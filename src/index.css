@@ -1881,6 +1881,22 @@ a.button:hover {
 }
 
 /* Page Comparer */
+.compare-goals {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.compare-label {
+  font-weight: 600;
+}
+
+.compare-goals .tag-filter {
+  margin: 0;
+}
+
 .compare-controls {
   display: flex;
   flex-wrap: wrap;
@@ -1892,6 +1908,15 @@ a.button:hover {
 .compare-controls .field {
   flex: 1 1 12rem;
   min-width: 0;
+}
+
+.compare-controls .field select {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
 }
 
 .compare-controls .compare-grams {

@@ -4,28 +4,34 @@ import {
   matchesSearch,
   normalizeForSearch,
   searchUsda,
+  translateToEnglish,
   valuesForFood,
   type ComparableFood,
   type FoodValues,
 } from '../api/foodCompare';
+import { baseNameForGi, categoryFor, FOOD_CATEGORIES, type FoodCategory } from '../lib/foodCategories';
+import { giFor } from '../lib/glycemicIndex';
 import type { NutritionPer100g } from '../types';
 
-type SortKey = 'calories_kcal' | 'protein_g' | 'protein_density' | 'carbs_g' | 'fat_g' | 'fiber_g' | 'sugar_g';
+type SortKey =
+  | 'calories_kcal'
+  | 'protein_g'
+  | 'protein_density'
+  | 'carbs_g'
+  | 'fat_g'
+  | 'fiber_g'
+  | 'sugar_g'
+  | 'gi';
 
-interface Column {
-  key: SortKey;
-  label: string;
-  unit: string;
-}
-
-const COLUMNS: Column[] = [
-  { key: 'calories_kcal', label: 'kcal', unit: '' },
-  { key: 'protein_g', label: 'Prot.', unit: 'g' },
-  { key: 'carbs_g', label: 'Gluc.', unit: 'g' },
-  { key: 'fat_g', label: 'Lip.', unit: 'g' },
-  { key: 'fiber_g', label: 'Fibres', unit: 'g' },
-  { key: 'sugar_g', label: 'Sucres', unit: 'g' },
-  { key: 'protein_density', label: 'Prot./100 kcal', unit: 'g' },
+const COLUMNS: { key: SortKey; label: string }[] = [
+  { key: 'calories_kcal', label: 'kcal' },
+  { key: 'protein_g', label: 'Prot.' },
+  { key: 'carbs_g', label: 'Gluc.' },
+  { key: 'fat_g', label: 'Lip.' },
+  { key: 'fiber_g', label: 'Fibres' },
+  { key: 'sugar_g', label: 'Sucres' },
+  { key: 'gi', label: 'IG' },
+  { key: 'protein_density', label: 'Prot./100 kcal' },
 ];
 
 // Les questions qu'on se pose le plus souvent, en un tap.
@@ -34,21 +40,78 @@ const QUESTIONS: { label: string; key: SortKey; dir: 'asc' | 'desc' }[] = [
   { label: 'Le plus protéiné', key: 'protein_g', dir: 'desc' },
   { label: 'Le plus de protéines par calorie', key: 'protein_density', dir: 'desc' },
   { label: 'Le moins de glucides', key: 'carbs_g', dir: 'asc' },
+  { label: "L'IG le plus bas", key: 'gi', dir: 'asc' },
   { label: 'Le moins gras', key: 'fat_g', dir: 'asc' },
   { label: 'Le plus de fibres', key: 'fiber_g', dir: 'desc' },
   { label: 'Le moins sucré', key: 'sugar_g', dir: 'asc' },
 ];
 
+// « Je cherche une source de… » : familles candidates, critère pour garder un
+// aliment une fois ses valeurs connues, et classement par défaut (ce qui rend
+// une source « intéressante » : beaucoup de protéines pour peu de calories ;
+// des glucides à IG bas).
+type Goal = 'proteines' | 'glucides';
+const GOALS: Record<
+  Goal,
+  {
+    label: string;
+    categories: FoodCategory[];
+    keep: (v: NutritionPer100g) => boolean;
+    sort: SortKey;
+    dir: 'asc' | 'desc';
+    hint: string;
+  }
+> = {
+  proteines: {
+    label: 'Une source de protéines',
+    categories: [
+      'Viandes',
+      'Poissons & fruits de mer',
+      'Œufs & produits laitiers',
+      'Légumineuses',
+      'Alternatives végétales',
+      'Oléagineux & graines',
+      'Céréales & féculents',
+      'Farines',
+    ],
+    keep: (v) => !!v.calories_kcal && (v.protein_g ?? 0) >= 5 && ((v.protein_g ?? 0) * 4) / v.calories_kcal >= 0.2,
+    sort: 'protein_density',
+    dir: 'desc',
+    hint: 'Aliments dont au moins 20 % des calories viennent des protéines, classés par protéines pour 100 kcal.',
+  },
+  glucides: {
+    label: 'Une source de glucides',
+    // Féculents seulement : fruits et légumes à IG bas (cassis, échalote…)
+    // passeraient devant sans être de vraies bases de repas.
+    categories: ['Céréales & féculents', 'Farines', 'Légumineuses'],
+    keep: (v) => !!v.calories_kcal && (v.carbs_g ?? 0) >= 10 && ((v.carbs_g ?? 0) * 4) / v.calories_kcal >= 0.4,
+    sort: 'gi',
+    dir: 'asc',
+    hint: 'Céréales, féculents, farines et légumineuses dont au moins 40 % des calories viennent des glucides, classés par IG (le plus bas en premier). Regarde aussi les fibres.',
+  },
+};
+
 const MAX_MATCHES = 40;
+const MAX_LISTED = 250;
+const PER_100G_ONLY: SortKey[] = ['gi', 'protein_density'];
+
+type RowState = FoodValues | null | 'loading' | 'error';
 
 interface Row {
   food: ComparableFood;
-  state: FoodValues | null | 'loading' | 'error';
+  state: RowState;
+  gi: number | null;
 }
 
-/** Valeur pour 100 g ; la densité protéique (g de protéines pour 100 kcal) ne
- * dépend pas de la quantité. */
-function metric(values: NutritionPer100g, key: SortKey): number | null {
+function giForFood(food: ComparableFood): number | null {
+  if (food.key.startsWith('usda:')) return null;
+  return giFor(food.name) ?? giFor(baseNameForGi(food.name));
+}
+
+/** Valeur pour 100 g ; la densité protéique (g de protéines pour 100 kcal) et
+ * l'IG ne dépendent pas de la quantité. */
+function metric(values: NutritionPer100g, key: SortKey, gi: number | null): number | null {
+  if (key === 'gi') return gi;
   if (key === 'protein_density') {
     if (!values.calories_kcal || values.protein_g === null) return null;
     return (values.protein_g / values.calories_kcal) * 100;
@@ -58,7 +121,7 @@ function metric(values: NutritionPer100g, key: SortKey): number | null {
 
 function formatValue(value: number | null, key: SortKey): string {
   if (value === null) return '—';
-  if (key === 'calories_kcal') return String(Math.round(value));
+  if (key === 'calories_kcal' || key === 'gi') return String(Math.round(value));
   return (Math.round(value * 10) / 10).toLocaleString('fr-CH');
 }
 
@@ -66,12 +129,17 @@ export function ComparePage() {
   const [foods, setFoods] = useState<ComparableFood[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<FoodCategory | ''>('');
+  const [goal, setGoal] = useState<Goal | null>(null);
   const [grams, setGrams] = useState('100');
   const [sortKey, setSortKey] = useState<SortKey>('calories_kcal');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
-  const [states, setStates] = useState<Record<string, Row['state']>>({});
+  const [states, setStates] = useState<Record<string, RowState>>({});
   const [pinned, setPinned] = useState<ComparableFood[]>([]);
 
+  const [frenchQuery, setFrenchQuery] = useState('');
+  const [translating, setTranslating] = useState(false);
+  const [translationNote, setTranslationNote] = useState<string | null>(null);
   const [usdaQuery, setUsdaQuery] = useState('');
   const [usdaResults, setUsdaResults] = useState<Awaited<ReturnType<typeof searchUsda>> | null>(null);
   const [usdaLoading, setUsdaLoading] = useState(false);
@@ -83,23 +151,34 @@ export function ComparePage() {
       .catch((err) => setLoadError(err instanceof Error ? err.message : 'Erreur de chargement.'));
   }, []);
 
-  const matches = useMemo(() => {
+  const categoryByKey = useMemo(() => new Map(foods.map((f) => [f.key, categoryFor(f.name)])), [foods]);
+
+  const candidates = useMemo(() => {
     const q = normalizeForSearch(query);
-    if (q.length < 2) return [];
-    return foods.filter((f) => matchesSearch(f.name, q)).slice(0, MAX_MATCHES);
-  }, [foods, query]);
+    const hasQuery = q.length >= 2;
+    if (!hasQuery && !category && !goal) return [];
+    const allowed = goal ? new Set<FoodCategory>(GOALS[goal].categories) : null;
+    const list = foods.filter((f) => {
+      const c = categoryByKey.get(f.key) ?? null;
+      if (category && c !== category) return false;
+      if (allowed && (!c || !allowed.has(c))) return false;
+      if (hasQuery && !matchesSearch(f.name, q)) return false;
+      return true;
+    });
+    return list.slice(0, hasQuery && !category && !goal ? MAX_MATCHES : MAX_LISTED);
+  }, [foods, categoryByKey, query, category, goal]);
 
   const visibleFoods = useMemo(() => {
     const seen = new Set<string>();
     const list: ComparableFood[] = [];
-    for (const f of [...pinned, ...matches]) {
+    for (const f of [...pinned, ...candidates]) {
       if (!seen.has(f.key)) {
         seen.add(f.key);
         list.push(f);
       }
     }
     return list;
-  }, [pinned, matches]);
+  }, [pinned, candidates]);
 
   // Charge les valeurs des aliments affichés qui ne le sont pas encore (tant
   // qu'une valeur manque, la ligne s'affiche « Chargement… »).
@@ -118,17 +197,27 @@ export function ComparePage() {
   }, [visibleFoods]);
 
   const factor = (parseFloat(grams.replace(',', '.')) || 100) / 100;
-  const pinnedKeys = new Set(pinned.map((f) => f.key));
+  const pinnedKeys = useMemo(() => new Set(pinned.map((f) => f.key)), [pinned]);
 
-  const rows: Row[] = useMemo(() => {
-    // null = aucune donnée pour cet aliment (≠ pas encore chargé).
-    const withState = visibleFoods.map((food) => ({
-      food,
-      state: food.key in states ? states[food.key] : ('loading' as const),
-    }));
-    const valueOf = (r: Row) =>
-      r.state && typeof r.state === 'object' ? metric(r.state.values, sortKey) : null;
-    return withState.sort((a, b) => {
+  const { rows, pendingCount } = useMemo(() => {
+    let pending = 0;
+    const list: Row[] = [];
+    for (const food of visibleFoods) {
+      // null = aucune donnée pour cet aliment (≠ pas encore chargé).
+      const state: RowState = food.key in states ? states[food.key] : 'loading';
+      if (goal && !pinnedKeys.has(food.key)) {
+        // En mode « source de… », seuls les aliments qui passent le critère
+        // s'affichent ; ceux encore en chargement sont comptés à part.
+        if (state === 'loading') {
+          pending++;
+          continue;
+        }
+        if (!state || state === 'error' || !GOALS[goal].keep(state.values)) continue;
+      }
+      list.push({ food, state, gi: giForFood(food) });
+    }
+    const valueOf = (r: Row) => (r.state && typeof r.state === 'object' ? metric(r.state.values, sortKey, r.gi) : null);
+    list.sort((a, b) => {
       const va = valueOf(a);
       const vb = valueOf(b);
       if (va === null && vb === null) return a.food.name.localeCompare(b.food.name, 'fr');
@@ -136,10 +225,12 @@ export function ComparePage() {
       if (vb === null) return -1;
       return sortDir === 'asc' ? va - vb : vb - va;
     });
-  }, [visibleFoods, states, sortKey, sortDir]);
+    return { rows: list, pendingCount: pending };
+  }, [visibleFoods, states, sortKey, sortDir, goal, pinnedKeys]);
 
-  const bestKey = rows.find((r) => r.state && typeof r.state === 'object' && metric(r.state.values, sortKey) !== null)
-    ?.food.key;
+  const bestKey = rows.find(
+    (r) => r.state && typeof r.state === 'object' && metric(r.state.values, sortKey, r.gi) !== null,
+  )?.food.key;
 
   const chooseSort = (key: SortKey, dir?: 'asc' | 'desc') => {
     if (dir) {
@@ -149,26 +240,63 @@ export function ComparePage() {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortKey(key);
-      setSortDir(key === 'calories_kcal' || key === 'fat_g' || key === 'sugar_g' || key === 'carbs_g' ? 'asc' : 'desc');
+      setSortDir(['calories_kcal', 'fat_g', 'sugar_g', 'carbs_g', 'gi'].includes(key) ? 'asc' : 'desc');
     }
   };
 
-  const togglePin = (food: ComparableFood) => {
-    setPinned((prev) => (prev.some((f) => f.key === food.key) ? prev.filter((f) => f.key !== food.key) : [...prev, food]));
+  const chooseGoal = (g: Goal) => {
+    if (goal === g) {
+      setGoal(null);
+      return;
+    }
+    setGoal(g);
+    chooseSort(GOALS[g].sort, GOALS[g].dir);
   };
 
-  const handleUsdaSearch = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!usdaQuery.trim()) return;
+  const togglePin = (food: ComparableFood) => {
+    setPinned((prev) =>
+      prev.some((f) => f.key === food.key) ? prev.filter((f) => f.key !== food.key) : [...prev, food],
+    );
+  };
+
+  const runUsdaSearch = async (english: string) => {
+    if (!english.trim()) return;
     setUsdaLoading(true);
     setUsdaError(null);
     try {
-      setUsdaResults(await searchUsda(usdaQuery.trim()));
+      setUsdaResults(await searchUsda(english.trim()));
     } catch (err) {
       setUsdaError(err instanceof Error ? err.message : 'La recherche a échoué.');
     } finally {
       setUsdaLoading(false);
     }
+  };
+
+  const handleTranslate = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!frenchQuery.trim()) return;
+    setTranslating(true);
+    setUsdaError(null);
+    setTranslationNote(null);
+    try {
+      const { text, source } = await translateToEnglish(frenchQuery);
+      setUsdaQuery(text);
+      setTranslationNote(
+        source === 'kaly'
+          ? `Traduction du dictionnaire Kaly : « ${text} ».`
+          : `Traduction automatique : « ${text} » — vérifie-la, corrige-la au besoin puis relance la recherche.`,
+      );
+      await runUsdaSearch(text);
+    } catch (err) {
+      setUsdaError(err instanceof Error ? err.message : 'La traduction a échoué.');
+    } finally {
+      setTranslating(false);
+    }
+  };
+
+  const handleUsdaSearch = (e: FormEvent) => {
+    e.preventDefault();
+    void runUsdaSearch(usdaQuery);
   };
 
   const addUsdaFood = (r: NonNullable<typeof usdaResults>[number]) => {
@@ -184,15 +312,47 @@ export function ComparePage() {
     <section className="compare-page">
       <h2>Comparer des aliments</h2>
       <p className="hint">
-        Cherche une famille d'aliments (farine, fromage, riz…) puis choisis ta question. Valeurs pour
-        l'aliment cru ou sec, sauf mention « cuit » ou « en conserve ». Touche ☆ pour garder un
-        aliment dans la comparaison quand tu changes de recherche.
+        Choisis ce que tu cherches, une famille ou un nom, puis ta question. Valeurs pour l'aliment
+        cru ou sec, sauf mention « cuit » ou « en conserve ». Touche ☆ pour garder un aliment dans la
+        comparaison quand tu changes de recherche.
       </p>
       {loadError && <p className="error">{loadError}</p>}
 
+      <div className="compare-goals">
+        <span className="compare-label">Je cherche</span>
+        <div className="tag-filter">
+          {(Object.keys(GOALS) as Goal[]).map((g) => (
+            <button
+              key={g}
+              type="button"
+              className={`tag-chip${goal === g ? ' selected' : ''}`}
+              onClick={() => chooseGoal(g)}
+            >
+              {GOALS[g].label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {goal && <p className="hint">{GOALS[goal].hint}</p>}
+
       <div className="compare-controls">
         <div className="field">
-          <label htmlFor="compare-search">Aliment</label>
+          <label htmlFor="compare-category">Famille</label>
+          <select
+            id="compare-category"
+            value={category}
+            onChange={(e) => setCategory(e.target.value as FoodCategory | '')}
+          >
+            <option value="">Toutes</option>
+            {FOOD_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="compare-search">Nom</label>
           <input
             id="compare-search"
             type="search"
@@ -228,14 +388,19 @@ export function ComparePage() {
         ))}
       </div>
 
-      {query.trim().length >= 2 && matches.length === 0 && (
+      {query.trim().length >= 2 && candidates.length === 0 && (
         <p className="hint">
-          Aucun aliment connu ne contient « {query.trim()} ». Essaie un autre mot, ou teste-le
+          Aucun aliment connu ne correspond. Essaie un autre mot, une autre famille, ou teste-le
           directement dans la base USDA ci-dessous.
         </p>
       )}
-      {matches.length === MAX_MATCHES && (
-        <p className="hint">Seuls les {MAX_MATCHES} premiers résultats sont affichés — précise ta recherche.</p>
+      {pendingCount > 0 && (
+        <p className="hint">
+          Calcul en cours pour {pendingCount} aliment{pendingCount > 1 ? 's' : ''}…
+        </p>
+      )}
+      {sortKey === 'gi' && rows.length > 0 && (
+        <p className="hint">IG du guide de référence : les aliments sans IG connu sont classés à la fin.</p>
       )}
 
       {rows.length > 0 && (
@@ -261,7 +426,7 @@ export function ComparePage() {
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ food, state }) => (
+              {rows.map(({ food, state, gi }) => (
                 <tr key={food.key} className={food.key === bestKey ? 'compare-best' : undefined}>
                   <th scope="row" className="compare-name-col">
                     <button
@@ -290,8 +455,8 @@ export function ComparePage() {
                   {state &&
                     typeof state === 'object' &&
                     COLUMNS.map((c) => {
-                      const raw = metric(state.values, c.key);
-                      const shown = raw === null ? null : c.key === 'protein_density' ? raw : raw * factor;
+                      const raw = metric(state.values, c.key, gi);
+                      const shown = raw === null || PER_100G_ONLY.includes(c.key) ? raw : raw * factor;
                       return (
                         <td key={c.key} className={sortKey === c.key ? 'active' : undefined}>
                           {formatValue(shown, c.key)}
@@ -304,13 +469,34 @@ export function ComparePage() {
           </table>
         </div>
       )}
+      {goal && rows.length === 0 && pendingCount === 0 && candidates.length > 0 && (
+        <p className="hint">Aucun aliment de cette sélection ne correspond au critère.</p>
+      )}
 
       <div className="compare-usda">
         <h3>Tester un aliment dans la base USDA</h3>
         <p className="hint">
-          Pour un aliment que Kaly ne connaît pas encore. La base USDA est en anglais (ex. « spelt
-          flour », « cottage cheese ») : choisis la bonne fiche et ajoute-la à la comparaison.
+          Pour un aliment que Kaly ne connaît pas encore. La base USDA est en anglais : écris le nom en
+          français et traduis-le, ou tape directement le nom anglais. Choisis ensuite la bonne fiche
+          et ajoute-la à la comparaison.
         </p>
+        <form className="compare-controls" onSubmit={handleTranslate}>
+          <div className="field">
+            <label htmlFor="compare-french">Nom en français</label>
+            <input
+              id="compare-french"
+              type="search"
+              value={frenchQuery}
+              onChange={(e) => setFrenchQuery(e.target.value)}
+              placeholder="ex. farine d'épeautre"
+              autoComplete="off"
+            />
+          </div>
+          <button type="submit" disabled={translating || !frenchQuery.trim()}>
+            {translating ? 'Traduction…' : 'Traduire et chercher'}
+          </button>
+        </form>
+        {translationNote && <p className="hint">{translationNote}</p>}
         <form className="compare-controls" onSubmit={handleUsdaSearch}>
           <div className="field">
             <label htmlFor="compare-usda">Nom en anglais</label>

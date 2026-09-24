@@ -134,6 +134,7 @@ export const INGREDIENT_FDC_ID: Record<string, number> = {
 
   // Féculents
   "flocons d'avoine": 173904, // Cereals, oats, regular and quick, dry
+  "farine d'avoine": 2261421, // Flour, oat, whole grain (Foundation)
   farine: 169761, // Wheat flour, white, all-purpose, unenriched
   'farine de blé': 169761,
   boulgour: 170688, // Bulgur, dry
