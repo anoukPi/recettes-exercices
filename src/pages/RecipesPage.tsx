@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { LibraryView } from '../components/LibraryView';
+import { RecipeImage } from '../components/RecipeImage';
 import { listRecipes, getFavoriteRecipeIds } from '../api/recipes';
 import { listMyEndorsedRecipeIds } from '../api/endorsements';
 import { useSession } from '../lib/auth';
@@ -54,7 +55,7 @@ export function RecipesPage() {
       .catch(() => setTestedIds(new Set()));
   }, [session]);
 
-  const { byId: nutritionById } = useRecipesNutrition(recipes);
+  const { byId: nutritionById, loading: nutritionLoading } = useRecipesNutrition(recipes);
 
   const usedCategories = useMemo(() => {
     const set = new Set(recipes.map((r) => r.category).filter((c): c is string => !!c));
@@ -76,10 +77,81 @@ export function RecipesPage() {
     () =>
       filteredByCategory.map((r) => ({
         ...r,
+        // Titre + tags suffisent à la recherche ; la carte affiche le reste.
+        photo_url: null,
         subtitle: recipeSubtitle(r, testedIds.has(r.id), favoriteIds.has(r.id), nutritionById[r.id]),
       })),
     [filteredByCategory, nutritionById, favoriteIds, testedIds],
   );
+
+  const recipesById = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
+
+  const renderCard = (item: { id: string }) => {
+    const r = recipesById.get(item.id);
+    if (!r) return null;
+    const n = nutritionById[r.id];
+    const perPart = n && r.servings ? n.calories / r.servings : null;
+    return (
+      <>
+        <div className="recipe-card-media">
+          <RecipeImage recipe={r} />
+          <div className="recipe-card-badges">
+            {testedIds.has(r.id) && <span title="Déjà testée">✅</span>}
+            {favoriteIds.has(r.id) && <span title="Favorite du mois">⭐</span>}
+          </div>
+          {r.category && (
+            <span className="recipe-card-category">
+              {RECIPE_CATEGORY_EMOJI[r.category] ?? '📦'} {r.category}
+            </span>
+          )}
+        </div>
+        <div className="recipe-card-body">
+          <h3>{r.title}</h3>
+          {n ? (
+            <>
+              <p className="recipe-card-kcal">
+                {perPart !== null ? (
+                  <>
+                    <strong>
+                      {n.approx ? '≈ ' : ''}
+                      {Math.round(perPart)} kcal
+                    </strong>{' '}
+                    / part · {r.servings} parts
+                  </>
+                ) : (
+                  <>
+                    <strong>
+                      {n.approx ? '≈ ' : ''}
+                      {Math.round(n.calories)} kcal
+                    </strong>{' '}
+                    la recette
+                  </>
+                )}
+                {n.avgGi !== null && <span className="recipe-card-ig">IG {Math.round(n.avgGi)}</span>}
+              </p>
+              <div
+                className="macro-bar"
+                role="img"
+                aria-label={`Protéines ${n.proteinPct} %, glucides ${n.carbsPct} %, lipides ${n.fatPct} %`}
+              >
+                <span className="macro-p" style={{ flex: n.proteinPct || 0.001 }} />
+                <span className="macro-g" style={{ flex: n.carbsPct || 0.001 }} />
+                <span className="macro-l" style={{ flex: n.fatPct || 0.001 }} />
+              </div>
+              <p className="recipe-card-macros">
+                <span>P {n.proteinPct}%</span>
+                <span>G {n.carbsPct}%</span>
+                <span>L {n.fatPct}%</span>
+                {n.partial && <span title="Certains ingrédients n'ont pas pu être comptés">⚠️ partiel</span>}
+              </p>
+            </>
+          ) : (
+            <p className="recipe-card-kcal hint">{nutritionLoading ? 'Calcul des calories…' : 'Calories non calculables'}</p>
+          )}
+        </div>
+      </>
+    );
+  };
 
   return (
     <>
@@ -123,6 +195,8 @@ export function RecipesPage() {
         newPath="/recipes/new"
         newLabel="+ Ajouter une recette"
         detailPath={(id) => `/recipes/${id}`}
+        renderCard={renderCard}
+        gridClassName="recipe-grid"
       />
     </>
   );

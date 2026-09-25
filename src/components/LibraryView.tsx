@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 
 interface LibraryItem {
@@ -17,6 +17,9 @@ interface LibraryViewProps<T extends LibraryItem> {
   newPath: string;
   newLabel: string;
   detailPath: (id: string) => string;
+  /** Carte personnalisée (ex. recettes avec image) ; sinon la carte simple. */
+  renderCard?: (item: T) => ReactNode;
+  gridClassName?: string;
 }
 
 export function LibraryView<T extends LibraryItem>({
@@ -27,6 +30,8 @@ export function LibraryView<T extends LibraryItem>({
   newPath,
   newLabel,
   detailPath,
+  renderCard,
+  gridClassName = 'grid',
 }: LibraryViewProps<T>) {
   const [search, setSearch] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -99,8 +104,13 @@ export function LibraryView<T extends LibraryItem>({
         <p className="empty">Rien à afficher pour l'instant.</p>
       )}
 
-      <div className="grid">
-        {filtered.map((item) => (
+      <div className={gridClassName}>
+        {filtered.map((item) =>
+          renderCard ? (
+            <Link key={item.id} to={detailPath(item.id)} className="recipe-card">
+              {renderCard(item)}
+            </Link>
+          ) : (
           <Link key={item.id} to={detailPath(item.id)} className="card">
             {item.photo_url && <img src={item.photo_url} alt="" className="card-photo" />}
             <h3>{item.title}</h3>
@@ -115,7 +125,8 @@ export function LibraryView<T extends LibraryItem>({
               </div>
             )}
           </Link>
-        ))}
+          ),
+        )}
       </div>
     </section>
   );

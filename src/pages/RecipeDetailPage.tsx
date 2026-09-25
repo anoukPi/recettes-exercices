@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { RecipeForm } from '../components/RecipeForm';
-import { deleteRecipe, duplicateRecipe, getRecipe, updateRecipe } from '../api/recipes';
+import { deleteRecipe, duplicateRecipe, getRecipe, updateRecipe, updateRecipeServings } from '../api/recipes';
+import { RecipeImage } from '../components/RecipeImage';
 import {
   endorseRecipe,
   listEndorsementCounts,
@@ -23,6 +24,20 @@ export function RecipeDetailPage() {
   const [editing, setEditing] = useState(false);
   const [endorsed, setEndorsed] = useState(false);
   const [endorsementCount, setEndorsementCount] = useState(0);
+  const [servingsInput, setServingsInput] = useState('');
+  const [servingsError, setServingsError] = useState<string | null>(null);
+
+  const saveServings = async () => {
+    if (!recipe) return;
+    const n = Number(servingsInput);
+    if (!Number.isInteger(n) || n < 1 || n > 200) {
+      setServingsError('Un nombre entier de 1 à 200.');
+      return;
+    }
+    setServingsError(null);
+    setRecipe(await updateRecipeServings(recipe.id, n));
+    setServingsInput('');
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -93,14 +108,47 @@ export function RecipeDetailPage() {
       <Link to="/recipes" className="back-link">
         ← Recettes
       </Link>
-      <h2>
-        {recipe.category && <span title={recipe.category}>{RECIPE_CATEGORY_EMOJI[recipe.category] ?? '📦'} </span>}
-        {recipe.title}
-      </h2>
-      {recipe.category && <p className="hint">{recipe.category}</p>}
-
-      {recipe.photo_url && (
-        <img src={recipe.photo_url} alt={recipe.title} className="detail-photo" />
+      <RecipeImage recipe={recipe} className="recipe-hero" />
+      <h2 className="recipe-detail-title">{recipe.title}</h2>
+      <div className="recipe-detail-chips">
+        {recipe.category && (
+          <span className="recipe-chip">
+            {RECIPE_CATEGORY_EMOJI[recipe.category] ?? '📦'} {recipe.category}
+          </span>
+        )}
+        {recipe.servings ? (
+          <span className="recipe-chip recipe-chip-parts">🍽️ {recipe.servings} parts</span>
+        ) : (
+          <span className="recipe-chip recipe-chip-missing">🍽️ Nombre de parts à renseigner</span>
+        )}
+        {nutrition?.anyFound && recipe.servings && (
+          <span className="recipe-chip">
+            🔥 {nutrition.approx ? '≈ ' : ''}
+            {Math.round(nutrition.totals.calories_kcal / recipe.servings)} kcal / part
+          </span>
+        )}
+      </div>
+      {!recipe.servings && session?.user.id === recipe.user_id && (
+        <div className="recipe-servings-quick">
+          <label htmlFor="recipe-servings-quick">La recette entière fait combien de parts ?</label>
+          <div>
+            <input
+              id="recipe-servings-quick"
+              type="number"
+              inputMode="numeric"
+              min={1}
+              max={200}
+              step={1}
+              value={servingsInput}
+              onChange={(e) => setServingsInput(e.target.value)}
+              placeholder="ex. 10"
+            />
+            <button type="button" onClick={saveServings} disabled={!servingsInput}>
+              Enregistrer
+            </button>
+          </div>
+          {servingsError && <p className="error">{servingsError}</p>}
+        </div>
       )}
 
       {recipe.instagram_link && (
@@ -134,10 +182,30 @@ export function RecipeDetailPage() {
 
       {recipe.ingredients.length > 0 && (
         <div className="summary-card">
-          <h4>Valeurs nutritionnelles (recette entière)</h4>
+          <h4>Valeurs nutritionnelles</h4>
           {nutritionLoading && <p className="hint">Calcul en cours…</p>}
+          {!nutritionLoading && nutrition?.anyFound && recipe.servings && (
+            <div className="recipe-per-part">
+              <span className="recipe-per-part-label">Pour 1 part (1/{recipe.servings} de la recette)</span>
+              <div className="recipe-per-part-values">
+                <span>
+                  <strong>{Math.round(nutrition.totals.calories_kcal / recipe.servings)}</strong> kcal
+                </span>
+                <span>
+                  <strong>{Math.round(nutrition.totals.protein_g / recipe.servings)}</strong> g protéines
+                </span>
+                <span>
+                  <strong>{Math.round(nutrition.totals.carbs_g / recipe.servings)}</strong> g glucides
+                </span>
+                <span>
+                  <strong>{Math.round(nutrition.totals.fat_g / recipe.servings)}</strong> g lipides
+                </span>
+              </div>
+            </div>
+          )}
           {!nutritionLoading && nutrition?.anyFound && (
             <>
+              <p className="recipe-whole-label">Recette entière</p>
               <p className="hint">
                 {Math.round(nutrition.totals.calories_kcal)} kcal · {Math.round(nutrition.totals.protein_g)} g
                 protéines · {Math.round(nutrition.totals.carbs_g)} g glucides · {Math.round(nutrition.totals.fat_g)}{' '}
@@ -194,10 +262,12 @@ export function RecipeDetailPage() {
                   (mesure inconnue, ingrédient introuvable). Le total ci-dessus les exclut.
                 </p>
               )}
-              <p className="hint">
-                Ceci est le total pour la recette telle qu'écrite, pas "par portion" — la recette
-                n'a pas de nombre de portions défini.
-              </p>
+              {!recipe.servings && (
+                <p className="hint">
+                  Ces valeurs sont pour la recette entière. Renseigne son nombre de parts pour voir les
+                  valeurs d'une part.
+                </p>
+              )}
             </>
           )}
           {!nutritionLoading && !nutrition?.anyFound && (

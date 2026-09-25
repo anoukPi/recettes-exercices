@@ -12,6 +12,10 @@ export interface Recipe {
   title: string;
   instagram_link: string | null;
   photo_url: string | null;
+  /** Image générée par IA quand il n'y a pas de photo (jamais à la place d'une photo). */
+  ai_image_url: string | null;
+  /** Nombre de parts que fait la recette entière — null tant qu'il n'est pas renseigné. */
+  servings: number | null;
   ingredients: RecipeIngredient[];
   steps: string | null;
   tags: string[];
@@ -20,7 +24,7 @@ export interface Recipe {
   created_at: string;
 }
 
-export type RecipeInput = Omit<Recipe, 'id' | 'created_at'>;
+export type RecipeInput = Omit<Recipe, 'id' | 'created_at' | 'ai_image_url'>;
 
 export const RECIPE_CATEGORIES = [
   'Pain', 'Banana bread', 'Gâteau', 'Cookie', 'Dessert', 'Viande', 'Poisson',

@@ -15,7 +15,8 @@ import {
   type FrequentJournalItem,
 } from '../api/journal';
 import { addReferenceItem, listReferenceItems, type ReferenceItem } from '../api/referenceItems';
-import { listRecipes } from '../api/recipes';
+import { listRecipes, updateRecipeServings } from '../api/recipes';
+import { describeRecipeQuantity, formatPercentOfRecipe, fractionToParts, partsToFraction } from '../lib/recipeParts';
 import { useSession } from '../lib/auth';
 import { ManualNutritionForm } from '../components/ManualNutritionForm';
 import { MEALS, type JournalEntry, type Recipe } from '../types';
@@ -38,6 +39,8 @@ export function MealsPage() {
   const [ingQty, setIngQty] = useState('');
   const [ingUnit, setIngUnit] = useState('');
   const [ingError, setIngError] = useState<string | null>(null);
+  /** Nombre de parts saisi ici quand la recette n'en a pas encore. */
+  const [newServings, setNewServings] = useState('');
 
   const [selectedMeal, setSelectedMeal] = useState<string>(defaultMealForNow());
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
@@ -58,6 +61,8 @@ export function MealsPage() {
     return map;
   }, [ingredientItems]);
 
+  const recipeById = useMemo(() => new Map(recipes.map((r) => [r.id, r])), [recipes]);
+
   const recipeByTitle = useMemo(() => {
     const map = new Map<string, Recipe>();
     for (const r of recipes) map.set(r.title.toLowerCase(), r);
@@ -77,13 +82,26 @@ export function MealsPage() {
   };
 
   const selectedRecipe = recipeByTitle.get(ingName.trim().toLowerCase());
+  const typedServings = Number(newServings);
+  const recipeServings =
+    selectedRecipe?.servings ??
+    (Number.isInteger(typedServings) && typedServings >= 1 && typedServings <= 200 ? typedServings : null);
+  const partsNumber = parseFloat(ingQty.replace(',', '.'));
+  const partsFraction =
+    recipeServings && !Number.isNaN(partsNumber) && partsNumber > 0 ? partsToFraction(partsNumber, recipeServings) : null;
   const [dismissedAmbiguous, setDismissedAmbiguous] = useState<string | null>(null);
   const ambiguousVariants =
     ingName.trim().toLowerCase() !== dismissedAmbiguous ? disambiguationFor(ingName) : null;
 
   const handleIngNameChange = (name: string) => {
     setIngName(name);
-    if (!ingUnit && !recipeByTitle.has(name.trim().toLowerCase())) {
+    if (recipeByTitle.has(name.trim().toLowerCase())) {
+      // Un plat : on note des parts, 1 par défaut.
+      setIngQty((q) => q || '1');
+      setNewServings('');
+      return;
+    }
+    if (!ingUnit) {
       const suggested = suggestUnit(name);
       if (suggested) setIngUnit(suggested);
     }
@@ -108,24 +126,35 @@ export function MealsPage() {
     const qty = parseFloat(ingQty.replace(',', '.'));
 
     if (selectedRecipe) {
-      if (Number.isNaN(qty)) {
-        setIngError('Renseigne un nombre de portions valide.');
+      if (!recipeServings) {
+        setIngError('Indique en combien de parts se coupe la recette entière (nombre entier).');
+        return;
+      }
+      if (Number.isNaN(qty) || qty <= 0) {
+        setIngError('Indique combien de parts tu as mangées.');
         return;
       }
       try {
+        // Recette sans nombre de parts : on l'enregistre une fois pour toutes
+        // (seulement si c'est ta recette — sinon il sert juste à ce repas).
+        if (!selectedRecipe.servings && selectedRecipe.user_id === session?.user.id) {
+          const updated = await updateRecipeServings(selectedRecipe.id, recipeServings);
+          setRecipes((prev) => prev.map((r) => (r.id === updated.id ? updated : r)));
+        }
         await addJournalEntry({
           entry_date: dateKey,
           kind: 'recipe',
           reference_item_id: null,
           recipe_id: selectedRecipe.id,
           label: selectedRecipe.title,
-          quantity: qty,
+          quantity: partsToFraction(qty, recipeServings),
           unit: null,
           meal: selectedMeal,
         });
         setIngName('');
         setIngQty('');
         setIngUnit('');
+        setNewServings('');
         reload();
       } catch (err) {
         setIngError(err instanceof Error ? err.message : 'Une erreur est survenue.');
@@ -182,9 +211,15 @@ export function MealsPage() {
     setEntries((prev) => prev.filter((e) => e.id !== id));
   };
 
+  const servingsOf = (entry: JournalEntry) =>
+    entry.kind === 'recipe' && entry.recipe_id ? (recipeById.get(entry.recipe_id)?.servings ?? null) : null;
+
+  // Une recette avec un nombre de parts se modifie en parts ; sinon en
+  // fraction de la recette, comme avant.
   const startEditQty = (entry: JournalEntry) => {
     setEditingEntryId(entry.id);
-    setEditingQty(String(entry.quantity));
+    const servings = servingsOf(entry);
+    setEditingQty(String(servings ? fractionToParts(entry.quantity, servings) : entry.quantity));
   };
 
   const cancelEditQty = () => {
@@ -192,10 +227,12 @@ export function MealsPage() {
     setEditingQty('');
   };
 
-  const saveEditQty = async (id: string) => {
+  const saveEditQty = async (entry: JournalEntry) => {
     const qty = parseFloat(editingQty.replace(',', '.'));
     if (Number.isNaN(qty) || qty <= 0) return;
-    const updated = await updateJournalEntryQuantity(id, qty);
+    const servings = servingsOf(entry);
+    const id = entry.id;
+    const updated = await updateJournalEntryQuantity(id, servings ? partsToFraction(qty, servings) : qty);
     setEntries((prev) => prev.map((e) => (e.id === id ? updated : e)));
     cancelEditQty();
   };
@@ -292,7 +329,10 @@ export function MealsPage() {
                           onChange={(e) => setEditingQty(e.target.value)}
                           autoFocus
                         />
-                        <button type="button" onClick={() => saveEditQty(entry.id)}>
+                        {entry.kind === 'recipe' && (
+                          <span className="hint">{servingsOf(entry) ? `part(s) sur ${servingsOf(entry)}` : '× recette'}</span>
+                        )}
+                        <button type="button" onClick={() => saveEditQty(entry)}>
                           ✓
                         </button>
                         <button type="button" className="link-button" onClick={cancelEditQty}>
@@ -305,7 +345,9 @@ export function MealsPage() {
                         onClick={() => startEditQty(entry)}
                         title="Modifier la quantité"
                       >
-                        {entry.quantity} {entry.kind === 'recipe' ? 'portion(s)' : entry.unit}
+                        {entry.kind === 'recipe'
+                          ? describeRecipeQuantity(entry.quantity, servingsOf(entry))
+                          : `${entry.quantity} ${entry.unit ?? ''}`}
                         {state?.status === 'ok' && state.grams !== null && entry.unit !== 'g' && (
                           <> (≈{Math.round(state.grams)} g)</>
                         )}
@@ -387,7 +429,13 @@ export function MealsPage() {
                   className="tag-chip"
                   onClick={() => handleQuickAdd(item)}
                 >
-                  {item.label} · {item.quantity} {item.kind === 'recipe' ? 'portion(s)' : item.unit}
+                  {item.label} ·{' '}
+                  {item.kind === 'recipe'
+                    ? describeRecipeQuantity(
+                        item.quantity,
+                        item.recipe_id ? (recipeById.get(item.recipe_id)?.servings ?? null) : null,
+                      )
+                    : `${item.quantity} ${item.unit ?? ''}`}
                 </button>
               ))}
             </div>
@@ -398,7 +446,7 @@ export function MealsPage() {
           <h3>Ajouter un aliment</h3>
           <p className="hint">
             Un ingrédient brut (pomme, riz…) ou un de tes plats — dans ce cas le calcul se fait
-            automatiquement à partir de ses ingrédients, selon le nombre de portions.
+            automatiquement à partir de ses ingrédients, selon le nombre de parts mangées.
           </p>
           {ingError && <p className="error">{ingError}</p>}
           <div className="journal-add-row-wrap">
@@ -417,7 +465,8 @@ export function MealsPage() {
                 step="any"
                 value={ingQty}
                 onChange={(e) => setIngQty(e.target.value)}
-                placeholder={selectedRecipe ? 'Portions' : 'Nb'}
+                placeholder={selectedRecipe ? 'Parts' : 'Nb'}
+                aria-label={selectedRecipe ? 'Parts mangées' : 'Quantité'}
                 className="ingredient-qty"
               />
               {!selectedRecipe && (
@@ -436,7 +485,67 @@ export function MealsPage() {
               )}
             </div>
           </div>
-          {selectedRecipe && <p className="hint">Plat de ta bibliothèque : {selectedRecipe.title}.</p>}
+          {selectedRecipe && (
+            <div className="recipe-parts-box">
+              {!selectedRecipe.servings && (
+                <label className="recipe-parts-servings">
+                  <span>
+                    La recette entière fait combien de parts ? <strong>*</strong>
+                  </span>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={200}
+                    step={1}
+                    value={newServings}
+                    onChange={(e) => setNewServings(e.target.value)}
+                    placeholder="ex. 10"
+                    required
+                  />
+                </label>
+              )}
+              {recipeServings ? (
+                <>
+                  <p className="recipe-parts-summary">
+                    🍽️ {selectedRecipe.title} fait <strong>{recipeServings} parts</strong>
+                    {partsFraction !== null && (
+                      <>
+                        {' '}
+                        · tu en notes <strong>{describeRecipeQuantity(partsFraction, recipeServings)}</strong> ={' '}
+                        {formatPercentOfRecipe(partsFraction)} de la recette
+                      </>
+                    )}
+                  </p>
+                  <div className="tag-filter recipe-parts-shortcuts">
+                    {(
+                      [
+                        ['1 part', 1],
+                        ['¼ recette', recipeServings / 4],
+                        ['½ recette', recipeServings / 2],
+                        ['Recette entière', recipeServings],
+                      ] as const
+                    ).map(([label, parts]) => (
+                      <button
+                        key={label}
+                        type="button"
+                        className={`tag-chip${partsNumber === Math.round(parts * 100) / 100 ? ' selected' : ''}`}
+                        onClick={() => setIngQty(String(Math.round(parts * 100) / 100))}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="hint">
+                  Indique le nombre de parts de la recette entière{' '}
+                  {selectedRecipe.user_id === session.user.id ? '(il sera enregistré sur la recette)' : ''}, puis
+                  combien tu en as mangé.
+                </p>
+              )}
+            </div>
+          )}
           {ambiguousVariants && (
             <div className="disambiguation">
               <p className="hint">« {ingName.trim()} » regroupe des aliments assez différents — précise :</p>

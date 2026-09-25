@@ -34,6 +34,7 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
   const [tags, setTags] = useState(formatTagList(initial?.tags ?? []));
   const [notes, setNotes] = useState(initial?.notes ?? '');
   const [category, setCategory] = useState(initial?.category ?? '');
+  const [servings, setServings] = useState(initial?.servings ? String(initial.servings) : '');
   const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(initial?.photo_url ?? null);
@@ -99,6 +100,11 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
       setError('Le titre est obligatoire.');
       return;
     }
+    const servingsNumber = servings.trim() ? Number(servings) : null;
+    if (servingsNumber !== null && (!Number.isInteger(servingsNumber) || servingsNumber < 1 || servingsNumber > 200)) {
+      setError('Le nombre de parts doit être un nombre entier (1 à 200).');
+      return;
+    }
     setSubmitting(true);
     setError(null);
     try {
@@ -122,6 +128,7 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
         tags: parseTagList(tags),
         notes: notes.trim() || null,
         category: category || null,
+        servings: servingsNumber,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue.');
@@ -212,6 +219,22 @@ export function RecipeForm({ initial, onSubmit, submitLabel }: RecipeFormProps) 
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="field">
+        <label htmlFor="recipe-servings">Nombre de parts</label>
+        <input
+          id="recipe-servings"
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={200}
+          step={1}
+          value={servings}
+          onChange={(e) => setServings(e.target.value)}
+          placeholder="ex. 10 pour un gâteau"
+        />
+        <p className="hint">La recette entière fait combien de parts ? Dans Repas, tu noteras ensuite « 1 part ».</p>
       </div>
 
       <IngredientListEditor ingredients={ingredients} onChange={setIngredients} />

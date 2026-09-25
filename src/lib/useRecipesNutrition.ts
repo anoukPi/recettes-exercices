@@ -45,7 +45,11 @@ export function useRecipesNutrition(recipes: Recipe[]) {
 
         const result: Record<string, RecipeCardNutrition> = {};
 
+        let processed = 0;
         for (const recipe of recipes) {
+          // Affichage progressif : les cartes se remplissent au fur et à mesure.
+          if (processed > 0 && processed % 6 === 0 && !cancelled) setById({ ...result });
+          processed++;
           let sum = emptyTotals();
           let anyFound = false;
           let partial = false;

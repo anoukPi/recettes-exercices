@@ -88,3 +88,10 @@ export async function getFavoriteRecipeIds(days = 30, limit = 5): Promise<string
     .slice(0, limit)
     .map(([id]) => id);
 }
+
+/** Enregistre seulement le nombre de parts (depuis Repas ou la fiche recette). */
+export async function updateRecipeServings(id: string, servings: number): Promise<Recipe> {
+  const { data, error } = await supabase.from('recipes').update({ servings }).eq('id', id).select().single();
+  if (error) throw error;
+  return data;
+}
