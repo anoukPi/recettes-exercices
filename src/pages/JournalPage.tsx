@@ -7,7 +7,7 @@ import { useSession } from '../lib/auth';
 import { MonthCalendar } from '../components/MonthCalendar';
 import { listCycleEntries } from '../api/cycle';
 import { getProfile } from '../api/profile';
-import { isLutealPhase, isOnPeriod } from '../lib/cycle';
+import { canTrackCycle, isLutealPhase, isOnPeriod } from '../lib/cycle';
 import { addWaterEntry, deleteWaterEntry, listWaterEntries } from '../api/water';
 import {
   BEVERAGE_TYPES,
@@ -213,6 +213,8 @@ export function JournalPage() {
   const [monthKey, setMonthKey] = useState(dateKey.slice(0, 7));
   const [cycleEntries, setCycleEntries] = useState<CycleEntry[]>([]);
   const [periodLengthDays, setPeriodLengthDays] = useState<number | null>(null);
+  // Rappels du cycle : seulement pour les femmes majeures (voir canTrackCycle).
+  const [cycleOn, setCycleOn] = useState(false);
   const [waterEntries, setWaterEntries] = useState<WaterEntry[]>([]);
   const [beverageType, setBeverageType] = useState<BeverageType>('eau');
   const [beverageQty, setBeverageQty] = useState('1');
@@ -225,12 +227,15 @@ export function JournalPage() {
     // useDayNutrition, qui a besoin de l'ajustement calorique de phase
     // lutéale en entrée plutôt qu'en sortie.
     getProfile()
-      .then((p) => setPeriodLengthDays(p?.period_length_days ?? null))
+      .then((p) => {
+        setPeriodLengthDays(p?.period_length_days ?? null);
+        setCycleOn(canTrackCycle(p));
+      })
       .catch(() => {});
   }, [session]);
 
-  const onPeriod = isOnPeriod(dateKey, cycleEntries, periodLengthDays);
-  const lutealPhase = isLutealPhase(dateKey, cycleEntries, periodLengthDays);
+  const onPeriod = cycleOn && isOnPeriod(dateKey, cycleEntries, periodLengthDays);
+  const lutealPhase = cycleOn && isLutealPhase(dateKey, cycleEntries, periodLengthDays);
   // Repère courant : ~100-300 kcal/jour en plus pendant la semaine précédant
   // les règles (phase lutéale), pas pendant les règles elles-mêmes — 200
   // comme milieu de fourchette, pas une mesure individuelle.

@@ -1,5 +1,6 @@
 import { addDays, daysBetween } from './date';
-import type { CycleEntry } from '../types';
+import type { CycleEntry, Profile } from '../types';
+import { ageFromBirthDate } from './dailyNeeds';
 
 // Durées par défaut — repères larges couramment cités (règles : 3-7 jours,
 // cycle : 21-35 jours), utilisées seulement quand on n'a pas encore assez
@@ -161,4 +162,11 @@ export function cycleDayInfo(
     nextStart: next,
     ovulation,
   };
+}
+
+/** Le suivi du cycle n'est proposé qu'aux femmes majeures (profil « femme »,
+ * pas de date de naissance indiquant moins de 18 ans). */
+export function canTrackCycle(profile: Pick<Profile, 'sex' | 'birth_date'> | null): boolean {
+  if (!profile || profile.sex !== 'femme') return false;
+  return !profile.birth_date || ageFromBirthDate(profile.birth_date) >= 18;
 }

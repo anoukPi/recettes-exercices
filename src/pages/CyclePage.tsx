@@ -3,14 +3,16 @@ import { Link } from 'react-router-dom';
 import { formatDateKeyFr, toDateKey } from '../lib/date';
 import { addCycleEntry, deleteCycleEntry, listCycleEntries } from '../api/cycle';
 import { getProfile, saveProfile } from '../api/profile';
-import { averageCycleLength, cycleDayInfo, PHASE_LABELS, predictNextPeriod, recentCycleLengths } from '../lib/cycle';
+import { averageCycleLength, canTrackCycle, cycleDayInfo, PHASE_LABELS, predictNextPeriod, recentCycleLengths } from '../lib/cycle';
 import { daysBetween } from '../lib/date';
 import { CycleCalendar } from '../components/CycleCalendar';
 import { useSession } from '../lib/auth';
+import { useProfiles } from '../lib/profileContext';
 import type { CycleEntry, Profile } from '../types';
 
 export function CyclePage() {
   const { session, loading: authLoading } = useSession();
+  const { active } = useProfiles();
   const [entries, setEntries] = useState<CycleEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -104,6 +106,19 @@ export function CyclePage() {
       <section className="journal">
         <p className="hint">
           Connecte-toi dans <Link to="/settings">Paramètres</Link> pour suivre ton cycle.
+        </p>
+      </section>
+    );
+  }
+
+  // Profil actif qui n'est pas une femme majeure (lien direct, favori…).
+  if (active && !canTrackCycle(active)) {
+    return (
+      <section className="journal">
+        <h2>Cycle</h2>
+        <p className="hint">
+          Le suivi du cycle est proposé aux femmes majeures. Vérifie le sexe et la date de naissance dans le{' '}
+          <Link to="/settings?onglet=profil">profil</Link> si ce n’est pas le bon réglage.
         </p>
       </section>
     );

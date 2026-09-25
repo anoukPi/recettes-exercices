@@ -3,6 +3,7 @@ import { getProfile, saveProfile } from '../api/profile';
 import { computeDailyTargets, profileWarnings, targetsBlockedReason } from '../lib/dailyNeeds';
 import { useMeasuredActivity } from '../lib/useMeasuredActivity';
 import { useSession } from '../lib/auth';
+import { useProfiles } from '../lib/profileContext';
 import {
   ACTIVITY_LEVELS,
   CLIMBING_BOULDER_COLORS,
@@ -15,6 +16,7 @@ import {
 
 export function ProfileSection() {
   const { session } = useSession();
+  const { reload: reloadProfiles } = useProfiles();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -89,6 +91,8 @@ export function ProfileSection() {
         special_situation: sex === 'femme' ? ((specialSituation || null) as Profile['special_situation']) : null,
       });
       setProfile(updated);
+      // Prénom, sexe, âge : le sélecteur et les menus (Cycle…) suivent tout de suite.
+      reloadProfiles().catch(() => {});
       setSaved(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue.');

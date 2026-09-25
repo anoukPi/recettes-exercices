@@ -16,6 +16,8 @@ import { DailyValueChart } from '../components/DailyValueChart';
 import { CriteriaLineChart } from '../components/CriteriaLineChart';
 import { FavoritesBar } from '../components/FavoritesBar';
 import { useFavorites } from '../lib/useFavorites';
+import { useProfiles } from '../lib/profileContext';
+import { canTrackCycle } from '../lib/cycle';
 import { TrendChart } from '../components/TrendChart';
 import { listFitnessTests } from '../api/fitnessTests';
 import { definitionFor, TEST_CATEGORIES } from '../lib/fitnessTestCatalog';
@@ -704,6 +706,8 @@ function StatsView({
     ['proteines', 'glucides', 'lipides', 'entrainements', 'activite'],
   );
   const [curve, setCurve] = useState<CurveKey>('proteines');
+  // « Règles » : seulement pour les femmes majeures.
+  const cycleOn = canTrackCycle(useProfiles().active);
 
   const s = useMemo(() => {
     const food = days.filter((d) => d.hasData);
@@ -726,14 +730,19 @@ function StatsView({
     };
   }, [days, targets]);
 
-  const on = (k: StatKey) => fav.active.includes(k);
+  const on = (k: StatKey) => fav.active.includes(k) && (cycleOn || k !== 'regles');
   const curveDef = CURVES[curve];
   const byDate = new Map(days.map((d) => [d.date, d]));
 
   return (
     <>
       <FavoritesBar
-        options={STAT_OPTIONS.map((o) => ({ key: o.value, label: o.label, emoji: o.emoji, group: o.group }))}
+        options={STAT_OPTIONS.filter((o) => cycleOn || o.value !== 'regles').map((o) => ({
+          key: o.value,
+          label: o.label,
+          emoji: o.emoji,
+          group: o.group,
+        }))}
         favorites={fav.favorites}
         active={fav.active}
         onToggle={(k) => fav.toggle(k as StatKey)}

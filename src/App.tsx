@@ -6,6 +6,7 @@ import { ProfileProvider } from './components/ProfileProvider';
 import { profileLabel, useProfiles } from './lib/profileContext';
 import { createProfile } from './api/profile';
 import { ageFromBirthDate } from './lib/dailyNeeds';
+import { canTrackCycle } from './lib/cycle';
 import type { Profile } from './types';
 import { RecipesPage } from './pages/RecipesPage';
 import { ExercisesPage } from './pages/ExercisesPage';
@@ -92,11 +93,6 @@ function Sheet({ title, onClose, children }: { title: string; onClose: () => voi
       </div>
     </div>
   );
-}
-
-/** Profil d'enfant (moins de 18 ans) : pas de Cycle dans les menus. */
-function isChildProfile(profile: Profile | null): boolean {
-  return !!profile?.birth_date && ageFromBirthDate(profile.birth_date) < 18;
 }
 
 function ProfileAvatar({ profile, accountId }: { profile: Profile | null; accountId: string | null }) {
@@ -243,9 +239,10 @@ function AppNavigation() {
   const { pathname } = useLocation();
   const [openSheet, setOpenSheet] = useState<OpenSheet>(null);
   const { active } = useProfiles();
-  const child = isChildProfile(active);
-  const sidebarItems = SIDEBAR_ITEMS.filter((item) => !(child && item === NAV_CYCLE));
-  const moreItems = MORE_ITEMS.filter((item) => !(child && item === NAV_CYCLE));
+  // Cycle : seulement pour les femmes majeures.
+  const cycle = canTrackCycle(active);
+  const sidebarItems = SIDEBAR_ITEMS.filter((item) => cycle || item !== NAV_CYCLE);
+  const moreItems = MORE_ITEMS.filter((item) => cycle || item !== NAV_CYCLE);
 
   const go = (path: string) => {
     setOpenSheet(null);
