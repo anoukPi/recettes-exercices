@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { NavIcon, type NavIconName } from './components/NavIcon';
+import { MonthlyTestReminder } from './components/MonthlyTestReminder';
 import { RecipesPage } from './pages/RecipesPage';
 import { ExercisesPage } from './pages/ExercisesPage';
 import { NewRecipePage } from './pages/NewRecipePage';
@@ -245,6 +246,7 @@ function App() {
     <div className="app">
       <ScrollManager />
       <AppNavigation />
+      <MonthlyTestReminder />
 
       <main className="app-main">
         <Routes>

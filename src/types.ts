@@ -297,6 +297,8 @@ export interface CycleEntry {
   created_at: string;
 }
 
+export type FitnessTestCategory = 'mesures' | 'force' | 'souplesse' | 'endurance';
+
 export interface FitnessTest {
   id: string;
   user_id: string;
@@ -304,6 +306,10 @@ export interface FitnessTest {
   test_name: string;
   value: number;
   unit: string;
+  category: FitnessTestCategory | null;
+  /** Chemins dans le bucket privé test-media (URL signée à l'affichage). */
+  photo_path: string | null;
+  video_path: string | null;
   created_at: string;
 }
 

@@ -2915,3 +2915,161 @@ a.button,
   padding: 0.5rem 0.4rem;
   background: transparent;
 }
+
+/* --- Page Tests --- */
+.test-form {
+  max-width: 640px;
+}
+
+.test-date {
+  max-width: 220px;
+  margin-bottom: 0.75rem;
+}
+
+.test-date input {
+  width: 100%;
+}
+
+.test-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.test-item {
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--border);
+}
+
+.test-item-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.2rem 0.75rem;
+}
+
+.test-item-head label {
+  font-weight: 800;
+}
+
+.test-item > .hint {
+  margin: 0.2rem 0 0.45rem;
+}
+
+.test-value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 260px;
+}
+
+.test-unit {
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.test-value input,
+.test-other input,
+.ruffier-inputs input,
+.test-date input {
+  min-width: 0;
+  padding: 0.5rem 0.6rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.test-value input {
+  width: 100%;
+}
+
+.ruffier-inputs,
+.test-other {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+}
+
+.ruffier-result {
+  margin: 0.45rem 0 0;
+}
+
+.test-media-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.test-file {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.test-file input {
+  font-size: 0.85rem;
+}
+
+.test-saved {
+  background: var(--eau-soft);
+  border-left: 4px solid var(--eau);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.8rem;
+  font-weight: 700;
+}
+
+.test-delta {
+  font-weight: 800;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.test-delta.good {
+  color: var(--petrole);
+}
+
+.test-delta.bad {
+  color: var(--text);
+  border-left: 4px solid var(--corail);
+  padding-left: 0.5rem;
+}
+
+.test-entry-media {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.test-media-thumb {
+  width: 96px;
+  height: 96px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  display: block;
+}
+
+.test-media-video {
+  width: 100%;
+  max-width: 320px;
+  border-radius: var(--radius-sm);
+}
+
+.test-reminder h3 {
+  margin: 0.25rem 0 0.6rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .test-delta.good {
+    color: var(--eau);
+  }
+}
