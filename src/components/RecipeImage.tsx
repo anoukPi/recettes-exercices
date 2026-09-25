@@ -1,28 +1,27 @@
 import { useState } from 'react';
 import { RECIPE_CATEGORY_EMOJI, type Recipe } from '../types';
+import type { DominantMacro } from '../lib/macros';
 
-// Fond de la vignette (quand il n'y a ni photo ni image IA) : une teinte de
-// la palette par catégorie, pour que la liste reste colorée et lisible.
-const TILE_BY_CATEGORY: Record<string, string> = {
-  Pain: 'tile-beige',
-  'Banana bread': 'tile-beige',
-  Gâteau: 'tile-corail',
-  Cookie: 'tile-corail',
-  Dessert: 'tile-corail',
-  Viande: 'tile-petrole',
-  Poisson: 'tile-petrole',
-  Entrée: 'tile-eau',
-  Plat: 'tile-petrole',
-  Salade: 'tile-eau',
-  'Petit-déjeuner': 'tile-beige',
-  Sauce: 'tile-eau',
-  Boisson: 'tile-eau',
+// Fond de la vignette (ni photo ni image IA) : la couleur du macronutriment
+// le plus représenté, comme dans la barre P/G/L des cartes.
+const TILE_BY_MACRO: Record<DominantMacro, string> = {
+  proteines: 'tile-petrole',
+  glucides: 'tile-eau',
+  lipides: 'tile-corail',
 };
 
 /** Photo de la recette ; sinon l'image générée par IA ; sinon une vignette
- * illustrée (emoji de la catégorie). Une image qui ne charge pas retombe sur
- * la vignette. */
-export function RecipeImage({ recipe, className = '' }: { recipe: Recipe; className?: string }) {
+ * illustrée (emoji de la catégorie, fond = macro dominant). Une image qui ne
+ * charge pas retombe sur la vignette. */
+export function RecipeImage({
+  recipe,
+  dominant = null,
+  className = '',
+}: {
+  recipe: Recipe;
+  dominant?: DominantMacro | null;
+  className?: string;
+}) {
   const [failed, setFailed] = useState(false);
   const src = recipe.photo_url ?? recipe.ai_image_url;
   const emoji = (recipe.category && RECIPE_CATEGORY_EMOJI[recipe.category]) || '🍽️';
@@ -36,7 +35,7 @@ export function RecipeImage({ recipe, className = '' }: { recipe: Recipe; classN
     );
   }
   return (
-    <div className={`recipe-image recipe-image-tile ${TILE_BY_CATEGORY[recipe.category ?? ''] ?? 'tile-eau'} ${className}`}>
+    <div className={`recipe-image recipe-image-tile ${dominant ? TILE_BY_MACRO[dominant] : 'tile-beige'} ${className}`}>
       <span aria-hidden="true">{emoji}</span>
     </div>
   );

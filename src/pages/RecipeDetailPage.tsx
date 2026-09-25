@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { RecipeForm } from '../components/RecipeForm';
 import { deleteRecipe, duplicateRecipe, getRecipe, updateRecipe, updateRecipeServings } from '../api/recipes';
 import { RecipeImage } from '../components/RecipeImage';
+import { dominantMacro } from '../lib/macros';
 import {
   endorseRecipe,
   listEndorsementCounts,
@@ -108,7 +109,19 @@ export function RecipeDetailPage() {
       <Link to="/recipes" className="back-link">
         ← Recettes
       </Link>
-      <RecipeImage recipe={recipe} className="recipe-hero" />
+      <RecipeImage
+        recipe={recipe}
+        className="recipe-hero"
+        dominant={
+          nutrition?.anyFound
+            ? dominantMacro(
+                nutrition.totals.protein_g * 4,
+                nutrition.totals.carbs_g * 4,
+                nutrition.totals.fat_g * 9,
+              )
+            : null
+        }
+      />
       <h2 className="recipe-detail-title">{recipe.title}</h2>
       <div className="recipe-detail-chips">
         {recipe.category && (

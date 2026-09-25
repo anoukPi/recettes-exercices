@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { PageIntro } from '../components/PageIntro';
 import { LibraryView } from '../components/LibraryView';
 import { RecipeImage } from '../components/RecipeImage';
+import { dominantMacro } from '../lib/macros';
 import { listRecipes, getFavoriteRecipeIds } from '../api/recipes';
 import { listMyEndorsedRecipeIds } from '../api/endorsements';
 import { useSession } from '../lib/auth';
@@ -104,7 +105,7 @@ export function RecipesPage() {
     return (
       <>
         <div className="recipe-card-media">
-          <RecipeImage recipe={r} />
+          <RecipeImage recipe={r} dominant={n ? dominantMacro(n.proteinPct, n.carbsPct, n.fatPct) : null} />
           <div className="recipe-card-badges">
             {testedIds.has(r.id) && <span title="Déjà testée">✅</span>}
             {favoriteIds.has(r.id) && <span title="Favorite du mois">⭐</span>}
