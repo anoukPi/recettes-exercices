@@ -5,14 +5,16 @@ export interface CriteriaSeries {
   label: string;
   emoji: string;
   color: string;
+  dashed?: boolean;
+  unit: string;
   values: (number | null)[];
   target?: number | null;
+  format: (v: number) => string;
 }
 
-const HEIGHT = 230;
+const HEIGHT = 240;
 const TOP = 14;
 const BOTTOM = 34;
-const LEFT = 42;
 const RIGHT = 10;
 const AXIS = 'var(--accent)';
 
@@ -28,20 +30,19 @@ function niceTicks(min: number, max: number): number[] {
   return ticks;
 }
 
-/** Courbes jour par jour : les jours sur l'axe horizontal (vert), la valeur
- * en vertical, un trait coloré par critère. Les critères d'une même unité
- * partagent l'axe ; un pointillé de la couleur du critère marque son objectif.
- * Dessiné à la taille réelle du conteneur pour garder un texte lisible. */
+/** Un seul graphique pour tous les critères affichés : les jours sur l'axe
+ * horizontal (vert), un trait par critère. Si tous les critères ont la même
+ * unité, l'axe vertical est gradué ; sinon chaque courbe a sa propre échelle
+ * (son maximum de la période = haut du graphique) et les vraies valeurs du
+ * jour touché s'affichent sous le graphique. */
 export function CriteriaLineChart({
   dates,
   series,
-  unit,
   openDate,
   onOpen,
 }: {
   dates: string[];
   series: CriteriaSeries[];
-  unit: string;
   openDate: string | null;
   onOpen: (date: string) => void;
 }) {
@@ -56,39 +57,72 @@ export function CriteriaLineChart({
     return () => ro.disconnect();
   }, []);
 
-  const all = series.flatMap((s) => [...s.values, s.target ?? null]).filter((v): v is number => v !== null);
+  const units = Array.from(new Set(series.map((s) => s.unit)));
+  const shared = units.length === 1;
+
+  // Échelle de chaque courbe : 1 (valeurs réelles) si unité commune, sinon
+  // division par son plus grand écart à 0 sur la période (objectif compris).
+  const scaleOf = (s: CriteriaSeries) => {
+    if (shared) return 1;
+    const m = Math.max(0, ...s.values.map((v) => Math.abs(v ?? 0)), Math.abs(s.target ?? 0));
+    return m > 0 ? m : 1;
+  };
+  const scaled = series.map((s) => {
+    const k = scaleOf(s);
+    return {
+      ...s,
+      points: s.values.map((v) => (v === null ? null : v / k)),
+      scaledTarget: s.target ? s.target / k : null,
+    };
+  });
+
+  const all = scaled.flatMap((s) => [...s.points, s.scaledTarget]).filter((v): v is number => v !== null);
   const rawMin = Math.min(0, ...all);
-  const rawMax = Math.max(1, ...all);
+  const rawMax = Math.max(shared ? 1 : 0.01, ...all);
   const pad = (rawMax - rawMin) * 0.06;
   const min = rawMin < 0 ? rawMin - pad : 0;
   const max = rawMax + pad;
 
+  const left = shared ? 42 : 12;
   const n = Math.max(1, dates.length);
-  const plotW = width - LEFT - RIGHT;
+  const plotW = width - left - RIGHT;
   const slot = plotW / n;
-  const x = (i: number) => LEFT + slot * i + slot / 2;
+  const x = (i: number) => left + slot * i + slot / 2;
   const plotH = HEIGHT - TOP - BOTTOM;
   const y = (v: number) => TOP + (1 - (v - min) / (max - min)) * plotH;
-  const ticks = niceTicks(min, max);
+  const ticks = shared ? niceTicks(min, max) : [];
   const labelStep = n <= 10 ? 1 : n <= 16 ? 2 : 5;
+  const openIndex = openDate ? dates.indexOf(openDate) : -1;
 
   return (
     <figure className="criteria-chart">
       <figcaption className="criteria-chart-legend">
         {series.map((s) => (
           <span key={s.key}>
-            <span className="criteria-chart-swatch" style={{ background: s.color }} />
+            <svg width="18" height="6" aria-hidden="true">
+              <line
+                x1="1"
+                y1="3"
+                x2="17"
+                y2="3"
+                stroke={s.color}
+                strokeWidth="3"
+                strokeDasharray={s.dashed ? '4 3' : undefined}
+                strokeLinecap="round"
+              />
+            </svg>
             {s.emoji} {s.label}
+            {!shared && <span className="hint"> ({s.unit})</span>}
           </span>
         ))}
-        <span className="hint">en {unit}</span>
+        {shared && units[0] && <span className="hint">en {units[0]}</span>}
       </figcaption>
       <div ref={wrapRef}>
-        <svg width={width} height={HEIGHT} viewBox={`0 0 ${width} ${HEIGHT}`} role="img" aria-label={`Valeurs par jour en ${unit}`}>
+        <svg width={width} height={HEIGHT} viewBox={`0 0 ${width} ${HEIGHT}`} role="img" aria-label="Critères jour par jour">
           {dates.map((date, i) => (
             <rect
               key={date}
-              x={LEFT + slot * i}
+              x={left + slot * i}
               y={TOP}
               width={slot}
               height={plotH}
@@ -99,15 +133,15 @@ export function CriteriaLineChart({
 
           {ticks.map((t) => (
             <g key={t} pointerEvents="none">
-              {t !== 0 && <line x1={LEFT} y1={y(t)} x2={width - RIGHT} y2={y(t)} className="criteria-chart-grid" />}
-              <text x={LEFT - 6} y={y(t) + 3} className="criteria-chart-tick">
+              {t !== 0 && <line x1={left} y1={y(t)} x2={width - RIGHT} y2={y(t)} className="criteria-chart-grid" />}
+              <text x={left - 6} y={y(t) + 3} className="criteria-chart-tick">
                 {t.toLocaleString('fr-CH')}
               </text>
             </g>
           ))}
 
           {/* Axe des jours : horizontal, vert, sur la valeur 0. */}
-          <line x1={LEFT} y1={y(0)} x2={width - RIGHT} y2={y(0)} stroke={AXIS} strokeWidth={3} strokeLinecap="round" />
+          <line x1={left} y1={y(0)} x2={width - RIGHT} y2={y(0)} stroke={AXIS} strokeWidth={3} strokeLinecap="round" />
           {dates.map((date, i) => {
             if (i % labelStep !== 0 && i !== n - 1) return null;
             const d = new Date(`${date}T12:00:00`);
@@ -126,27 +160,28 @@ export function CriteriaLineChart({
             );
           })}
 
-          {series.map((s) =>
-            s.target ? (
+          {scaled.map((s) =>
+            s.scaledTarget ? (
               <line
                 key={`${s.key}-cible`}
-                x1={LEFT}
-                y1={y(s.target)}
+                x1={left}
+                y1={y(s.scaledTarget)}
                 x2={width - RIGHT}
-                y2={y(s.target)}
+                y2={y(s.scaledTarget)}
                 stroke={s.color}
-                strokeWidth={1.5}
-                strokeDasharray="5 4"
-                opacity={0.8}
+                strokeWidth={1.2}
+                strokeDasharray="1 4"
+                strokeLinecap="round"
+                opacity={0.9}
                 pointerEvents="none"
               />
             ) : null,
           )}
 
-          {series.map((s) => {
+          {scaled.map((s) => {
             const runs: string[] = [];
             let cur = '';
-            s.values.forEach((v, i) => {
+            s.points.forEach((v, i) => {
               if (v === null) {
                 if (cur) runs.push(cur);
                 cur = '';
@@ -158,11 +193,27 @@ export function CriteriaLineChart({
             return (
               <g key={s.key} pointerEvents="none">
                 {runs.map((d, ri) => (
-                  <path key={ri} d={d} fill="none" stroke={s.color} strokeWidth={2.5} strokeLinejoin="round" />
+                  <path
+                    key={ri}
+                    d={d}
+                    fill="none"
+                    stroke={s.color}
+                    strokeWidth={2.5}
+                    strokeLinejoin="round"
+                    strokeDasharray={s.dashed ? '6 4' : undefined}
+                  />
                 ))}
-                {s.values.map((v, i) =>
+                {s.points.map((v, i) =>
                   v === null ? null : (
-                    <circle key={i} cx={x(i)} cy={y(v)} r={n > 16 ? 2.5 : 4} fill={s.color} stroke="#fff" strokeWidth={1.2} />
+                    <circle
+                      key={i}
+                      cx={x(i)}
+                      cy={y(v)}
+                      r={n > 16 ? 2.5 : 4}
+                      fill={s.dashed ? '#fff' : s.color}
+                      stroke={s.dashed ? s.color : '#fff'}
+                      strokeWidth={s.dashed ? 2 : 1.2}
+                    />
                   ),
                 )}
               </g>
@@ -170,6 +221,25 @@ export function CriteriaLineChart({
           })}
         </svg>
       </div>
+      {openIndex >= 0 ? (
+        <ul className="criteria-chart-readout">
+          {series.map((s) => {
+            const v = s.values[openIndex];
+            return (
+              <li key={s.key}>
+                <span className="criteria-chart-dot" style={{ background: s.color }} />
+                {s.emoji} {s.label} : <strong>{v === null ? '—' : `${s.format(v)} ${s.unit}`}</strong>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        !shared && (
+          <p className="hint criteria-chart-note">
+            Unités différentes : chaque courbe a sa propre échelle. Touche un jour pour lire les valeurs.
+          </p>
+        )
+      )}
     </figure>
   );
 }

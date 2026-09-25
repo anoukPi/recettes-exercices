@@ -19,6 +19,9 @@ export interface DaySummary {
   omega3_g: number;
   omega6_g: number;
   omega9_g: number;
+  fiber_g: number;
+  sugar_g: number;
+  fat_saturated_g: number;
   activityCalories: number;
   activities: ActivityEntry[];
   hasData: boolean;
@@ -61,7 +64,7 @@ export function usePeriodSummary(startDate: string, endDate: string) {
         );
 
         const nutritionForEntry = async (entry: JournalEntry) => {
-          const empty = { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, omega3_g: 0, omega6_g: 0, omega9_g: 0 };
+          const empty = { calories: 0, protein_g: 0, carbs_g: 0, fat_g: 0, omega3_g: 0, omega6_g: 0, omega9_g: 0, fiber_g: 0, sugar_g: 0, fat_saturated_g: 0 };
           if (entry.kind === 'ingredient') {
             if (!entry.reference_item_id || !entry.unit) return empty;
             const grams = gramsForQuantity(
@@ -82,6 +85,9 @@ export function usePeriodSummary(startDate: string, endDate: string) {
               omega3_g: (nutrition.omega3_g ?? 0) * factor,
               omega6_g: (nutrition.omega6_g ?? 0) * factor,
               omega9_g: (nutrition.omega9_g ?? 0) * factor,
+              fiber_g: (nutrition.fiber_g ?? 0) * factor,
+              sugar_g: (nutrition.sugar_g ?? 0) * factor,
+              fat_saturated_g: (nutrition.fat_saturated_g ?? 0) * factor,
             };
           }
 
@@ -107,6 +113,9 @@ export function usePeriodSummary(startDate: string, endDate: string) {
                 omega3_g: sum.omega3_g + (nutrition.omega3_g ?? 0) * factor,
                 omega6_g: sum.omega6_g + (nutrition.omega6_g ?? 0) * factor,
                 omega9_g: sum.omega9_g + (nutrition.omega9_g ?? 0) * factor,
+                fiber_g: sum.fiber_g + (nutrition.fiber_g ?? 0) * factor,
+                sugar_g: sum.sugar_g + (nutrition.sugar_g ?? 0) * factor,
+                fat_saturated_g: sum.fat_saturated_g + (nutrition.fat_saturated_g ?? 0) * factor,
               };
             } catch {
               // un ingrédient en échec ne doit pas casser le calcul du jour entier
@@ -121,6 +130,9 @@ export function usePeriodSummary(startDate: string, endDate: string) {
             omega3_g: sum.omega3_g * portionFactor,
             omega6_g: sum.omega6_g * portionFactor,
             omega9_g: sum.omega9_g * portionFactor,
+            fiber_g: sum.fiber_g * portionFactor,
+            sugar_g: sum.sugar_g * portionFactor,
+            fat_saturated_g: sum.fat_saturated_g * portionFactor,
           };
         };
 
@@ -136,6 +148,9 @@ export function usePeriodSummary(startDate: string, endDate: string) {
               omega3_g: 0,
               omega6_g: 0,
               omega9_g: 0,
+              fiber_g: 0,
+              sugar_g: 0,
+              fat_saturated_g: 0,
               activityCalories: 0,
               activities: [],
               hasData: false,
@@ -156,6 +171,9 @@ export function usePeriodSummary(startDate: string, endDate: string) {
             day.omega3_g += nutrition.omega3_g;
             day.omega6_g += nutrition.omega6_g;
             day.omega9_g += nutrition.omega9_g;
+            day.fiber_g += nutrition.fiber_g;
+            day.sugar_g += nutrition.sugar_g;
+            day.fat_saturated_g += nutrition.fat_saturated_g;
             day.hasData = true;
           } catch {
             // une entrée en échec ne doit pas casser le résumé de toute la période

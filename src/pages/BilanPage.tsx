@@ -14,6 +14,8 @@ import { usePeriodSummary, type DaySummary } from '../lib/usePeriodSummary';
 import { useSession } from '../lib/auth';
 import { DailyValueChart } from '../components/DailyValueChart';
 import { CriteriaLineChart } from '../components/CriteriaLineChart';
+import { FavoritesBar } from '../components/FavoritesBar';
+import { useFavorites } from '../lib/useFavorites';
 import { TrendChart } from '../components/TrendChart';
 import { listFitnessTests } from '../api/fitnessTests';
 import { definitionFor, TEST_CATEGORIES } from '../lib/fitnessTestCatalog';
@@ -109,13 +111,12 @@ function useStoredSelection<T extends string>(key: string, defaults: T[], allowe
 type Level = 'none' | 'low' | 'ok' | 'over' | 'deficit' | 'act1' | 'act2' | 'act3';
 
 interface CalendarMetric {
+  group: 'alimentation' | 'activite';
   label: string;
   emoji: string;
   /** Premières lettres affichées dans la case. */
   abbr: string;
   unit: string;
-  /** Couleur du trait dans la vue graphique. */
-  color: string;
   target?: (t: DailyTargets) => number;
   value: (d: DaySummary | undefined, t: DailyTargets | null) => number | null;
   format: (v: number) => string;
@@ -143,13 +144,31 @@ const ACTIVITY_LEGEND: [Level, string][] = [
   ['act3', 'fort'],
 ];
 
+// Repère ANSES pour les fibres chez l'adulte.
+const FIBER_TARGET_G = 30;
+
+const LEVEL3 = (a: string, b: string, c: string): [Level, string][] => [
+  ['act1', a],
+  ['act2', b],
+  ['act3', c],
+];
+
+const avgOf = (vals: (number | null)[]): number | null => {
+  const ok = vals.filter((v): v is number => v !== null);
+  return ok.length ? ok.reduce((x, y) => x + y, 0) / ok.length : null;
+};
+
+const grams = (v: number) => fmt(Math.round(v));
+const grams1 = (v: number) => fmt(v, v < 10 ? 1 : 0);
+
 const CALENDAR_METRICS = {
+  // ------------------------------------------------ Alimentation
   calories: {
+    group: 'alimentation',
     label: 'Calories du jour',
     emoji: '🍽️',
     abbr: 'Cal',
     unit: 'kcal',
-    color: '#0e4e5c',
     target: (t) => t.calories_kcal,
     value: (d) => (d?.hasData ? d.calories : null),
     format: (v) => fmt(Math.round(v)),
@@ -157,11 +176,11 @@ const CALENDAR_METRICS = {
     legend: RATIO_LEGEND,
   },
   ecart: {
+    group: 'alimentation',
     label: 'Écart calories',
     emoji: '⚖️',
     abbr: 'Éc',
     unit: 'kcal',
-    color: '#ff6f61',
     value: (d, t) => (d?.hasData && t ? d.calories - expensesFor(d, t) : null),
     format: (v) => `${v >= 0 ? '+' : ''}${fmt(Math.round(v))}`,
     level: (v) => (v > 200 ? 'over' : v < -200 ? 'deficit' : 'ok'),
@@ -171,78 +190,213 @@ const CALENDAR_METRICS = {
       ['over', 'surplus (> +200)'],
     ],
   },
+  proteines: {
+    group: 'alimentation',
+    label: 'Protéines',
+    emoji: '🥩',
+    abbr: 'Pro',
+    unit: 'g',
+    target: (t) => t.protein_g,
+    value: (d) => (d?.hasData ? d.protein_g : null),
+    format: grams,
+    level: (v, t) => ratioLevel(v, t?.protein_g),
+    legend: RATIO_LEGEND,
+  },
+  glucides: {
+    group: 'alimentation',
+    label: 'Glucides',
+    emoji: '🍞',
+    abbr: 'Glu',
+    unit: 'g',
+    target: (t) => t.carbs_g,
+    value: (d) => (d?.hasData ? d.carbs_g : null),
+    format: grams,
+    level: (v, t) => ratioLevel(v, t?.carbs_g),
+    legend: RATIO_LEGEND,
+  },
+  lipides: {
+    group: 'alimentation',
+    label: 'Lipides',
+    emoji: '🥑',
+    abbr: 'Lip',
+    unit: 'g',
+    target: (t) => t.fat_g,
+    value: (d) => (d?.hasData ? d.fat_g : null),
+    format: grams,
+    level: (v, t) => ratioLevel(v, t?.fat_g),
+    legend: RATIO_LEGEND,
+  },
+  fibres: {
+    group: 'alimentation',
+    label: 'Fibres',
+    emoji: '🌾',
+    abbr: 'Fib',
+    unit: 'g',
+    target: () => FIBER_TARGET_G,
+    value: (d) => (d?.hasData ? d.fiber_g : null),
+    format: grams,
+    level: (v) => (v >= FIBER_TARGET_G * 0.9 ? 'ok' : 'low'),
+    legend: [
+      ['low', `moins de ${Math.round(FIBER_TARGET_G * 0.9)} g`],
+      ['ok', `repère ${FIBER_TARGET_G} g atteint`],
+    ],
+  },
+  sucres: {
+    group: 'alimentation',
+    label: 'Sucres',
+    emoji: '🍬',
+    abbr: 'Suc',
+    unit: 'g',
+    value: (d) => (d?.hasData ? d.sugar_g : null),
+    format: grams,
+    level: (v) => (v > 100 ? 'over' : 'ok'),
+    legend: [
+      ['ok', '100 g ou moins'],
+      ['over', 'plus de 100 g (repère ANSES)'],
+    ],
+  },
+  satures: {
+    group: 'alimentation',
+    label: 'Graisses saturées',
+    emoji: '🧈',
+    abbr: 'Sat',
+    unit: 'g',
+    target: (t) => t.fat_saturated_g,
+    value: (d) => (d?.hasData ? d.fat_saturated_g : null),
+    format: grams,
+    level: (v, t) => (t && v > t.fat_saturated_g * 1.1 ? 'over' : 'ok'),
+    legend: [
+      ['ok', 'sous le repère'],
+      ['over', 'au-dessus'],
+    ],
+  },
+  omega3: {
+    group: 'alimentation',
+    label: 'Oméga-3',
+    emoji: '🐟',
+    abbr: 'Ω3',
+    unit: 'g',
+    target: (t) => t.omega3_g,
+    value: (d) => (d?.hasData ? d.omega3_g : null),
+    format: grams1,
+    level: (v, t) => ratioLevel(v, t?.omega3_g),
+    legend: RATIO_LEGEND,
+  },
+  omega6: {
+    group: 'alimentation',
+    label: 'Oméga-6',
+    emoji: '🌻',
+    abbr: 'Ω6',
+    unit: 'g',
+    target: (t) => t.omega6_g,
+    value: (d) => (d?.hasData ? d.omega6_g : null),
+    format: grams1,
+    level: (v, t) => ratioLevel(v, t?.omega6_g),
+    legend: RATIO_LEGEND,
+  },
+  omega9: {
+    group: 'alimentation',
+    label: 'Oméga-9',
+    emoji: '🫒',
+    abbr: 'Ω9',
+    unit: 'g',
+    target: (t) => t.omega9_g,
+    value: (d) => (d?.hasData ? d.omega9_g : null),
+    format: grams1,
+    level: (v, t) => ratioLevel(v, t?.omega9_g),
+    legend: RATIO_LEGEND,
+  },
+  // ------------------------------------------------ Activité
   depense: {
+    group: 'activite',
     label: 'Kcal dépensées (activité)',
     emoji: '🔥',
     abbr: 'Dép',
     unit: 'kcal',
-    color: '#121212',
     value: (d) => (d && d.activities.length > 0 ? d.activityCalories : null),
     format: (v) => fmt(Math.round(v)),
     level: (v) => (v >= 400 ? 'act3' : v >= 150 ? 'act2' : 'act1'),
     legend: ACTIVITY_LEGEND,
   },
   met: {
+    group: 'activite',
     label: 'MET-heures',
     emoji: '⚡',
     abbr: 'MET',
     unit: 'MET·h',
-    color: '#121212',
     value: (d) => (d && d.activities.length > 0 ? metHours(d) : null),
     format: (v) => fmt(v, 1),
     level: (v) => (v >= 6 ? 'act3' : v >= 3 ? 'act2' : 'act1'),
     legend: ACTIVITY_LEGEND,
   },
   minutes: {
+    group: 'activite',
     label: 'Minutes d’activité',
     emoji: '⏱️',
     abbr: 'Min',
     unit: 'min',
-    color: '#0e4e5c',
     value: (d) => (d && d.activities.length > 0 ? activityMinutes(d) : null),
     format: (v) => fmt(Math.round(v)),
     level: (v) => (v >= 60 ? 'act3' : v >= 30 ? 'act2' : 'act1'),
     legend: ACTIVITY_LEGEND,
   },
-  proteines: {
-    label: 'Protéines',
-    emoji: '🥩',
-    abbr: 'Pro',
-    unit: 'g',
-    color: '#0e4e5c',
-    target: (t) => t.protein_g,
-    value: (d) => (d?.hasData ? d.protein_g : null),
-    format: (v) => `${fmt(Math.round(v))} g`,
-    level: (v, t) => ratioLevel(v, t?.protein_g),
-    legend: RATIO_LEGEND,
+  seances: {
+    group: 'activite',
+    label: 'Nombre d’activités',
+    emoji: '🏃',
+    abbr: 'Nb',
+    unit: 'activité(s)',
+    value: (d) => (d && d.activities.length > 0 ? d.activities.length : null),
+    format: (v) => fmt(v),
+    level: (v) => (v >= 3 ? 'act3' : v >= 2 ? 'act2' : 'act1'),
+    legend: LEVEL3('1', '2', '3 et plus'),
   },
-  glucides: {
-    label: 'Glucides',
-    emoji: '🍞',
-    abbr: 'Glu',
-    unit: 'g',
-    color: '#ff6f61',
-    target: (t) => t.carbs_g,
-    value: (d) => (d?.hasData ? d.carbs_g : null),
-    format: (v) => `${fmt(Math.round(v))} g`,
-    level: (v, t) => ratioLevel(v, t?.carbs_g),
-    legend: RATIO_LEGEND,
+  forme: {
+    group: 'activite',
+    label: 'Forme ressentie',
+    emoji: '😊',
+    abbr: 'For',
+    unit: '/5',
+    value: (d) => (d ? avgOf(d.activities.map((a) => a.felt_form)) : null),
+    format: (v) => fmt(v, 1),
+    level: (v) => (v >= 4 ? 'act3' : v >= 3 ? 'act2' : 'act1'),
+    legend: LEVEL3('à plat (1-2)', 'correcte (3)', 'en forme (4-5)'),
   },
-  lipides: {
-    label: 'Lipides',
-    emoji: '🥑',
-    abbr: 'Lip',
-    unit: 'g',
-    color: '#121212',
-    target: (t) => t.fat_g,
-    value: (d) => (d?.hasData ? d.fat_g : null),
-    format: (v) => `${fmt(Math.round(v))} g`,
-    level: (v, t) => ratioLevel(v, t?.fat_g),
-    legend: RATIO_LEGEND,
+  effort: {
+    group: 'activite',
+    label: 'Intensité perçue',
+    emoji: '💥',
+    abbr: 'Int',
+    unit: '/5',
+    value: (d) => (d ? avgOf(d.activities.map((a) => a.effort_intensity)) : null),
+    format: (v) => fmt(v, 1),
+    level: (v) => (v >= 4 ? 'act3' : v >= 3 ? 'act2' : 'act1'),
+    legend: LEVEL3('facile (1-2)', 'modérée (3)', 'intense (4-5)'),
+  },
+  voies: {
+    group: 'activite',
+    label: 'Voies / blocs grimpés',
+    emoji: '🧗',
+    abbr: 'Voi',
+    unit: 'voies',
+    value: (d) => {
+      const counts = (d?.activities ?? []).map((a) => a.climbing_routes_count).filter((c): c is number => c !== null);
+      return counts.length ? counts.reduce((x, y) => x + y, 0) : null;
+    },
+    format: (v) => fmt(v),
+    level: (v) => (v >= 12 ? 'act3' : v >= 5 ? 'act2' : 'act1'),
+    legend: LEVEL3('moins de 5', '5 à 11', '12 et plus'),
   },
 } satisfies Record<string, CalendarMetric>;
 type CalendarMetricKey = keyof typeof CALENDAR_METRICS;
 const CALENDAR_KEYS = Object.keys(CALENDAR_METRICS) as CalendarMetricKey[];
+const GROUP_LABELS = { alimentation: '🍽️ Alimentation', activite: '🏃 Activité' };
+const METRIC_OPTIONS = CALENDAR_KEYS.map((k) => {
+  const m: CalendarMetric = CALENDAR_METRICS[k];
+  return { key: k, label: m.label, emoji: m.emoji, group: GROUP_LABELS[m.group] };
+});
+// Pétrole, corail, noir — puis les mêmes en pointillé au-delà de 3 critères.
+const CHART_COLORS = ['#0e4e5c', '#ff6f61', '#121212'];
 
 // Petites cases (mois, téléphone) : on raccourcit seulement ce qui ne tient
 // pas sur 4 caractères — −2047 → −2k, +1250 → +1,3k ; 1782 reste 1782.
@@ -268,11 +422,13 @@ function BilanCalendar({
   days: DaySummary[];
   targets: DailyTargets | null;
 }) {
-  const [selected, toggle] = useStoredSelection<CalendarMetricKey>(
-    'kaly-bilan-calendrier',
-    ['calories', 'ecart', 'depense'],
+  const fav = useFavorites<CalendarMetricKey>(
+    'kaly-bilan-favoris',
     CALENDAR_KEYS,
+    ['calories', 'ecart', 'depense', 'proteines', 'glucides', 'lipides'],
+    ['calories', 'ecart', 'depense'],
   );
+  const selected = fav.active;
   const [openDay, setOpenDay] = useState<string | null>(null);
   const [view, setView] = useState<'calendrier' | 'graphique'>(() => {
     try {
@@ -300,39 +456,33 @@ function BilanCalendar({
   ];
   const detail = openDay ? byDate.get(openDay) : undefined;
   const dates = cells.filter((c): c is string => c !== null);
-  // Un graphique par unité : on ne mélange pas des kcal et des grammes sur le même axe.
-  const chartGroups = Array.from(new Set(selected.map((k) => CALENDAR_METRICS[k].unit))).map((unit) => ({
-    unit,
-    series: selected
-      .filter((k) => CALENDAR_METRICS[k].unit === unit)
-      .map((k) => {
-        const m: CalendarMetric = CALENDAR_METRICS[k];
-        return {
-          key: k,
-          label: m.label,
-          emoji: m.emoji,
-          color: m.color,
-          target: m.target && targets ? m.target(targets) : null,
-          values: dates.map((date) => m.value(byDate.get(date), targets)),
-        };
-      }),
-  }));
+  // Un seul graphique : couleurs et traits (plein puis pointillé) selon
+  // l'ordre d'affichage, pour que 6 critères restent distincts.
+  const chartSeries = selected.map((k, i) => {
+    const m: CalendarMetric = CALENDAR_METRICS[k];
+    return {
+      key: k,
+      label: m.label,
+      emoji: m.emoji,
+      unit: m.unit,
+      format: m.format,
+      color: CHART_COLORS[i % CHART_COLORS.length],
+      dashed: i >= CHART_COLORS.length,
+      target: m.target && targets ? m.target(targets) : null,
+      values: dates.map((date) => m.value(byDate.get(date), targets)),
+    };
+  });
 
   return (
     <>
-      <div className="bilan-chips" role="group" aria-label="Critères affichés">
-        {CALENDAR_KEYS.map((k) => (
-          <button
-            key={k}
-            type="button"
-            aria-pressed={selected.includes(k)}
-            className={`tag-chip${selected.includes(k) ? ' selected' : ''}`}
-            onClick={() => toggle(k)}
-          >
-            {CALENDAR_METRICS[k].emoji} {CALENDAR_METRICS[k].label}
-          </button>
-        ))}
-      </div>
+      <FavoritesBar
+        options={METRIC_OPTIONS}
+        favorites={fav.favorites}
+        active={fav.active}
+        onToggle={(k) => fav.toggle(k as CalendarMetricKey)}
+        onRemove={(k) => fav.remove(k as CalendarMetricKey)}
+        onAdd={(k) => fav.add(k as CalendarMetricKey)}
+      />
 
       <div className="bilan-period-toggle bilan-view-toggle" role="group" aria-label="Affichage">
         {(
@@ -354,18 +504,12 @@ function BilanCalendar({
       </div>
 
       {view === 'graphique' ? (
-        <div className="criteria-chart-list">
-          {chartGroups.map((g) => (
-            <CriteriaLineChart
-              key={g.unit}
-              unit={g.unit}
-              dates={dates}
-              series={g.series}
-              openDate={openDay}
-              onOpen={(d) => setOpenDay(openDay === d ? null : d)}
-            />
-          ))}
-        </div>
+        <CriteriaLineChart
+          dates={dates}
+          series={chartSeries}
+          openDate={openDay}
+          onOpen={(d) => setOpenDay(openDay === d ? null : d)}
+        />
       ) : (
         <>
           <div className={`bilan-calendar ${periodType}`}>
@@ -766,66 +910,106 @@ function TestsEvolution() {
 
   if (error) return <p className="error">{error}</p>;
   if (!tests) return <p>Chargement…</p>;
-  if (tests.length === 0) {
-    return <p className="empty">Aucun test pour l’instant : fais-en un depuis le bouton +.</p>;
-  }
+  return <TestsFavorites tests={tests} />;
+}
 
-  const groups = [
-    ...TEST_CATEGORIES.map((c) => ({ label: c.label, tests: tests.filter((t) => t.category === c.value) })),
-    { label: 'Autres', tests: tests.filter((t) => !t.category) },
-  ].filter((g) => g.tests.length > 0);
+const CATEGORY_EMOJI: Record<string, string> = {
+  mesures: '📏',
+  force: '💪',
+  souplesse: '🤸',
+  endurance: '❤️',
+};
+
+function TestsFavorites({ tests }: { tests: FitnessTest[] }) {
+  // Tous les tests du catalogue + ceux notés hors catalogue, par catégorie.
+  const options = useMemo(() => {
+    const opts = TEST_CATEGORIES.flatMap((c) =>
+      c.tests.map((t) => ({ key: t.name, label: t.name, emoji: CATEGORY_EMOJI[c.value] ?? '📈', group: c.label })),
+    );
+    const known = new Set(opts.map((o) => o.key.toLowerCase()));
+    for (const name of new Set(tests.map((t) => t.test_name))) {
+      if (!known.has(name.toLowerCase())) opts.push({ key: name, label: name, emoji: '📈', group: 'Autres' });
+    }
+    return opts;
+  }, [tests]);
+  const keys = options.map((o) => o.key);
+  // Présélection : les tests déjà faits, les plus récents d'abord.
+  const withData = Array.from(new Set([...tests].reverse().map((t) => t.test_name))).filter((n) => keys.includes(n));
+  const fav = useFavorites<string>('kaly-bilan-tests-favoris', keys, withData.slice(0, 6), withData.slice(0, 6));
 
   return (
     <>
-      {groups.map((g) => {
-        const names = Array.from(new Set(g.tests.map((t) => t.test_name)));
-        return (
-          <section key={g.label} className="bilan-test-group">
-            <h3>{g.label}</h3>
-            <div className="bilan-test-grid">
-              {names.map((name) => {
-                const entries = g.tests.filter((t) => t.test_name === name);
-                const first = entries[0];
-                const last = entries[entries.length - 1];
-                const def = definitionFor(name);
-                const delta = entries.length > 1 ? last.value - first.value : null;
-                const good =
-                  delta === null || !def || def.better === 'neutre' || delta === 0
-                    ? null
-                    : (def.better === 'plus') === delta > 0;
-                return (
-                  <div key={name} className="block b-blanc bilan-test-card">
-                    <div className="bilan-test-head">
-                      <strong>{name}</strong>
-                      <span>
-                        {fmt(last.value, 2)} {last.unit}
-                      </span>
-                    </div>
-                    {delta !== null && (
-                      <p className={`test-delta${good === true ? ' good' : good === false ? ' bad' : ''}`}>
-                        {delta > 0 ? '+' : ''}
-                        {fmt(delta, 2)} {last.unit} depuis le{' '}
-                        {new Date(`${first.entry_date}T12:00:00`).toLocaleDateString('fr-CH')}
-                      </p>
-                    )}
-                    {entries.length > 1 ? (
-                      <TrendChart
-                        points={entries.map((e) => ({ date: e.entry_date, value: e.value }))}
-                        unit={last.unit}
-                      />
-                    ) : (
-                      <p className="hint">
-                        Un seul résultat ({new Date(`${last.entry_date}T12:00:00`).toLocaleDateString('fr-CH')}) : la
-                        courbe apparaîtra au prochain test.
-                      </p>
-                    )}
+      <FavoritesBar
+        options={options}
+        favorites={fav.favorites}
+        active={fav.active}
+        onToggle={fav.toggle}
+        onRemove={fav.remove}
+        onAdd={fav.add}
+        noun="test"
+      />
+      {fav.active.length === 0 ? (
+        <p className="empty">
+          {tests.length === 0
+            ? 'Aucun test pour l’instant : fais-en un depuis le bouton +, et ajoute ici ceux à suivre.'
+            : 'Ajoute un test à tes favoris pour voir sa courbe.'}
+        </p>
+      ) : (
+        <div className="bilan-test-grid">
+          {fav.active.map((name) => {
+            const entries = tests.filter((t) => t.test_name.toLowerCase() === name.toLowerCase());
+            const def = definitionFor(name);
+            const emoji = options.find((o) => o.key === name)?.emoji ?? '📈';
+            if (entries.length === 0) {
+              return (
+                <div key={name} className="block b-blanc bilan-test-card">
+                  <div className="bilan-test-head">
+                    <strong>
+                      {emoji} {name}
+                    </strong>
+                    <span className="hint">{def?.unit}</span>
                   </div>
-                );
-              })}
-            </div>
-          </section>
-        );
-      })}
+                  <p className="hint">Pas encore de résultat : fais ce test depuis le bouton +.</p>
+                </div>
+              );
+            }
+            const first = entries[0];
+            const last = entries[entries.length - 1];
+            const delta = entries.length > 1 ? last.value - first.value : null;
+            const good =
+              delta === null || !def || def.better === 'neutre' || delta === 0
+                ? null
+                : (def.better === 'plus') === delta > 0;
+            return (
+              <div key={name} className="block b-blanc bilan-test-card">
+                <div className="bilan-test-head">
+                  <strong>
+                    {emoji} {name}
+                  </strong>
+                  <span>
+                    {fmt(last.value, 2)} {last.unit}
+                  </span>
+                </div>
+                {delta !== null && (
+                  <p className={`test-delta${good === true ? ' good' : good === false ? ' bad' : ''}`}>
+                    {delta > 0 ? '+' : ''}
+                    {fmt(delta, 2)} {last.unit} depuis le{' '}
+                    {new Date(`${first.entry_date}T12:00:00`).toLocaleDateString('fr-CH')}
+                  </p>
+                )}
+                {entries.length > 1 ? (
+                  <TrendChart points={entries.map((e) => ({ date: e.entry_date, value: e.value }))} unit={last.unit} />
+                ) : (
+                  <p className="hint">
+                    Un seul résultat ({new Date(`${last.entry_date}T12:00:00`).toLocaleDateString('fr-CH')}) : la courbe
+                    apparaîtra au prochain test.
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 }
