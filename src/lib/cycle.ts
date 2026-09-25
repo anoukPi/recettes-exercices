@@ -78,3 +78,74 @@ export function isLutealPhase(
   const lutealStart = addDays(predicted.start, -7);
   return dateKey >= lutealStart && dateKey < predicted.start;
 }
+
+// --- Phases du cycle pour le calendrier (demande d'Anouk, 25/09/2026) ---
+// Modèle courant, volontairement simple : l'ovulation a lieu ~14 jours avant
+// les règles suivantes (la phase lutéale est la plus stable d'une femme à
+// l'autre) ; fenêtre fertile = les 5 jours qui précèdent + le jour
+// d'ovulation. Une estimation calendaire, pas une méthode de contraception.
+const LUTEAL_LENGTH_DAYS = 14;
+const FERTILE_DAYS_BEFORE_OVULATION = 5;
+
+export type CyclePhase = 'regles' | 'folliculaire' | 'fertile' | 'ovulation' | 'luteale';
+
+export const PHASE_LABELS: Record<CyclePhase, string> = {
+  regles: 'Règles',
+  folliculaire: 'Phase folliculaire',
+  fertile: 'Période fertile',
+  ovulation: 'Ovulation',
+  luteale: 'Phase lutéale',
+};
+
+export interface CycleDayInfo {
+  phase: CyclePhase;
+  /** Jour du cycle (1 = premier jour des règles). */
+  cycleDay: number;
+  /** true si ce jour dépend d'un cycle estimé (règles pas encore notées). */
+  predicted: boolean;
+  cycleStart: string;
+  nextStart: string;
+  ovulation: string;
+}
+
+export function cycleDayInfo(
+  dateKey: string,
+  cycleEntries: CycleEntry[],
+  periodLengthDays?: number | null,
+): CycleDayInfo | null {
+  const starts = [...new Set(cycleEntries.map((e) => e.entry_date))].sort();
+  if (starts.length === 0 || dateKey < starts[0]) return null;
+  const cycleLength = averageCycleLength(cycleEntries);
+  const periodLength = periodLengthDays ?? DEFAULT_PERIOD_LENGTH_DAYS;
+
+  // Dernier début noté au plus tard ce jour-là, et début suivant (noté, ou
+  // estimé avec la durée moyenne du cycle).
+  let start = starts.filter((s) => s <= dateKey).pop() as string;
+  const noted = starts.find((s) => s > start);
+  // Un écart noté aberrant (oubli d'une règle) : on retombe sur l'estimation.
+  let next = noted && daysBetween(start, noted) <= MAX_PLAUSIBLE_CYCLE_DAYS ? noted : addDays(start, cycleLength);
+  let predicted = false;
+  while (dateKey >= next) {
+    start = next;
+    next = addDays(start, cycleLength);
+    predicted = true;
+  }
+
+  const ovulation = addDays(next, -LUTEAL_LENGTH_DAYS);
+  const fertileStart = addDays(ovulation, -FERTILE_DAYS_BEFORE_OVULATION);
+  let phase: CyclePhase;
+  if (dateKey < addDays(start, periodLength)) phase = 'regles';
+  else if (dateKey === ovulation) phase = 'ovulation';
+  else if (dateKey >= fertileStart && dateKey < ovulation) phase = 'fertile';
+  else if (dateKey > ovulation) phase = 'luteale';
+  else phase = 'folliculaire';
+
+  return {
+    phase,
+    cycleDay: daysBetween(start, dateKey) + 1,
+    predicted,
+    cycleStart: start,
+    nextStart: next,
+    ovulation,
+  };
+}

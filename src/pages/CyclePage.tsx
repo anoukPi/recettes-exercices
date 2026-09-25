@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 import { formatDateKeyFr, toDateKey } from '../lib/date';
 import { addCycleEntry, deleteCycleEntry, listCycleEntries } from '../api/cycle';
 import { getProfile, saveProfile } from '../api/profile';
-import { averageCycleLength, predictNextPeriod } from '../lib/cycle';
+import { averageCycleLength, cycleDayInfo, PHASE_LABELS, predictNextPeriod } from '../lib/cycle';
+import { daysBetween } from '../lib/date';
+import { CycleCalendar } from '../components/CycleCalendar';
 import { useSession } from '../lib/auth';
 import type { CycleEntry, Profile } from '../types';
 
@@ -16,6 +18,8 @@ export function CyclePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [periodLength, setPeriodLength] = useState('');
   const [savingLength, setSavingLength] = useState(false);
+  // Durée des règles : discrète une fois renseignée, dépliée pour modifier.
+  const [editingLength, setEditingLength] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -69,6 +73,7 @@ export function CyclePage() {
         special_situation: profile.special_situation,
       });
       setProfile(updated);
+      setEditingLength(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Une erreur est survenue.');
     } finally {
@@ -78,6 +83,9 @@ export function CyclePage() {
 
   const cycleLength = averageCycleLength(entries);
   const predicted = predictNextPeriod(entries, profile?.period_length_days ?? null);
+  const today = toDateKey(new Date());
+  const todayInfo = cycleDayInfo(today, entries, profile?.period_length_days ?? null);
+  const lengthKnown = profile?.period_length_days != null;
 
   const handleDelete = async (id: string) => {
     await deleteCycleEntry(id);
@@ -99,12 +107,29 @@ export function CyclePage() {
   return (
     <section className="journal">
       <h2>Cycle</h2>
-      <p className="hint">
-        Note le premier jour de tes règles. Kaly te rappellera de surveiller ton apport en fer les
-        jours qui suivent (pertes de sang), t'indiquera si tu es en période de règles dans le
-        Carnet, et estimera la prochaine échéance à partir de ton historique — le reste (envies,
-        énergie...) varie trop d'une personne à l'autre pour que je t'affiche des chiffres
-        inventés dessus.
+      {todayInfo && (
+        <div className={`block cycle-today phase-block-${todayInfo.phase}`}>
+          <h4 className="block-label">Aujourd'hui</h4>
+          <p className="block-number-line">
+            <span className="block-number">J{todayInfo.cycleDay}</span>
+            <span className="block-caption">{PHASE_LABELS[todayInfo.phase]}</span>
+          </p>
+          <p className="block-meta">
+            Prochaines règles {formatDateKeyFr(todayInfo.nextStart)}
+            {` (dans ${daysBetween(today, todayInfo.nextStart)} jours)`}
+            {todayInfo.ovulation > today &&
+              ` · ovulation estimée ${formatDateKeyFr(todayInfo.ovulation)}`}
+          </p>
+        </div>
+      )}
+
+      <CycleCalendar entries={entries} periodLengthDays={profile?.period_length_days ?? null} />
+
+      <p className="hint cycle-disclaimer">
+        Estimation calendaire (cycle moyen de {cycleLength} jours
+        {entries.length < 2 ? ', repère par défaut faute d\'historique' : ', calculé depuis tes dates'} ;
+        ovulation ~14 jours avant les règles suivantes). Ce n'est ni une prédiction médicale ni une
+        méthode de contraception.
       </p>
 
       <div className="journal-add-forms">
@@ -117,52 +142,46 @@ export function CyclePage() {
               Ajouter
             </button>
           </div>
-        </div>
 
-        <div className="journal-add-form">
-          <h3>Durée moyenne des règles</h3>
-          <p className="hint">
-            Sert à savoir si tu es dedans (indiqué dans le Carnet) et à estimer la fin de la
-            prochaine échéance.
-          </p>
-          <div className="journal-add-row two-cols">
-            <input
-              type="number"
-              min="1"
-              max="14"
-              step="1"
-              value={periodLength}
-              onChange={(e) => setPeriodLength(e.target.value)}
-              placeholder="ex. 5 (jours)"
-            />
-            <button type="button" onClick={handleSavePeriodLength} disabled={savingLength || !profile}>
-              {savingLength ? 'Enregistrement…' : 'Enregistrer'}
-            </button>
-          </div>
+          {lengthKnown && !editingLength ? (
+            <p className="hint cycle-length-line">
+              Durée des règles : {profile?.period_length_days} jours ·{' '}
+              <button type="button" className="link-button" onClick={() => setEditingLength(true)}>
+                modifier
+              </button>
+            </p>
+          ) : (
+            <div className="cycle-length-edit">
+              <label htmlFor="cycle-period-length" className="hint">
+                Durée moyenne de tes règles (jours)
+              </label>
+              <div className="journal-add-row two-cols">
+                <input
+                  id="cycle-period-length"
+                  type="number"
+                  min="1"
+                  max="14"
+                  step="1"
+                  value={periodLength}
+                  onChange={(e) => setPeriodLength(e.target.value)}
+                  placeholder="ex. 5"
+                />
+                <button type="button" onClick={handleSavePeriodLength} disabled={savingLength || !profile}>
+                  {savingLength ? 'Enregistrement…' : 'Enregistrer'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {entries.length > 0 && (
-        <div className="summary-card">
-          <h4>Prochaine échéance estimée</h4>
-          {predicted ? (
-            <p>
-              Du <strong>{formatDateKeyFr(predicted.start)}</strong> au{' '}
-              <strong>{formatDateKeyFr(predicted.end)}</strong>
-            </p>
-          ) : (
-            <p className="hint">Pas encore assez de données.</p>
-          )}
-          <p className="hint">
-            Basé sur un cycle moyen de {cycleLength} jours
-            {entries.length < 2 ? ' (repère par défaut, pas encore assez d\'historique)' : ' (calculé depuis tes dates notées)'}
-            {' '}et une durée de règles de {profile?.period_length_days ?? 5} jours
-            {profile?.period_length_days == null ? ' (repère par défaut)' : ''}. Une estimation, pas
-            une prédiction médicale.
-          </p>
-        </div>
+      {entries.length > 0 && predicted && !todayInfo && (
+        <p className="hint">
+          Prochaine échéance estimée : du {formatDateKeyFr(predicted.start)} au {formatDateKeyFr(predicted.end)}.
+        </p>
       )}
 
+      <h3 className="cycle-history-title">Dates notées</h3>
       {loading && <p>Chargement…</p>}
       {!loading && entries.length === 0 && <p className="empty">Rien noté pour l'instant.</p>}
 

@@ -3105,3 +3105,151 @@ a.button,
 .test-illustration figcaption a {
   color: inherit;
 }
+
+/* --- Cycle : calendrier des phases --- */
+.cycle-today {
+  margin-bottom: 1rem;
+}
+
+.phase-block-regles { background: var(--corail); color: var(--noir); }
+.phase-block-fertile,
+.phase-block-ovulation { background: var(--eau); color: var(--noir); }
+.phase-block-luteale { background: var(--petrole); color: var(--on-dark); }
+.phase-block-folliculaire { background: var(--surface); color: var(--text); box-shadow: var(--shadow-card); }
+
+.cycle-calendar {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 1rem;
+  max-width: 460px;
+}
+
+.cycle-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.6rem;
+  text-transform: capitalize;
+}
+
+.cycle-calendar-header button {
+  border: none;
+  background: var(--bg);
+  border-radius: 999px;
+  width: 36px;
+  height: 36px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.cycle-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.cycle-calendar-weekday {
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  padding-bottom: 2px;
+}
+
+.cycle-day {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.cycle-day.phase-regles,
+.cycle-swatch.phase-regles { background: var(--corail); color: var(--noir); }
+.cycle-day.phase-fertile,
+.cycle-swatch.phase-fertile { background: var(--eau); color: var(--noir); }
+.cycle-day.phase-ovulation,
+.cycle-swatch.phase-ovulation { background: var(--eau); color: var(--noir); box-shadow: inset 0 0 0 3px var(--petrole); }
+.cycle-day.phase-luteale,
+.cycle-swatch.phase-luteale { background: rgba(14, 78, 92, 0.18); }
+.cycle-day.phase-folliculaire,
+.cycle-swatch.phase-folliculaire { background: var(--bg); }
+
+/* Estimé (règles pas encore notées) : même couleur, en pointillés et plus pâle */
+.cycle-day.predicted,
+.cycle-swatch.predicted {
+  opacity: 0.55;
+  outline: 2px dashed rgba(18, 18, 18, 0.35);
+  outline-offset: -3px;
+}
+
+.cycle-day.noted-start {
+  font-weight: 900;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+
+.cycle-day.today {
+  box-shadow: 0 0 0 3px var(--noir);
+}
+
+.cycle-day.phase-ovulation.today {
+  box-shadow: inset 0 0 0 3px var(--petrole), 0 0 0 3px var(--noir);
+}
+
+.cycle-legend {
+  list-style: none;
+  padding: 0;
+  margin: 0.8rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.9rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.cycle-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cycle-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.cycle-disclaimer {
+  margin: 0.6rem 0 1rem;
+  max-width: 460px;
+}
+
+.cycle-length-line {
+  margin-top: 0.6rem;
+}
+
+.cycle-length-line .link-button {
+  margin-top: 0;
+  font-size: inherit;
+}
+
+.cycle-length-edit {
+  margin-top: 0.8rem;
+}
+
+.cycle-history-title {
+  margin: 1.4rem 0 0.5rem;
+  font-size: 1rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  .cycle-day.phase-luteale,
+  .cycle-swatch.phase-luteale { background: rgba(158, 219, 207, 0.18); }
+}
