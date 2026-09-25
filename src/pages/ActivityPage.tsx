@@ -286,7 +286,7 @@ export function ActivityPage() {
         </div>
         {!profile?.weight_kg && (
           <p className="hint">
-            Renseigne ton <Link to="/settings">poids dans les Paramètres</Link> pour estimer les
+            Renseigne ton <Link to="/settings?onglet=profil">poids dans les Paramètres</Link> pour estimer les
             calories dépensées.
           </p>
         )}

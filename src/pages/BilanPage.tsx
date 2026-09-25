@@ -134,7 +134,7 @@ export function BilanPage() {
       {loading && <p>Chargement…</p>}
       {!dailyTargets && !loading && (
         <p className="hint">
-          Renseigne ton <Link to="/settings">profil dans les Paramètres</Link> pour voir les écarts
+          Renseigne ton <Link to="/settings?onglet=profil">profil dans les Paramètres</Link> pour voir les écarts
           par rapport à tes objectifs.
         </p>
       )}

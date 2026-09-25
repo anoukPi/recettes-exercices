@@ -341,7 +341,7 @@ export function JournalPage() {
 
       {!profile && (
         <p className="hint">
-          Renseigne ton <Link to="/settings">profil dans les Paramètres</Link> pour voir tes
+          Renseigne ton <Link to="/settings?onglet=profil">profil dans les Paramètres</Link> pour voir tes
           objectifs journaliers ici.
         </p>
       )}
