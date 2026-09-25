@@ -21,7 +21,7 @@ import { NewWorkoutSessionPage } from './pages/NewWorkoutSessionPage';
 import { WorkoutSessionDetailPage } from './pages/WorkoutSessionDetailPage';
 
 // Navigation (voir EXPERIENCE.md de l'atelier UX, révisée le 25/09/2026) :
-// - mobile : barre du bas noire (Carnet, Comparer, +, Bilan, Plus) ;
+// - mobile : barre du bas noire (Carnet, Bilan, +, Comparer, Plus) ;
 // - tablette/ordinateur (≥ 900 px) : menu latéral noir, même logique.
 // Règle d'Anouk : ce qui est dans « + » (repas, activité, tests, recettes)
 // n'apparaît nulle part ailleurs dans les menus.
@@ -39,9 +39,9 @@ const NAV_BILAN: NavItem = { path: '/bilan', label: 'Bilan', icon: 'bilan' };
 const NAV_CYCLE: NavItem = { path: '/cycle', label: 'Cycle', icon: 'cycle' };
 const NAV_PARAMETRES: NavItem = { path: '/settings', label: 'Paramètres', icon: 'parametres' };
 
-const TAB_ITEMS_LEFT = [NAV_CARNET, NAV_COMPARER];
-const TAB_ITEMS_RIGHT = [NAV_BILAN];
-const SIDEBAR_ITEMS = [NAV_CARNET, NAV_COMPARER, NAV_BILAN, NAV_CYCLE];
+const TAB_ITEMS_LEFT = [NAV_CARNET, NAV_BILAN];
+const TAB_ITEMS_RIGHT = [NAV_COMPARER];
+const SIDEBAR_ITEMS = [NAV_CARNET, NAV_BILAN, NAV_COMPARER, NAV_CYCLE];
 // Rangé dans la feuille « Plus » sur mobile.
 const MORE_ITEMS = [NAV_CYCLE, NAV_PARAMETRES];
 
