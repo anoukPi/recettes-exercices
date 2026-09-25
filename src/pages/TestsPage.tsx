@@ -18,6 +18,7 @@ import {
   type TestCategory,
 } from '../lib/fitnessTestCatalog';
 import type { FitnessTest, FitnessTestCategory, Profile } from '../types';
+import { TestIllustrationView } from '../components/TestIllustrationView';
 
 type Tab = FitnessTestCategory | 'tendances';
 
@@ -108,7 +109,8 @@ function CategoryForm({
   const [otherValue, setOtherValue] = useState('');
   const [otherUnit, setOtherUnit] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
-  const [video, setVideo] = useState<File | null>(null);
+  // Photo seulement pour les mesures corporelles (suivi visuel de silhouette).
+  const allowsPhoto = category.value === 'mesures';
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fileKey, setFileKey] = useState(0);
@@ -148,9 +150,8 @@ function CategoryForm({
 
     setSaving(true);
     try {
-      // Une photo / vidéo par saisie, rattachée à chaque résultat du jour.
-      const photoPath = photo ? await uploadTestMedia(photo) : null;
-      const videoPath = video ? await uploadTestMedia(video) : null;
+      // Une photo par saisie (mesures corporelles), rattachée à chaque résultat du jour.
+      const photoPath = allowsPhoto && photo ? await uploadTestMedia(photo) : null;
       for (const r of rows) {
         await addFitnessTest({
           entry_date: entryDate,
@@ -159,7 +160,7 @@ function CategoryForm({
           unit: r.unit,
           category: category.value,
           photo_path: photoPath,
-          video_path: videoPath,
+          video_path: null,
         });
       }
       const weight = rows.find((r) => r.name.toLowerCase() === 'poids' && r.unit === 'kg');
@@ -171,7 +172,6 @@ function CategoryForm({
       setOtherValue('');
       setOtherUnit('');
       setPhoto(null);
-      setVideo(null);
       setFileKey((k) => k + 1);
       onSaved(rows.map((r) => r.name));
     } catch (err) {
@@ -211,6 +211,7 @@ function CategoryForm({
                 )}
               </div>
               <p className="hint">{t.how}</p>
+              {t.illustration && <TestIllustrationView illustration={t.illustration} />}
               {t.name === RUFFIER_TEST_NAME ? (
                 <div className="ruffier">
                   <p className="hint">
@@ -291,17 +292,15 @@ function CategoryForm({
         </li>
       </ul>
 
-      <div className="test-media-inputs" key={fileKey}>
-        <label className="test-file">
-          📷 Photo (optionnel)
-          <input type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} />
-        </label>
-        <label className="test-file">
-          🎬 Vidéo (optionnel, 50 Mo max)
-          <input type="file" accept="video/*" onChange={(e) => setVideo(e.target.files?.[0] ?? null)} />
-        </label>
-        <p className="hint">Photos et vidéos sont privées : toi seule peux les voir.</p>
-      </div>
+      {allowsPhoto && (
+        <div className="test-media-inputs" key={fileKey}>
+          <label className="test-file">
+            📷 Photo de silhouette (optionnel)
+            <input type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} />
+          </label>
+          <p className="hint">Privée : toi seule peux la voir. Même tenue, même endroit, même lumière d'un mois à l'autre.</p>
+        </div>
+      )}
 
       <button type="submit" disabled={saving}>
         {saving ? 'Enregistrement…' : 'Enregistrer mes résultats'}
