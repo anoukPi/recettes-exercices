@@ -23,6 +23,7 @@ export function ProfileSection() {
 
   const [sex, setSex] = useState('');
   const [birthDate, setBirthDate] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [heightCm, setHeightCm] = useState('');
   const [weightKg, setWeightKg] = useState('');
   const [activityLevel, setActivityLevel] = useState('');
@@ -39,6 +40,7 @@ export function ProfileSection() {
       .then((p) => {
         setProfile(p);
         if (p) {
+          setDisplayName(p.display_name ?? '');
           setSex(p.sex ?? '');
           setBirthDate(p.birth_date ?? '');
           setHeightCm(p.height_cm?.toString() ?? '');
@@ -71,6 +73,7 @@ export function ProfileSection() {
     setSaved(false);
     try {
       const updated = await saveProfile({
+        display_name: displayName.trim() || null,
         sex: sex === 'homme' || sex === 'femme' ? sex : null,
         birth_date: birthDate || null,
         height_cm: heightCm ? parseFloat(heightCm) : null,
@@ -100,6 +103,9 @@ export function ProfileSection() {
   // cliquer sur "Enregistrer le profil".
   const draftProfile: Profile = {
     id: profile?.id ?? '',
+    account_id: profile?.account_id ?? '',
+    display_name: displayName.trim() || null,
+    created_at: profile?.created_at ?? '',
     updated_at: profile?.updated_at ?? '',
     sex: sex === 'homme' || sex === 'femme' ? sex : null,
     birth_date: birthDate || null,
@@ -140,6 +146,18 @@ export function ProfileSection() {
       {error && <p className="error">{error}</p>}
 
       <form className="profile-form" onSubmit={handleSubmit}>
+        <div className="field">
+          <label htmlFor="profile-name">Prénom</label>
+          <input
+            id="profile-name"
+            type="text"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="Affiché dans le choix du profil"
+            maxLength={40}
+          />
+        </div>
+
         <div className="field">
           <label htmlFor="profile-sex">Sexe</label>
           <select id="profile-sex" value={sex} onChange={(e) => setSex(e.target.value)}>

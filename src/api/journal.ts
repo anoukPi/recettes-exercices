@@ -1,11 +1,13 @@
 import { supabase } from '../lib/supabaseClient';
 import { getCurrentUserId } from '../lib/auth';
+import { activeProfileId } from '../lib/activeProfile';
 import type { JournalEntry, JournalEntryInput } from '../types';
 
 export async function listJournalEntries(date: string): Promise<JournalEntry[]> {
   const { data, error } = await supabase
     .from('journal_entries')
     .select('*')
+    .eq('profile_id', await activeProfileId())
     .eq('entry_date', date)
     .order('created_at', { ascending: true });
   if (error) throw error;
@@ -16,6 +18,7 @@ export async function listJournalEntriesInRange(startDate: string, endDate: stri
   const { data, error } = await supabase
     .from('journal_entries')
     .select('*')
+    .eq('profile_id', await activeProfileId())
     .gte('entry_date', startDate)
     .lte('entry_date', endDate);
   if (error) throw error;
@@ -42,6 +45,7 @@ export async function listFrequentJournalItems(days = 30, limit = 10): Promise<F
   const { data, error } = await supabase
     .from('journal_entries')
     .select('kind, reference_item_id, recipe_id, label, quantity, unit, entry_date, created_at')
+    .eq('profile_id', await activeProfileId())
     .gte('entry_date', sinceKey)
     .order('entry_date', { ascending: false })
     .order('created_at', { ascending: false });
@@ -84,7 +88,7 @@ export async function addJournalEntry(input: Omit<JournalEntryInput, 'user_id'>)
   if (!userId) throw new Error('Connecte-toi pour ajouter une entrée au carnet.');
   const { data, error } = await supabase
     .from('journal_entries')
-    .insert({ ...input, user_id: userId })
+    .insert({ ...input, user_id: userId, profile_id: await activeProfileId() })
     .select()
     .single();
   if (error) throw error;

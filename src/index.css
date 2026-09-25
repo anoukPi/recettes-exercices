@@ -4328,3 +4328,136 @@ a.button,
   opacity: 0.4;
   cursor: default;
 }
+
+/* --- Profils (toi, tes enfants…) --- */
+.profile-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--on-dark);
+  font: inherit;
+  font-weight: 700;
+  padding: 0.35rem 0.8rem 0.35rem 0.35rem;
+  margin: 0 0 1rem;
+  cursor: pointer;
+  max-width: 100%;
+}
+
+.profile-switcher-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-switcher.compact {
+  margin: 0;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-card);
+  font-size: 0.88rem;
+}
+
+.app-topbar {
+  gap: 0.75rem;
+}
+
+.profile-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--eau);
+  color: var(--noir);
+  font-weight: 800;
+  flex: none;
+}
+
+.profile-avatar.secondary {
+  background: var(--corail);
+}
+
+.profile-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.profile-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.75rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.profile-option span:nth-child(2) {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.profile-option small {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.profile-option.active {
+  border-color: var(--petrole);
+  background: var(--eau-soft);
+}
+
+.profile-check {
+  font-weight: 800;
+  color: var(--petrole);
+}
+
+.profile-add-button {
+  width: 100%;
+  padding: 0.65rem;
+  border: 1.5px dashed var(--petrole);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--petrole);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.profile-add-form {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.profile-add-form .field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.profile-add-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.child-tips {
+  margin: 0.6rem 0 0;
+  padding-left: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+}

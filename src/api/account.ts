@@ -23,9 +23,10 @@ export async function exportMyData(): Promise<Record<string, unknown>> {
 
   const result: Record<string, unknown> = { exported_at: new Date().toISOString() };
 
-  const { data: profile, error: profileError } = await supabase.from('profile').select('*').eq('id', userId).maybeSingle();
+  // Tous les profils du compte (toi + profils ajoutés, ex. enfants).
+  const { data: profiles, error: profileError } = await supabase.from('profile').select('*').eq('account_id', userId);
   if (profileError) throw profileError;
-  result.profile = profile;
+  result.profiles = profiles;
 
   for (const table of OWN_TABLES) {
     const { data, error } = await supabase.from(table).select('*').eq('user_id', userId);

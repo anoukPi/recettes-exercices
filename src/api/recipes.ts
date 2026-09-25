@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabaseClient';
 import { getCurrentUserId } from '../lib/auth';
+import { activeProfileId } from '../lib/activeProfile';
 import type { Recipe, RecipeInput } from '../types';
 
 export async function listRecipes(): Promise<Recipe[]> {
@@ -74,6 +75,7 @@ export async function getFavoriteRecipeIds(days = 30, limit = 5): Promise<string
   const { data, error } = await supabase
     .from('journal_entries')
     .select('recipe_id')
+    .eq('profile_id', await activeProfileId())
     .eq('kind', 'recipe')
     .gte('entry_date', sinceKey);
   if (error) throw error;

@@ -188,7 +188,13 @@ export const CLIMBING_BOULDER_COLORS = [
 ] as const;
 
 export interface Profile {
-  id: string; // = auth.uid() de l'utilisatrice
+  /** Profil principal : = id du compte (auth.uid()). Profils ajoutés (enfants…) : id propre. */
+  id: string;
+  /** Compte (adresse mail) auquel le profil appartient. */
+  account_id: string;
+  /** Prénom affiché dans le sélecteur de profil (null = « Moi » pour le profil principal). */
+  display_name: string | null;
+  created_at: string;
   sex: 'homme' | 'femme' | null;
   birth_date: string | null;
   height_cm: number | null;
@@ -214,7 +220,9 @@ export const SPECIAL_SITUATIONS = [
 ] as const;
 export type SpecialSituation = (typeof SPECIAL_SITUATIONS)[number]['value'];
 
-export type ProfileInput = Omit<Profile, 'id' | 'updated_at'>;
+export type ProfileInput = Omit<Profile, 'id' | 'updated_at' | 'account_id' | 'created_at' | 'display_name'> & {
+  display_name?: string | null;
+};
 
 export interface JournalEntry {
   id: string;

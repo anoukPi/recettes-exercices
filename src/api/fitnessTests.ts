@@ -1,11 +1,13 @@
 import { supabase } from '../lib/supabaseClient';
 import { getCurrentUserId } from '../lib/auth';
+import { activeProfileId } from '../lib/activeProfile';
 import type { FitnessTest, FitnessTestInput } from '../types';
 
 export async function listFitnessTests(): Promise<FitnessTest[]> {
   const { data, error } = await supabase
     .from('fitness_tests')
     .select('*')
+    .eq('profile_id', await activeProfileId())
     .order('entry_date', { ascending: true });
   if (error) throw error;
   return data ?? [];
@@ -16,7 +18,7 @@ export async function addFitnessTest(input: Omit<FitnessTestInput, 'user_id'>): 
   if (!userId) throw new Error('Connecte-toi pour ajouter un test.');
   const { data, error } = await supabase
     .from('fitness_tests')
-    .insert({ ...input, user_id: userId })
+    .insert({ ...input, user_id: userId, profile_id: await activeProfileId() })
     .select()
     .single();
   if (error) throw error;
@@ -54,6 +56,7 @@ export async function getLastFitnessTestDate(): Promise<string | null> {
   const { data, error } = await supabase
     .from('fitness_tests')
     .select('entry_date')
+    .eq('profile_id', await activeProfileId())
     .order('entry_date', { ascending: false })
     .limit(1)
     .maybeSingle();

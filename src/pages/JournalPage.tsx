@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { addDays, formatDateKeyFr, toDateKey } from '../lib/date';
 import { useDayNutrition } from '../lib/useDayNutrition';
-import { OMEGA6_OMEGA3_RATIO_MAX, targetsBlockedReason, type DailyTargets } from '../lib/dailyNeeds';
+import { ageFromBirthDate, OMEGA6_OMEGA3_RATIO_MAX, targetsBlockedReason, type DailyTargets } from '../lib/dailyNeeds';
 import { useSession } from '../lib/auth';
 import { MonthCalendar } from '../components/MonthCalendar';
 import { listCycleEntries } from '../api/cycle';
@@ -79,7 +79,27 @@ const BEVERAGE_UNITS_BY_TYPE: Record<BeverageType, BeverageUnit[]> = {
 const ML_PER_KCAL = 1;
 const WATER_TARGET_FLOOR_ML = 1500;
 
+/** Âge si moins de 18 ans (profil d'enfant), sinon null. */
+function childAge(profile: Profile | null): number | null {
+  if (!profile?.birth_date) return null;
+  const age = ageFromBirthDate(profile.birth_date);
+  return age < 18 ? age : null;
+}
+
+// Repère de boissons pour un enfant (EFSA, eau totale × ~0,8 venant des
+// boissons, arrondi) — pas de calcul par le poids ou les calories.
+function childWaterTarget(age: number): number {
+  if (age < 9) return 1200;
+  if (age < 14) return 1500;
+  return 1800;
+}
+
+// OMS : au moins 60 minutes par jour d'activité modérée à soutenue (5-17 ans).
+const CHILD_ACTIVITY_MINUTES = 60;
+
 function waterTarget(profile: Profile | null, dailyTargets: DailyTargets | null): number {
+  const age = childAge(profile);
+  if (age !== null) return childWaterTarget(age);
   if (dailyTargets) {
     return Math.max(WATER_TARGET_FLOOR_ML, Math.round(dailyTargets.tdee_kcal * ML_PER_KCAL));
   }
@@ -152,13 +172,17 @@ function MacroMeter({
   actual,
   target,
   unit,
+  moreIsBetter = false,
 }: {
   label: string;
   actual: number;
   target: number | undefined;
   unit: string;
+  /** Minimum à atteindre (ex. activité d'un enfant) : dépasser n'est jamais en corail. */
+  moreIsBetter?: boolean;
 }) {
-  const status = target ? meterStatus(actual, target) : null;
+  const raw = target ? meterStatus(actual, target) : null;
+  const status = raw && moreIsBetter && raw.className !== 'meter-under' ? { ...raw, className: 'meter-ok' as const } : raw;
   // Petites quantités (oméga-3…) : une décimale, sinon « 1 / 3 g » ne dit rien.
   const decimals = target !== undefined && target < 10 ? 1 : 0;
   const fmt = (v: number) => v.toLocaleString('fr-CH', { maximumFractionDigits: decimals, minimumFractionDigits: decimals });
@@ -212,8 +236,13 @@ export function JournalPage() {
   // comme milieu de fourchette, pas une mesure individuelle.
   const lutealPhaseExtraKcal = lutealPhase ? 200 : 0;
 
-  const { loading, error, profile, dailyTargets, dayTotals, dayGi, bilan, activityEntries } =
+  const { loading, error, profile, dailyTargets, dayTotals, dayGi, bilan: rawBilan, activityEntries } =
     useDayNutrition(dateKey, lutealPhaseExtraKcal);
+  // Profil d'enfant : pas de métabolisme ni d'« écart » calorique (formule
+  // adulte, et une logique de déficit n'a pas de sens en croissance).
+  const age = childAge(profile);
+  const bilan = age === null ? rawBilan : null;
+  const activityMinutesToday = activityEntries.reduce((sum, a) => sum + a.duration_minutes, 0);
 
   useEffect(() => {
     if (!session) return;
@@ -345,7 +374,7 @@ export function JournalPage() {
           objectifs journaliers ici.
         </p>
       )}
-      {targetsBlockedReason(profile) && (
+      {targetsBlockedReason(profile) && age === null && (
         <p className="hint warning-hint">{targetsBlockedReason(profile)}</p>
       )}
       {dailyTargets?.flooredBySafety && (
@@ -370,6 +399,22 @@ export function JournalPage() {
       )}
 
       <div className="journal-blocks">
+        {age !== null && (
+          <div className="block b-eau block-child">
+            <h4 className="block-label">🌱 Repères pour grandir</h4>
+            <p className="hint">
+              Avant 18 ans, pas d’objectif de calories : les besoins suivent la croissance. Quelques repères simples à la
+              place — pour un avis personnalisé, demande au pédiatre ou à un·e diététicien·ne.
+            </p>
+            <MacroMeter label="🏃 Bouger (OMS : 60 min/jour)" actual={activityMinutesToday} target={CHILD_ACTIVITY_MINUTES} unit="min" moreIsBetter />
+            <ul className="child-tips">
+              <li>💧 L’eau comme boisson principale — repère ≈ {(childWaterTarget(age) / 1000).toLocaleString('fr-CH')} L de boissons par jour</li>
+              <li>🍎 Des fruits et légumes à chaque repas (au moins 5 portions par jour)</li>
+              <li>🥛 Des produits laitiers ou d’autres sources de calcium chaque jour</li>
+              <li>🍬 Boissons sucrées et sucreries : plutôt occasionnelles</li>
+            </ul>
+          </div>
+        )}
         {dailyTargets || bilan ? (
           <div className="block b-petrole block-calories">
             <h4 className="block-label">Calories</h4>

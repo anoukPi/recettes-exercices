@@ -1,11 +1,13 @@
 import { supabase } from '../lib/supabaseClient';
 import { getCurrentUserId } from '../lib/auth';
+import { activeProfileId } from '../lib/activeProfile';
 import type { ActivityEntry, ActivityEntryInput } from '../types';
 
 export async function listActivityEntries(date: string): Promise<ActivityEntry[]> {
   const { data, error } = await supabase
     .from('activity_entries')
     .select('*')
+    .eq('profile_id', await activeProfileId())
     .eq('entry_date', date)
     .order('created_at', { ascending: true });
   if (error) throw error;
@@ -16,6 +18,7 @@ export async function listActivityEntriesInRange(startDate: string, endDate: str
   const { data, error } = await supabase
     .from('activity_entries')
     .select('*')
+    .eq('profile_id', await activeProfileId())
     .gte('entry_date', startDate)
     .lte('entry_date', endDate);
   if (error) throw error;
@@ -31,6 +34,7 @@ export async function listPastActivityMets(): Promise<Record<string, number>> {
   const { data, error } = await supabase
     .from('activity_entries')
     .select('activity_type, met')
+    .eq('profile_id', await activeProfileId())
     .order('entry_date', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(1000);
@@ -46,6 +50,7 @@ export async function getLastWorkoutSessionId(): Promise<string | null> {
   const { data, error } = await supabase
     .from('activity_entries')
     .select('workout_session_id')
+    .eq('profile_id', await activeProfileId())
     .not('workout_session_id', 'is', null)
     .order('entry_date', { ascending: false })
     .order('created_at', { ascending: false })
@@ -60,7 +65,7 @@ export async function addActivityEntry(input: Omit<ActivityEntryInput, 'user_id'
   if (!userId) throw new Error('Connecte-toi pour ajouter une activité.');
   const { data, error } = await supabase
     .from('activity_entries')
-    .insert({ ...input, user_id: userId })
+    .insert({ ...input, user_id: userId, profile_id: await activeProfileId() })
     .select()
     .single();
   if (error) throw error;
