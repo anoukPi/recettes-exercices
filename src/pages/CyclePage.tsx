@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { formatDateKeyFr, toDateKey } from '../lib/date';
 import { addCycleEntry, deleteCycleEntry, listCycleEntries } from '../api/cycle';
 import { getProfile, saveProfile } from '../api/profile';
-import { averageCycleLength, cycleDayInfo, PHASE_LABELS, predictNextPeriod } from '../lib/cycle';
+import { averageCycleLength, cycleDayInfo, PHASE_LABELS, predictNextPeriod, recentCycleLengths } from '../lib/cycle';
 import { daysBetween } from '../lib/date';
 import { CycleCalendar } from '../components/CycleCalendar';
 import { useSession } from '../lib/auth';
@@ -86,6 +86,11 @@ export function CyclePage() {
   const today = toDateKey(new Date());
   const todayInfo = cycleDayInfo(today, entries, profile?.period_length_days ?? null);
   const lengthKnown = profile?.period_length_days != null;
+  const recentLengths = recentCycleLengths(entries);
+  // Date prévue passée sans règles notées : on le dit plutôt que d'enchaîner
+  // sur un cycle inventé. La prochaine date notée recalera tout.
+  const lateSince = predicted && predicted.start < today ? predicted.start : null;
+  const lateDays = lateSince ? daysBetween(lateSince, today) : 0;
 
   const handleDelete = async (id: string) => {
     await deleteCycleEntry(id);
@@ -107,7 +112,20 @@ export function CyclePage() {
   return (
     <section className="journal">
       <h2>Cycle</h2>
-      {todayInfo && (
+      {lateSince && (
+        <div className="block b-corail cycle-today">
+          <h4 className="block-label">Aujourd'hui</h4>
+          <p className="block-number-line">
+            <span className="block-number">+{lateDays}</span>
+            <span className="block-caption">jour{lateDays > 1 ? 's' : ''} de retard ?</span>
+          </p>
+          <p className="block-meta">
+            Tes règles étaient prévues le {formatDateKeyFr(lateSince)} et ne sont pas encore notées.
+            Note-les dès qu'elles arrivent : les prochaines dates se recalculeront.
+          </p>
+        </div>
+      )}
+      {todayInfo && !lateSince && (
         <div className={`block cycle-today phase-block-${todayInfo.phase}`}>
           <h4 className="block-label">Aujourd'hui</h4>
           <p className="block-number-line">
@@ -126,10 +144,13 @@ export function CyclePage() {
       <CycleCalendar entries={entries} periodLengthDays={profile?.period_length_days ?? null} />
 
       <p className="hint cycle-disclaimer">
-        Estimation calendaire (cycle moyen de {cycleLength} jours
-        {entries.length < 2 ? ', repère par défaut faute d\'historique' : ', calculé depuis tes dates'} ;
-        ovulation ~14 jours avant les règles suivantes). Ce n'est ni une prédiction médicale ni une
-        méthode de contraception.
+        {recentLengths.length === 0
+          ? `Cycle de ${cycleLength} jours par défaut : note au moins deux débuts de règles pour que Kaly calcule le tien.`
+          : `Recalculé à chaque date notée : cycle typique de ${cycleLength} jours (médiane) d'après ${
+              recentLengths.length > 1 ? `tes ${recentLengths.length} derniers cycles` : 'ton dernier cycle'
+            } (${recentLengths.join(', ')} jours).`}{' '}
+        Ovulation estimée ~14 jours avant les règles suivantes. Ce n'est ni une prédiction médicale
+        ni une méthode de contraception.
       </p>
 
       <div className="journal-add-forms">

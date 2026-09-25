@@ -28,19 +28,32 @@ export function isIronReminderDay(
  * "règles en cours" plutôt qu'un rappel nutritionnel précis. */
 export const isOnPeriod = isIronReminderDay;
 
-/** Durée moyenne du cycle (du début d'une règle au début de la suivante),
- * calculée depuis l'historique noté. Repli sur 28 jours (moyenne courante)
- * si moins de deux dates notées pour calculer un vrai écart. */
-export function averageCycleLength(cycleEntries: CycleEntry[]): number {
-  if (cycleEntries.length < 2) return DEFAULT_CYCLE_LENGTH_DAYS;
-  const sorted = [...cycleEntries].sort((a, b) => a.entry_date.localeCompare(b.entry_date));
+// La prévision suit les cycles récents : un cycle change avec le temps
+// (stress, sport, âge…), les plus anciens ne doivent pas tirer la moyenne.
+const RECENT_CYCLES_FOR_AVERAGE = 6;
+
+/** Durées des derniers cycles notés (du début d'une règle au début de la
+ * suivante), du plus ancien au plus récent — écarts aberrants (oubli d'une
+ * date) exclus. Recalculées à chaque nouvelle date notée. */
+export function recentCycleLengths(cycleEntries: CycleEntry[]): number[] {
+  const sorted = [...new Set(cycleEntries.map((e) => e.entry_date))].sort();
   const gaps: number[] = [];
   for (let i = 1; i < sorted.length; i++) {
-    const gap = daysBetween(sorted[i - 1].entry_date, sorted[i].entry_date);
+    const gap = daysBetween(sorted[i - 1], sorted[i]);
     if (gap > 0 && gap <= MAX_PLAUSIBLE_CYCLE_DAYS) gaps.push(gap);
   }
+  return gaps.slice(-RECENT_CYCLES_FOR_AVERAGE);
+}
+
+/** Durée typique du cycle sur les derniers cycles notés : la médiane, pour
+ * qu'un cycle isolé très long ou très court ne décale pas toutes les
+ * prévisions pendant des mois. Repli sur 28 jours tant qu'il n'y a pas deux
+ * dates notées. */
+export function averageCycleLength(cycleEntries: CycleEntry[]): number {
+  const gaps = [...recentCycleLengths(cycleEntries)].sort((a, b) => a - b);
   if (gaps.length === 0) return DEFAULT_CYCLE_LENGTH_DAYS;
-  return Math.round(gaps.reduce((sum, g) => sum + g, 0) / gaps.length);
+  const mid = Math.floor(gaps.length / 2);
+  return Math.round(gaps.length % 2 ? gaps[mid] : (gaps[mid - 1] + gaps[mid]) / 2);
 }
 
 export interface PredictedPeriod {
