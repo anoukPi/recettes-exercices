@@ -24,14 +24,15 @@ import { CyclePage } from './pages/CyclePage';
 import { TestsPage } from './pages/TestsPage';
 import { BilanPage } from './pages/BilanPage';
 import { ComparePage } from './pages/ComparePage';
+import { HydrationPage } from './pages/HydrationPage';
 import { WorkoutSessionsPage } from './pages/WorkoutSessionsPage';
 import { NewWorkoutSessionPage } from './pages/NewWorkoutSessionPage';
 import { WorkoutSessionDetailPage } from './pages/WorkoutSessionDetailPage';
 
 // Navigation (voir EXPERIENCE.md de l'atelier UX, révisée le 25/09/2026) :
-// - mobile : barre du bas noire (Carnet, Bilan, +, Comparer, Plus) ;
+// - mobile : barre du bas noire (Carnet, Bilan, +, Recettes, Plus) ;
 // - tablette/ordinateur (≥ 900 px) : menu latéral noir, même logique.
-// Règle d'Anouk : ce qui est dans « + » (repas, activité, tests, recettes)
+// Règle d'Anouk : ce qui est dans « + » (repas, activité, tests, hydratation)
 // n'apparaît nulle part ailleurs dans les menus.
 interface NavItem {
   path: string;
@@ -45,13 +46,14 @@ const NAV_CARNET: NavItem = { path: '/journal', label: 'Carnet', icon: 'carnet' 
 const NAV_COMPARER: NavItem = { path: '/comparer', label: 'Comparer', icon: 'comparer' };
 const NAV_BILAN: NavItem = { path: '/bilan', label: 'Bilan', icon: 'bilan' };
 const NAV_CYCLE: NavItem = { path: '/cycle', label: 'Cycle', icon: 'cycle' };
+const NAV_RECETTES: NavItem = { path: '/recipes', label: 'Recettes', icon: 'recettes' };
 const NAV_PARAMETRES: NavItem = { path: '/settings', label: 'Paramètres', icon: 'parametres' };
 
 const TAB_ITEMS_LEFT = [NAV_CARNET, NAV_BILAN];
-const TAB_ITEMS_RIGHT = [NAV_COMPARER];
-const SIDEBAR_ITEMS = [NAV_CARNET, NAV_BILAN, NAV_COMPARER, NAV_CYCLE];
+const TAB_ITEMS_RIGHT = [NAV_RECETTES];
+const SIDEBAR_ITEMS = [NAV_CARNET, NAV_BILAN, NAV_RECETTES, NAV_COMPARER, NAV_CYCLE];
 // Rangé dans la feuille « Plus » sur mobile.
-const MORE_ITEMS = [NAV_CYCLE, NAV_PARAMETRES];
+const MORE_ITEMS = [NAV_COMPARER, NAV_CYCLE, NAV_PARAMETRES];
 
 // Le bouton + : seul accès à ces espaces (une couleur = un sens, voir DESIGN.md).
 const ADD_ACTIONS = [
@@ -70,7 +72,13 @@ const ADD_ACTIONS = [
     activeOn: ['/activity', '/sessions', '/exercises'],
   },
   { path: '/tests', label: 'Tests', hint: 'Poids, forme, performances', className: 'b-eau', activeOn: ['/tests'] },
-  { path: '/recipes', label: 'Recettes', hint: 'Ta bibliothèque', className: '', activeOn: ['/recipes'] },
+  {
+    path: '/hydratation',
+    label: 'Hydratation',
+    hint: 'Eau, thé, café, tisane',
+    className: '',
+    activeOn: ['/hydratation'],
+  },
 ];
 
 function isActive(item: NavItem, pathname: string): boolean {
@@ -215,8 +223,8 @@ function ProfileSheetContent({ onDone }: { onDone: (goToProfile: boolean) => voi
           <p className="hint">
             Le profil est rattaché à ton compte : ses repas, activités, tests et son bilan sont séparés des tiens. Un
             profil majeur a exactement les mêmes fonctions que toi (objectifs, bilan, cycle…) ; avant 18 ans, Kaly
-            affiche des repères pour grandir au lieu d’objectifs de calories — et passe automatiquement en mode adulte
-            à ses 18 ans.
+            affiche des repères pour grandir au lieu d’objectifs de calories — et passe automatiquement en mode adulte à
+            ses 18 ans.
           </p>
           <div className="profile-add-actions">
             <button type="submit" disabled={saving}>
@@ -449,6 +457,7 @@ function AppRoutes() {
       <Route path="/tests" element={<TestsPage />} />
       <Route path="/bilan" element={<BilanPage />} />
       <Route path="/comparer" element={<ComparePage />} />
+      <Route path="/hydratation" element={<HydrationPage />} />
       <Route path="/entrainement" element={<Navigate to="/activity" replace />} />
       <Route path="/activite" element={<Navigate to="/activity" replace />} />
       <Route path="/sessions" element={<WorkoutSessionsPage />} />

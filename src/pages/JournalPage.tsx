@@ -4,23 +4,15 @@ import { FirstSteps } from '../components/FirstSteps';
 import { Link, useSearchParams } from 'react-router-dom';
 import { addDays, formatDateKeyFr, toDateKey } from '../lib/date';
 import { useDayNutrition } from '../lib/useDayNutrition';
-import { ageFromBirthDate, OMEGA6_OMEGA3_RATIO_MAX, targetsBlockedReason, type DailyTargets } from '../lib/dailyNeeds';
+import { OMEGA6_OMEGA3_RATIO_MAX, targetsBlockedReason } from '../lib/dailyNeeds';
 import { useSession } from '../lib/auth';
 import { MonthCalendar } from '../components/MonthCalendar';
 import { listCycleEntries } from '../api/cycle';
 import { getProfile } from '../api/profile';
 import { canTrackCycle, isLutealPhase, isOnPeriod } from '../lib/cycle';
-import { addWaterEntry, deleteWaterEntry, listWaterEntries } from '../api/water';
-import {
-  BEVERAGE_TYPES,
-  INTENSITIES,
-  TRAINING_TYPES,
-  type BeverageType,
-  type CycleEntry,
-  type NutritionTotals,
-  type Profile,
-  type WaterEntry,
-} from '../types';
+import { addWaterEntry, listWaterEntries } from '../api/water';
+import { CHILD_ACTIVITY_MINUTES, childAge, childWaterTarget, WATER_GLASS_ML, waterTarget } from '../lib/hydration';
+import { INTENSITIES, TRAINING_TYPES, type CycleEntry, type NutritionTotals, type WaterEntry } from '../types';
 
 const GI_BANDS: { max: number; label: string; className: string }[] = [
   { max: 35, label: 'très bas', className: 'gi-very-low' },
@@ -62,51 +54,6 @@ const CYCLE_NUTRIENT_TARGETS = {
 // Repère courant pour le magnésium en phase lutéale (crampes, rétention...) —
 // pas de cible officielle distincte, juste un peu de marge indicative.
 const LUTEAL_MAGNESIUM_EXTRA_MG = 30;
-
-const WATER_GLASS_ML = 250;
-const TASSE_ML = 150;
-const LITRE_ML = 1000;
-type BeverageUnit = 'tasse' | 'litre';
-const BEVERAGE_UNITS_BY_TYPE: Record<BeverageType, BeverageUnit[]> = {
-  eau: ['tasse', 'litre'],
-  café: ['tasse'],
-  thé: ['tasse', 'litre'],
-  tisane: ['tasse', 'litre'],
-};
-
-// Repère courant en nutrition clinique : ~1 mL d'eau par kcal dépensée —
-// englobe naturellement âge, taille, sexe, poids (via le BMR) et niveau
-// d'activité (via la dépense totale), plutôt qu'un simple ratio au poids.
-// Plancher de sécurité si le profil est incomplet.
-const ML_PER_KCAL = 1;
-const WATER_TARGET_FLOOR_ML = 1500;
-
-/** Âge si moins de 18 ans (profil d'enfant), sinon null. */
-function childAge(profile: Profile | null): number | null {
-  if (!profile?.birth_date) return null;
-  const age = ageFromBirthDate(profile.birth_date);
-  return age < 18 ? age : null;
-}
-
-// Repère de boissons pour un enfant (EFSA, eau totale × ~0,8 venant des
-// boissons, arrondi) — pas de calcul par le poids ou les calories.
-function childWaterTarget(age: number): number {
-  if (age < 9) return 1200;
-  if (age < 14) return 1500;
-  return 1800;
-}
-
-// OMS : au moins 60 minutes par jour d'activité modérée à soutenue (5-17 ans).
-const CHILD_ACTIVITY_MINUTES = 60;
-
-function waterTarget(profile: Profile | null, dailyTargets: DailyTargets | null): number {
-  const age = childAge(profile);
-  if (age !== null) return childWaterTarget(age);
-  if (dailyTargets) {
-    return Math.max(WATER_TARGET_FLOOR_ML, Math.round(dailyTargets.tdee_kcal * ML_PER_KCAL));
-  }
-  return profile?.weight_kg ? Math.round(profile.weight_kg * 30) : 2000;
-}
 
 type MicroLabel = { key: keyof NutritionTotals; label: string; unit: string };
 
@@ -184,10 +131,12 @@ function MacroMeter({
   moreIsBetter?: boolean;
 }) {
   const raw = target ? meterStatus(actual, target) : null;
-  const status = raw && moreIsBetter && raw.className !== 'meter-under' ? { ...raw, className: 'meter-ok' as const } : raw;
+  const status =
+    raw && moreIsBetter && raw.className !== 'meter-under' ? { ...raw, className: 'meter-ok' as const } : raw;
   // Petites quantités (oméga-3…) : une décimale, sinon « 1 / 3 g » ne dit rien.
   const decimals = target !== undefined && target < 10 ? 1 : 0;
-  const fmt = (v: number) => v.toLocaleString('fr-CH', { maximumFractionDigits: decimals, minimumFractionDigits: decimals });
+  const fmt = (v: number) =>
+    v.toLocaleString('fr-CH', { maximumFractionDigits: decimals, minimumFractionDigits: decimals });
   return (
     <div className="meter-row">
       <div className="meter-row-header">
@@ -218,13 +167,12 @@ export function JournalPage() {
   // Rappels du cycle : seulement pour les femmes majeures (voir canTrackCycle).
   const [cycleOn, setCycleOn] = useState(false);
   const [waterEntries, setWaterEntries] = useState<WaterEntry[]>([]);
-  const [beverageType, setBeverageType] = useState<BeverageType>('eau');
-  const [beverageQty, setBeverageQty] = useState('1');
-  const [beverageUnit, setBeverageUnit] = useState<BeverageUnit>('tasse');
 
   useEffect(() => {
     if (!session) return;
-    listCycleEntries().then(setCycleEntries).catch(() => {});
+    listCycleEntries()
+      .then(setCycleEntries)
+      .catch(() => {});
     // Fetch séparé du profil (léger) : nécessaire avant même d'appeler
     // useDayNutrition, qui a besoin de l'ajustement calorique de phase
     // lutéale en entrée plutôt qu'en sortie.
@@ -243,8 +191,16 @@ export function JournalPage() {
   // comme milieu de fourchette, pas une mesure individuelle.
   const lutealPhaseExtraKcal = lutealPhase ? 200 : 0;
 
-  const { loading, error, profile, dailyTargets, dayTotals, dayGi, bilan: rawBilan, activityEntries } =
-    useDayNutrition(dateKey, lutealPhaseExtraKcal);
+  const {
+    loading,
+    error,
+    profile,
+    dailyTargets,
+    dayTotals,
+    dayGi,
+    bilan: rawBilan,
+    activityEntries,
+  } = useDayNutrition(dateKey, lutealPhaseExtraKcal);
   // Profil d'enfant : pas de métabolisme ni d'« écart » calorique (formule
   // adulte, et une logique de déficit n'a pas de sens en croissance).
   const age = childAge(profile);
@@ -253,7 +209,9 @@ export function JournalPage() {
 
   useEffect(() => {
     if (!session) return;
-    listWaterEntries(dateKey).then(setWaterEntries).catch(() => {});
+    listWaterEntries(dateKey)
+      .then(setWaterEntries)
+      .catch(() => {});
   }, [session, dateKey]);
 
   const ironReminder = onPeriod;
@@ -273,43 +231,6 @@ export function JournalPage() {
       setWaterError(err instanceof Error ? err.message : 'Une erreur est survenue.');
     }
   };
-
-  const handleRemoveLastWater = async () => {
-    const last = waterEntries[waterEntries.length - 1];
-    if (!last) return;
-    setWaterError(null);
-    try {
-      await deleteWaterEntry(last.id);
-      setWaterEntries((prev) => prev.filter((w) => w.id !== last.id));
-    } catch (err) {
-      setWaterError(err instanceof Error ? err.message : 'Une erreur est survenue.');
-    }
-  };
-
-  const handleBeverageTypeChange = (type: BeverageType) => {
-    setBeverageType(type);
-    if (!BEVERAGE_UNITS_BY_TYPE[type].includes(beverageUnit)) {
-      setBeverageUnit(BEVERAGE_UNITS_BY_TYPE[type][0]);
-    }
-  };
-
-  const handleAddBeverage = async () => {
-    const qty = parseFloat(beverageQty.replace(',', '.'));
-    if (Number.isNaN(qty) || qty <= 0) return;
-    setWaterError(null);
-    try {
-      const ml = qty * (beverageUnit === 'litre' ? LITRE_ML : TASSE_ML);
-      const entry = await addWaterEntry(dateKey, ml, beverageType);
-      setWaterEntries((prev) => [...prev, entry]);
-    } catch (err) {
-      setWaterError(err instanceof Error ? err.message : 'Une erreur est survenue.');
-    }
-  };
-
-  const beverageBreakdown = BEVERAGE_TYPES.map((b) => ({
-    ...b,
-    ml: waterEntries.filter((w) => w.beverage_type === b.value).reduce((sum, w) => sum + w.amount_ml, 0),
-  })).filter((b) => b.ml > 0);
 
   if (authLoading) return null;
 
@@ -388,8 +309,8 @@ export function JournalPage() {
 
       {!profile && (
         <p className="hint">
-          Renseigne ton <Link to="/settings?onglet=profil">profil dans les Paramètres</Link> pour voir tes
-          objectifs journaliers ici.
+          Renseigne ton <Link to="/settings?onglet=profil">profil dans les Paramètres</Link> pour voir tes objectifs
+          journaliers ici.
         </p>
       )}
       {targetsBlockedReason(profile) && age === null && (
@@ -397,9 +318,9 @@ export function JournalPage() {
       )}
       {dailyTargets?.flooredBySafety && (
         <p className="hint warning-hint">
-          ⚠️ Ton objectif calculé était en dessous du plancher de sécurité — il a été ajusté au
-          minimum recommandé. Si tu vises une perte de poids plus rapide, mieux vaut en parler à un
-          professionnel de santé qu'ajuster ce chiffre.
+          ⚠️ Ton objectif calculé était en dessous du plancher de sécurité — il a été ajusté au minimum recommandé. Si
+          tu vises une perte de poids plus rapide, mieux vaut en parler à un professionnel de santé qu'ajuster ce
+          chiffre.
         </p>
       )}
       {ironReminder && (
@@ -410,8 +331,8 @@ export function JournalPage() {
       )}
       {lutealPhase && (
         <p className="hint warning-hint">
-          🌙 Semaine avant les règles — besoin énergétique généralement un peu plus élevé (inclus
-          dans ton objectif calorique aujourd'hui), et magnésium/oméga-3 souvent plus sollicités.{' '}
+          🌙 Semaine avant les règles — besoin énergétique généralement un peu plus élevé (inclus dans ton objectif
+          calorique aujourd'hui), et magnésium/oméga-3 souvent plus sollicités.{' '}
           <Link to="/cycle">Gérer le suivi du cycle</Link>
         </p>
       )}
@@ -421,14 +342,26 @@ export function JournalPage() {
           <div className="block b-eau block-child">
             <h4 className="block-label">🌱 Repères pour grandir</h4>
             <p className="hint">
-              Avant 18 ans, pas d’objectif de calories : les besoins suivent la croissance. Quelques repères simples à la
-              place — pour un avis personnalisé, demande au pédiatre ou à un·e diététicien·ne.
+              Avant 18 ans, pas d’objectif de calories : les besoins suivent la croissance. Quelques repères simples à
+              la place — pour un avis personnalisé, demande au pédiatre ou à un·e diététicien·ne.
             </p>
-            <MacroMeter label="🏃 Bouger (OMS : 60 min/jour)" actual={activityMinutesToday} target={CHILD_ACTIVITY_MINUTES} unit="min" moreIsBetter />
+            <MacroMeter
+              label="🏃 Bouger (OMS : 60 min/jour)"
+              actual={activityMinutesToday}
+              target={CHILD_ACTIVITY_MINUTES}
+              unit="min"
+              moreIsBetter
+            />
             <ul className="child-tips">
-              <li>💧 L’eau comme boisson principale — repère ≈ {(childWaterTarget(age) / 1000).toLocaleString('fr-CH')} L de boissons par jour</li>
+              <li>
+                💧 L’eau comme boisson principale — repère ≈ {(childWaterTarget(age) / 1000).toLocaleString('fr-CH')} L
+                de boissons par jour
+              </li>
               <li>🍎 Des fruits et légumes à chaque repas (au moins 5 portions par jour)</li>
-              <li>🥛 Des produits laitiers ou d’autres sources de calcium chaque jour</li>
+              <li>
+                🥛 Varier les sources de calcium : laitages, mais aussi amandes, brocoli, tofu, légumineuses, eaux
+                riches en calcium
+              </li>
               <li>🍬 Boissons sucrées et sucreries : plutôt occasionnelles</li>
             </ul>
           </div>
@@ -461,7 +394,8 @@ export function JournalPage() {
                   />
                 </div>
                 <p className="block-meta">
-                  {Math.round(dayTotals.totals.calories_kcal)} mangées · objectif {Math.round(dailyTargets.calories_kcal)} kcal
+                  {Math.round(dayTotals.totals.calories_kcal)} mangées · objectif{' '}
+                  {Math.round(dailyTargets.calories_kcal)} kcal
                 </p>
               </>
             )}
@@ -494,7 +428,12 @@ export function JournalPage() {
         <div className="block b-eau block-macros">
           <h4 className="block-label">Macros</h4>
           <div className="meter-group">
-            <MacroMeter label="Protéines" actual={dayTotals.totals.protein_g} target={dailyTargets?.protein_g} unit="g" />
+            <MacroMeter
+              label="Protéines"
+              actual={dayTotals.totals.protein_g}
+              target={dailyTargets?.protein_g}
+              unit="g"
+            />
             <MacroMeter label="Glucides" actual={dayTotals.totals.carbs_g} target={dailyTargets?.carbs_g} unit="g" />
             <MacroMeter label="Lipides" actual={dayTotals.totals.fat_g} target={dailyTargets?.fat_g} unit="g" />
             <MacroMeter
@@ -516,21 +455,20 @@ export function JournalPage() {
               <details className="gi-explainer">
                 <summary>ℹ️ IG vs charge glycémique — quelle différence ?</summary>
                 <p className="hint">
-                  <strong>IG (indice glycémique)</strong> : vitesse à laquelle un aliment fait monter
-                  la glycémie — fixe pour cet aliment, peu importe la quantité mangée.
+                  <strong>IG (indice glycémique)</strong> : vitesse à laquelle un aliment fait monter la glycémie — fixe
+                  pour cet aliment, peu importe la quantité mangée.
                   <br />
-                  <strong>Charge glycémique (CG)</strong> : IG × la quantité de glucides réellement
-                  mangée. C'est l'impact réel sur ta glycémie de ta portion, pas juste de l'aliment en
-                  général — deux portions différentes du même aliment ont le même IG mais pas la même
-                  CG.
+                  <strong>Charge glycémique (CG)</strong> : IG × la quantité de glucides réellement mangée. C'est
+                  l'impact réel sur ta glycémie de ta portion, pas juste de l'aliment en général — deux portions
+                  différentes du même aliment ont le même IG mais pas la même CG.
                 </p>
               </details>
             </>
           )}
           {(dayTotals.hasPartial || dayTotals.hasWarning) && (
             <p className="hint warning-hint">
-              Certaines lignes du détail des repas sont des estimations approximatives, ou affichent
-              "?" quand aucune valeur n'a pu être calculée.
+              Certaines lignes du détail des repas sont des estimations approximatives, ou affichent "?" quand aucune
+              valeur n'a pu être calculée.
             </p>
           )}
         </div>
@@ -546,15 +484,19 @@ export function JournalPage() {
             {dayTotals.totals.omega3_g > 0 && (
               <p className="omega-ratio">
                 Rapport oméga-6 / oméga-3 :{' '}
-                <strong>{(dayTotals.totals.omega6_g / dayTotals.totals.omega3_g).toLocaleString('fr-CH', { maximumFractionDigits: 1 })}</strong>{' '}
+                <strong>
+                  {(dayTotals.totals.omega6_g / dayTotals.totals.omega3_g).toLocaleString('fr-CH', {
+                    maximumFractionDigits: 1,
+                  })}
+                </strong>{' '}
                 <span className="hint">(repère : moins de {OMEGA6_OMEGA3_RATIO_MAX})</span>
               </p>
             )}
             <p className="hint">
-              Repères ANSES adaptés à ton objectif calorique : oméga-3 = 1 % des calories + 0,5 g
-              d'EPA/DHA (poissons gras) ; oméga-6 = 4 % ; oméga-9 = 15 à 20 %
-              {dailyTargets ? ` (jusqu'à ${Math.round(dailyTargets.omega9_max_g)} g)` : ''}. Un « 0 » peut
-              vouloir dire « non mesuré » : le détail des acides gras manque pour certains aliments.
+              Repères ANSES adaptés à ton objectif calorique : oméga-3 = 1 % des calories + 0,5 g d'EPA/DHA (poissons
+              gras) ; oméga-6 = 4 % ; oméga-9 = 15 à 20 %
+              {dailyTargets ? ` (jusqu'à ${Math.round(dailyTargets.omega9_max_g)} g)` : ''}. Un « 0 » peut vouloir dire
+              « non mesuré » : le détail des acides gras manque pour certains aliments.
             </p>
           </div>
         )}
@@ -579,7 +521,9 @@ export function JournalPage() {
                       {a.training_type && ` · ${TRAINING_TYPES.find((t) => t.value === a.training_type)?.label}`}
                       {a.intensity && ` · ${INTENSITIES.find((i) => i.value === a.intensity)?.label}`}
                     </span>
-                    <span className="hint">{a.duration_minutes} min · {Math.round(a.calories_kcal)} kcal</span>
+                    <span className="hint">
+                      {a.duration_minutes} min · {Math.round(a.calories_kcal)} kcal
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -591,59 +535,30 @@ export function JournalPage() {
           </div>
         )}
 
-        <div className="block b-blanc block-eau" id="hydratation">
-          <h4 className="block-label">Hydratation</h4>
+        <div className="hydration-strip" id="hydratation">
+          <Link to={`/hydratation?date=${dateKey}`} className="hydration-strip-main">
+            <span className="hydration-strip-label">💧 Hydratation</span>
+            <span className="hydration-strip-value">
+              {(waterTotalMl / 1000).toLocaleString('fr-CH', { maximumFractionDigits: 2 })} /{' '}
+              {(waterTarget(profile, dailyTargets) / 1000).toLocaleString('fr-CH', { maximumFractionDigits: 1 })} L
+            </span>
+            <span className="hydration-strip-bar" aria-hidden="true">
+              <span
+                style={{
+                  width: `${Math.min(100, (waterTotalMl / Math.max(1, waterTarget(profile, dailyTargets))) * 100)}%`,
+                }}
+              />
+            </span>
+          </Link>
+          <button
+            type="button"
+            className="hydration-strip-add"
+            onClick={handleAddWater}
+            aria-label="Ajouter un verre d'eau (250 ml)"
+          >
+            + verre
+          </button>
           {waterError && <p className="error">{waterError}</p>}
-          <MacroMeter label="Total" actual={waterTotalMl} target={waterTarget(profile, dailyTargets)} unit="ml" />
-          <p className="hint">
-            {dailyTargets
-              ? "Objectif basé sur ta dépense énergétique du jour (~1 mL/kcal) — dépend donc de ton âge, ta taille, ton sexe, ton poids et ton activité."
-              : "Renseigne ton profil dans les Paramètres pour un objectif basé sur ta dépense énergétique plutôt que sur ton poids seul."}
-          </p>
-          {beverageBreakdown.length > 0 && (
-            <p className="hint beverage-breakdown">
-              {beverageBreakdown
-                .map((b) => `${b.icon} ${Math.round(b.ml)} ml`)
-                .join(' · ')}
-            </p>
-          )}
-          <div className="water-actions">
-            <button type="button" onClick={handleAddWater}>
-              + un verre d'eau (250 ml)
-            </button>
-            {waterEntries.length > 0 && (
-              <button type="button" className="link-button" onClick={handleRemoveLastWater}>
-                Annuler le dernier
-              </button>
-            )}
-          </div>
-          <div className="beverage-add-row">
-            <select value={beverageType} onChange={(e) => handleBeverageTypeChange(e.target.value as BeverageType)}>
-              {BEVERAGE_TYPES.map((b) => (
-                <option key={b.value} value={b.value}>
-                  {b.icon} {b.label}
-                </option>
-              ))}
-            </select>
-            <input
-              type="number"
-              step="any"
-              min="0"
-              value={beverageQty}
-              onChange={(e) => setBeverageQty(e.target.value)}
-              className="ingredient-qty"
-            />
-            <select value={beverageUnit} onChange={(e) => setBeverageUnit(e.target.value as BeverageUnit)}>
-              {BEVERAGE_UNITS_BY_TYPE[beverageType].map((u) => (
-                <option key={u} value={u}>
-                  {u === 'tasse' ? 'tasse(s)' : 'litre(s)'}
-                </option>
-              ))}
-            </select>
-            <button type="button" onClick={handleAddBeverage}>
-              Ajouter
-            </button>
-          </div>
         </div>
         {onPeriod && (
           <div className="block b-blanc block-cycle">
@@ -675,17 +590,17 @@ export function JournalPage() {
               />
             </div>
             <p className="hint">
-              Repères généraux (femme adulte, ANSES/EFSA), pas une prescription individuelle. La
-              vitamine C aide l'absorption du fer d'origine végétale — pratique de les manger
-              ensemble. L'oméga-3 manque encore de données pour beaucoup d'ingrédients (peu
-              renseigné dans la base USDA) — un "0 g" peut vouloir dire "non mesuré", pas "absent".
+              Repères généraux (femme adulte, ANSES/EFSA), pas une prescription individuelle. La vitamine C aide
+              l'absorption du fer d'origine végétale — pratique de les manger ensemble. L'oméga-3 manque encore de
+              données pour beaucoup d'ingrédients (peu renseigné dans la base USDA) — un "0 g" peut vouloir dire "non
+              mesuré", pas "absent".
             </p>
           </div>
         )}
       </div>
 
-      <div className="journal-summary">
-        {dayTotals.hasAny && (
+      {dayTotals.hasAny && (
+        <div className="journal-summary">
           <details className="journal-micro-details">
             <summary>Micronutriments</summary>
             {MICRO_GROUPS.map(({ title, items }) => (
@@ -710,8 +625,8 @@ export function JournalPage() {
               </div>
             ))}
           </details>
-        )}
-      </div>
+        </div>
+      )}
 
       <Link className="button" to={`/repas?date=${dateKey}`}>
         Voir / modifier les repas de ce jour
