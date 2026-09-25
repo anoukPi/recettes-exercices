@@ -47,9 +47,10 @@ export async function exportMyData(): Promise<Record<string, unknown>> {
   return result;
 }
 
-/** Supprime définitivement le compte et les données privées (carnets, profil,
- * suivis). Les recettes et exercices partagés restent dans le pool, anonymisés. */
-export async function deleteMyAccount(): Promise<void> {
+/** Ferme le compte : connexion bloquée, compte marqué archivé. Aucune donnée
+ * n'est effacée (décision d'Anouk, 25/09/2026 — voir la migration
+ * 20260925010000_archive_instead_of_delete.sql pour réactiver un compte). */
+export async function closeMyAccount(): Promise<void> {
   const { error } = await supabase.rpc('delete_my_account');
   if (error) throw error;
   await supabase.auth.signOut();

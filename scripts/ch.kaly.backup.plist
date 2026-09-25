@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Tâche macOS : sauvegarde quotidienne de Kaly dans iCloud Drive › Kaly
+     sauvegardes (voir scripts/backup.mjs). Installée dans
+     ~/Library/LaunchAgents/ch.kaly.backup.plist. Chaque jour à 21 h, et au
+     démarrage de session si la copie du jour manque (Mac éteint à 21 h). -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>ch.kaly.backup</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/anouk/.nvm/versions/node/v24.18.0/bin/node</string>
+    <string>--env-file=/Users/anouk/recettes-exercices/.env.local</string>
+    <string>/Users/anouk/recettes-exercices/scripts/backup.mjs</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>/Users/anouk/recettes-exercices</string>
+  <key>StartCalendarInterval</key>
+  <dict>
+    <key>Hour</key>
+    <integer>21</integer>
+    <key>Minute</key>
+    <integer>0</integer>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/anouk/Library/Logs/kaly-backup.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/anouk/Library/Logs/kaly-backup.log</string>
+</dict>
+</plist>

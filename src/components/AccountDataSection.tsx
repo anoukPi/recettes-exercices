@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { deleteMyAccount, exportMyData } from '../api/account';
+import { closeMyAccount, exportMyData } from '../api/account';
 
-/** Export et suppression du compte — volontairement discrets (liens en bas de
- * « Mon compte »), la suppression demandant une confirmation explicite. */
+/** Export et fermeture du compte — volontairement discrets (liens en bas de
+ * « Mon compte »), la fermeture demandant une confirmation explicite. Fermer
+ * n'efface rien : le compte est désactivé et ses données archivées. */
 export function AccountDataSection() {
   const [exporting, setExporting] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -32,9 +33,9 @@ export function AccountDataSection() {
     setError(null);
     setDeleting(true);
     try {
-      await deleteMyAccount();
+      await closeMyAccount();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'La suppression a échoué.');
+      setError(err instanceof Error ? err.message : 'La fermeture a échoué.');
       setDeleting(false);
     }
   };
@@ -48,7 +49,7 @@ export function AccountDataSection() {
         </button>
         <span aria-hidden="true">·</span>
         <button type="button" className="link-button" onClick={() => setConfirmOpen(true)}>
-          Supprimer mon compte
+          Fermer mon compte
         </button>
       </div>
 
@@ -61,21 +62,22 @@ export function AccountDataSection() {
             aria-labelledby="account-delete-title"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 id="account-delete-title">Es-tu sûre de vouloir supprimer ton compte ?</h3>
+            <h3 id="account-delete-title">Es-tu sûre de vouloir fermer ton compte ?</h3>
             <p>
-              C'est définitif : ton profil, tes carnets (repas, activité, eau, cycle) et tes tests
-              seront effacés et ne pourront pas être récupérés.
+              Tu ne pourras plus te connecter. Rien n'est effacé : ton profil, tes carnets (repas,
+              activité, eau, cycle), tes tests, tes recettes et tes exercices restent enregistrés et
+              archivés.
             </p>
             <p className="hint">
-              Tes recettes et exercices restent dans le pool partagé, sans ton nom, car d'autres
-              peuvent les utiliser. Pense à télécharger tes données avant si tu veux les garder.
+              Pour rouvrir ton compte, récupérer tes données ou demander leur effacement définitif,
+              écris à Anouk.
             </p>
             <div className="account-delete-actions">
               <button type="button" className="primary-dark" onClick={() => setConfirmOpen(false)} disabled={deleting}>
                 Non, garder mon compte
               </button>
               <button type="button" className="link-button danger" onClick={handleDelete} disabled={deleting}>
-                {deleting ? 'Suppression…' : 'Oui, supprimer définitivement'}
+                {deleting ? 'Fermeture…' : 'Oui, fermer mon compte'}
               </button>
             </div>
           </div>
