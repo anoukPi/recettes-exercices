@@ -176,7 +176,7 @@ const CALENDAR_METRICS = {
     emoji: '🔥',
     abbr: 'Dép',
     unit: 'kcal',
-    color: '#2c8a7b',
+    color: '#121212',
     value: (d) => (d && d.activities.length > 0 ? d.activityCalories : null),
     format: (v) => fmt(Math.round(v)),
     level: (v) => (v >= 400 ? 'act3' : v >= 150 ? 'act2' : 'act1'),
@@ -233,7 +233,7 @@ const CALENDAR_METRICS = {
     emoji: '🥑',
     abbr: 'Lip',
     unit: 'g',
-    color: '#2c8a7b',
+    color: '#121212',
     target: (t) => t.fat_g,
     value: (d) => (d?.hasData ? d.fat_g : null),
     format: (v) => `${fmt(Math.round(v))} g`,
@@ -484,7 +484,7 @@ function BilanCalendar({
         </div>
       ) : (
         <p className="hint">
-          Touche un jour (ou une ligne du graphique) pour voir le détail de l’alimentation et de l’activité.
+          Touche un jour (ou une colonne du graphique) pour voir le détail de l’alimentation et de l’activité.
         </p>
       )}
     </>
@@ -498,7 +498,7 @@ const STAT_OPTIONS = [
   { value: 'glucides', label: 'Glucides' },
   { value: 'lipides', label: 'Lipides' },
   { value: 'entrainements', label: 'Entraînements' },
-  { value: 'activite', label: 'Activité la plus pratiquée' },
+  { value: 'activite', label: 'Activités pratiquées' },
   { value: 'calories', label: 'Calories' },
   { value: 'depense', label: 'Kcal dépensées' },
   { value: 'minutes', label: 'Temps d’activité' },
@@ -539,19 +539,20 @@ function curveTarget(key: CurveKey, t: DailyTargets | null): number | null {
   }
 }
 
+// Exemples d'aliments riches, pour savoir quoi ajouter si la moyenne est basse.
+const OMEGA_SOURCES = {
+  omega3: 'noix, graines de lin et de chia, huile de colza, sardine, maquereau, saumon',
+  omega6: 'huile de tournesol, graines de tournesol et de courge, noix, pignons',
+  omega9: "huile d'olive, avocat, amandes, noisettes, noix de cajou, huile de colza",
+};
+
 function MacroStat({ label, values, target }: { label: string; values: number[]; target?: number }) {
-  const total = values.reduce((a, b) => a + b, 0);
   const avg = average(values);
   return (
     <div className="bilan-stat-card">
-      <span className="bilan-stat-label">{label}</span>
-      <span className="bilan-stat-value">{avg === null ? '—' : `${fmt(Math.round(avg))} g / jour`}</span>
-      {avg !== null && (
-        <span className="hint">
-          {fmt(Math.round(total))} g au total
-          {target ? ` · objectif ${fmt(Math.round(target))} g · écart ${formatGap(avg - target, 'g')}` : ''}
-        </span>
-      )}
+      <span className="bilan-stat-label">{label} (moyenne/jour)</span>
+      <span className="bilan-stat-value">{avg === null ? '—' : `${fmt(Math.round(avg))} g`}</span>
+      {avg !== null && target ? <span className="hint">objectif {fmt(Math.round(target))} g</span> : null}
     </div>
   );
 }
@@ -633,20 +634,18 @@ function StatsView({
           </div>
         )}
         {on('activite') && (
-          <div className="bilan-stat-card">
-            <span className="bilan-stat-label">Activité la plus pratiquée</span>
+          <div className="bilan-stat-card bilan-stat-wide">
+            <span className="bilan-stat-label">Activités pratiquées</span>
             {s.ranking.length > 0 ? (
-              <>
-                <span className="bilan-stat-value">{s.ranking[0][0]}</span>
-                <span className="hint">
-                  {s.ranking[0][1].count}× · {fmt(Math.round(s.ranking[0][1].minutes))} min
-                  {s.ranking.length > 1 &&
-                    ` — puis ${s.ranking
-                      .slice(1, 3)
-                      .map(([name, v]) => `${name} (${v.count}×)`)
-                      .join(', ')}`}
-                </span>
-              </>
+              <ol className="bilan-activity-ranking">
+                {s.ranking.map(([name, v]) => (
+                  <li key={name}>
+                    <span>{name}</span>
+                    <span className="hint">{fmt(Math.round(v.minutes))} min</span>
+                    <strong>{v.count}×</strong>
+                  </li>
+                ))}
+              </ol>
             ) : (
               <span className="bilan-stat-value">—</span>
             )}
@@ -678,15 +677,16 @@ function StatsView({
         {on('omegas') &&
           (
             [
-              ['Oméga-3', average(s.food.map((d) => d.omega3_g)), targets?.omega3_g],
-              ['Oméga-6', average(s.food.map((d) => d.omega6_g)), targets?.omega6_g],
-              ['Oméga-9', average(s.food.map((d) => d.omega9_g)), targets?.omega9_g],
+              ['Oméga-3', average(s.food.map((d) => d.omega3_g)), targets?.omega3_g, OMEGA_SOURCES.omega3],
+              ['Oméga-6', average(s.food.map((d) => d.omega6_g)), targets?.omega6_g, OMEGA_SOURCES.omega6],
+              ['Oméga-9', average(s.food.map((d) => d.omega9_g)), targets?.omega9_g, OMEGA_SOURCES.omega9],
             ] as const
-          ).map(([label, avg, target]) => (
+          ).map(([label, avg, target, sources]) => (
             <div className="bilan-stat-card" key={label}>
               <span className="bilan-stat-label">{label} (moyenne/jour)</span>
               <span className="bilan-stat-value">{avg === null ? '—' : `${fmt(avg, 1)} g`}</span>
               {target ? <span className="hint">repère {fmt(target, 1)} g</span> : null}
+              <span className="bilan-stat-sources">On en trouve dans : {sources}</span>
             </div>
           ))}
         {on('regularite') && (

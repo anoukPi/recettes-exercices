@@ -3733,3 +3733,94 @@ a.button,
   max-width: 640px;
   width: 100%;
 }
+
+.bilan-stat-wide {
+  grid-column: 1 / -1;
+}
+
+.bilan-activity-ranking {
+  margin: 0.3rem 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: rang;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.bilan-activity-ranking li {
+  counter-increment: rang;
+  display: grid;
+  grid-template-columns: 1.4rem 1fr auto auto;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.bilan-activity-ranking li:last-child {
+  border-bottom: none;
+}
+
+.bilan-activity-ranking li::before {
+  content: counter(rang);
+  font-weight: 800;
+  color: var(--petrole);
+}
+
+.bilan-activity-ranking li:first-child span:first-of-type {
+  font-weight: 800;
+}
+
+.bilan-activity-ranking strong {
+  min-width: 2.2rem;
+  text-align: right;
+}
+
+.bilan-stat-sources {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 0.3rem;
+  line-height: 1.35;
+}
+
+/* Graphique Bilan vertical : jours en abscisse */
+.criteria-chart svg {
+  width: auto;
+  max-width: 100%;
+}
+
+.criteria-chart-col {
+  fill: transparent;
+  cursor: pointer;
+}
+
+.criteria-chart-col.odd {
+  fill: var(--surface-muted);
+}
+
+.criteria-chart-col.open {
+  fill: var(--eau-soft);
+}
+
+.criteria-chart-tick {
+  text-anchor: end;
+  font-size: 10px;
+}
+
+.criteria-chart-day {
+  font-size: 11px;
+  font-weight: 800;
+  fill: var(--text);
+  text-anchor: middle;
+}
+
+.criteria-chart-date {
+  font-size: 10px;
+  fill: var(--text-muted);
+  text-anchor: middle;
+}
+
+.criteria-chart-list + .hint,
+.criteria-chart-list + .bilan-day-detail {
+  margin-top: 0.9rem;
+}
