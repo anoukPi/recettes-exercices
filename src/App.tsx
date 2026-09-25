@@ -215,8 +215,10 @@ function ProfileSheetContent({ onDone }: { onDone: (goToProfile: boolean) => voi
             </select>
           </div>
           <p className="hint">
-            Le profil est rattaché à ton compte : ses repas, activités, tests et son bilan sont séparés des tiens. Tu
-            passes de l’un à l’autre ici.
+            Le profil est rattaché à ton compte : ses repas, activités, tests et son bilan sont séparés des tiens. Un
+            profil majeur a exactement les mêmes fonctions que toi (objectifs, bilan, cycle…) ; avant 18 ans, Kaly
+            affiche des repères pour grandir au lieu d’objectifs de calories — et passe automatiquement en mode adulte
+            à ses 18 ans.
           </p>
           <div className="profile-add-actions">
             <button type="submit" disabled={saving}>
@@ -229,7 +231,7 @@ function ProfileSheetContent({ onDone }: { onDone: (goToProfile: boolean) => voi
         </form>
       ) : (
         <button type="button" className="profile-add-button" onClick={() => setAdding(true)}>
-          ＋ Ajouter un profil (ex. un enfant)
+          ＋ Ajouter un profil (enfant, conjoint…)
         </button>
       )}
     </>
