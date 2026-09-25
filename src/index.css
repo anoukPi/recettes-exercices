@@ -3253,3 +3253,350 @@ a.button,
   .cycle-day.phase-luteale,
   .cycle-swatch.phase-luteale { background: rgba(158, 219, 207, 0.18); }
 }
+
+/* --- Bilan : onglets Bilan / Stat / Test --- */
+.bilan-page .section-tabs {
+  margin-bottom: 1rem;
+}
+
+.bilan-period {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.bilan-period .journal-date-nav {
+  flex: 1;
+  min-width: 240px;
+  margin-bottom: 0;
+}
+
+.bilan-period-toggle {
+  display: inline-flex;
+  background: var(--surface);
+  border-radius: 999px;
+  padding: 0.3rem;
+  box-shadow: var(--shadow-card);
+}
+
+.bilan-period-toggle button {
+  border: none;
+  background: transparent;
+  border-radius: 999px;
+  padding: 0.4rem 0.9rem;
+  font: inherit;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.bilan-period-toggle button.selected {
+  background: var(--noir);
+  color: var(--on-dark);
+}
+
+.bilan-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.bilan-chips .tag-chip {
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.bilan-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.bilan-calendar-weekday {
+  text-align: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.bilan-day {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.35rem 0.25rem;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+  text-align: center;
+}
+
+.bilan-day.empty {
+  background: var(--surface-muted);
+  box-shadow: none;
+}
+
+.bilan-day.today {
+  border-color: var(--petrole);
+}
+
+.bilan-day.open {
+  border-color: var(--noir);
+}
+
+.bilan-day-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.bilan-day-period {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--corail);
+}
+
+.bilan-pill {
+  display: block;
+  border-radius: 6px;
+  padding: 0.15rem 0.1rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bilan-pill small {
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+.bilan-calendar.mois .bilan-pill {
+  font-size: 0.6rem;
+  padding: 0.1rem 0;
+}
+
+.bilan-calendar.mois .bilan-day {
+  padding: 0.25rem 0.1rem;
+}
+
+.level-none {
+  background: transparent;
+  color: var(--text-muted);
+}
+.level-low {
+  background: #c8dfe3;
+  color: var(--petrole-deep);
+}
+.level-ok {
+  background: var(--eau);
+  color: var(--noir);
+}
+.level-over {
+  background: var(--corail);
+  color: var(--noir);
+}
+.level-deficit {
+  background: var(--petrole);
+  color: var(--on-dark);
+}
+.level-act1 {
+  background: var(--eau-soft);
+  color: var(--petrole-deep);
+}
+.level-act2 {
+  background: #4f9aa3;
+  color: var(--on-dark);
+}
+.level-act3 {
+  background: var(--petrole);
+  color: var(--on-dark);
+}
+
+.bilan-legend {
+  list-style: none;
+  padding: 0;
+  margin: 0.9rem 0;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+}
+
+.bilan-legend li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.3rem 0.8rem;
+}
+
+.bilan-legend li span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text-muted);
+}
+
+.bilan-swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 4px;
+}
+
+.bilan-day-detail {
+  margin-top: 0.5rem;
+}
+
+.bilan-day-detail-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.bilan-day-detail-head h3 {
+  margin: 0;
+}
+
+.bilan-day-detail-head h3::first-letter {
+  text-transform: uppercase;
+}
+
+.bilan-curve {
+  margin-top: 1rem;
+}
+
+.daily-chart-bar {
+  fill: var(--petrole);
+}
+
+.daily-chart-bar.over {
+  fill: var(--corail);
+}
+
+.daily-chart-bar.active {
+  opacity: 0.7;
+}
+
+.daily-chart-target {
+  stroke: var(--noir);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.bilan-test-group h3 {
+  margin: 1.25rem 0 0.6rem;
+}
+
+.bilan-test-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+.bilan-test-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.bilan-test-card .trend-chart {
+  margin: 0.25rem 0 0;
+}
+
+@media (min-width: 900px) {
+  .bilan-calendar.semaine .bilan-day {
+    min-height: 120px;
+    padding: 0.5rem 0.4rem;
+  }
+  .bilan-calendar.mois .bilan-pill {
+    font-size: 0.72rem;
+  }
+  .bilan-calendar.mois .bilan-day {
+    min-height: 88px;
+  }
+}
+
+@media (max-width: 899px) {
+  .bilan-pill small {
+    display: none;
+  }
+  .bilan-calendar.semaine .bilan-pill {
+    font-size: 0.66rem;
+  }
+}
+
+.bilan-pill-compact {
+  display: none;
+}
+.bilan-calendar.mois .bilan-pill-full {
+  display: none;
+}
+.bilan-calendar.mois .bilan-pill-compact {
+  display: inline;
+}
+@media (max-width: 899px) {
+  .bilan-pill-full {
+    display: none;
+  }
+  .bilan-pill-compact {
+    display: inline;
+  }
+}
+@media (min-width: 900px) {
+  .bilan-calendar.mois .bilan-pill-full {
+    display: inline;
+  }
+  .bilan-calendar.mois .bilan-pill-compact {
+    display: none;
+  }
+}
+
+.bilan-page .bilan-stat-grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+.daily-chart-axis {
+  display: flex;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.daily-chart-axis span {
+  flex: 1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: visible;
+}
+
+@media (max-width: 400px) {
+  .bilan-calendar {
+    gap: 0.2rem;
+  }
+  .bilan-day,
+  .bilan-calendar.mois .bilan-day {
+    padding: 0.25rem 0.05rem;
+  }
+  .bilan-calendar.semaine .bilan-pill {
+    font-size: 0.62rem;
+    letter-spacing: -0.02em;
+  }
+}
