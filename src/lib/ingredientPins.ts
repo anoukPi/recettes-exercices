@@ -235,6 +235,16 @@ export const INGREDIENT_FDC_ID: Record<string, number> = {
   'tofu fumé': 172475,
   'tofu soyeux': 172461, // Tofu, silken, firm
   'algues nori': 168458, // Seaweed, laver, raw
+  // Produits préparés courants (demande d'Anouk, 25/09/2026 : trouvés
+  // automatiquement, sans saisie manuelle)
+  'poissons panés': 174195, // Fish, fish sticks, frozen, prepared
+  'bâtonnet de poisson': 174195,
+  'bâtonnets de poisson': 174195,
+  donut: 172758, // Doughnuts, yeast-leavened, glazed, enriched
+  donuts: 172758,
+  'donut chocolat': 174991, // Doughnuts, cake-type, plain, chocolate-coated or frosted
+  'donuts chocolat': 174991,
+  'donut au chocolat': 174991,
 };
 
 // Part comestible quand l'ingrédient est pesé avec ses déchets (noyaux…) :

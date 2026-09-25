@@ -91,6 +91,16 @@ export const PIECE_WEIGHTS_G: Record<string, number> = {
   baguette: 250,
   'baguette pain blanc': 250,
   'feuille de riz': 9,
+  // Produits préparés (USDA : 1 bâtonnet ≈ 28 g, 1 donut moyen ≈ 60 g)
+  'poisson pané': 28,
+  'poissons panés': 28,
+  'bâtonnet de poisson': 28,
+  'bâtonnets de poisson': 28,
+  donut: 60,
+  donuts: 60,
+  'donut chocolat': 60,
+  'donuts chocolat': 60,
+  'donut au chocolat': 60,
 };
 
 // Poids qui dépendent à la fois de l'unité ET de l'ingrédient — un "sachet" ou

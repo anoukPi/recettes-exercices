@@ -54,8 +54,10 @@ export function useDayNutrition(dateKey: string, lutealPhaseExtraKcal = 0) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateKey]);
 
-  useEffect(() => {
-    getProfile().then(setProfile).catch(() => {});
+  // Liste des aliments + poids par pièce : rechargée aussi par reload() —
+  // sinon un poids saisi à la main (valeurs manuelles) ne comptait qu'après
+  // un rafraîchissement de la page.
+  const loadReferenceItems = () =>
     listReferenceItems('ingredient')
       .then((items) => {
         const map = new Map<string, string>();
@@ -68,6 +70,11 @@ export function useDayNutrition(dateKey: string, lutealPhaseExtraKcal = 0) {
         setPieceWeights(weights);
       })
       .catch(() => {});
+
+  useEffect(() => {
+    getProfile().then(setProfile).catch(() => {});
+    loadReferenceItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -268,7 +275,10 @@ export function useDayNutrition(dateKey: string, lutealPhaseExtraKcal = 0) {
     setEntries,
     loading,
     error,
-    reload: () => loadEntries(dateKey),
+    reload: () => {
+      loadReferenceItems();
+      loadEntries(dateKey);
+    },
     profile,
     dailyTargets,
     activityEntries,
