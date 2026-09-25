@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { RecipeForm } from '../components/RecipeForm';
 import { deleteRecipe, duplicateRecipe, getRecipe, updateRecipe, updateRecipeServings } from '../api/recipes';
 import { RecipeImage } from '../components/RecipeImage';
+import { profileLabel, useProfiles } from '../lib/profileContext';
 import { RecipeIngredientFixes } from '../components/RecipeIngredientFixes';
 import { dominantMacro } from '../lib/macros';
 import {
@@ -19,6 +20,7 @@ export function RecipeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { session } = useSession();
+  const { profiles, accountId } = useProfiles();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const { result: nutrition, loading: nutritionLoading, reload: reloadNutrition } = useRecipeNutrition(recipe);
   const [loading, setLoading] = useState(true);
@@ -316,7 +318,10 @@ export function RecipeDetailPage() {
       )}
 
       <p className="meta">
-        Ajoutée le {new Date(recipe.created_at).toLocaleDateString('fr-FR')}
+        Ajoutée
+        {session?.user.id === recipe.user_id &&
+          ` par ${profileLabel(profiles.find((p) => p.id === (recipe.profile_id ?? recipe.user_id)) ?? null, accountId)}`}{' '}
+        le {new Date(recipe.created_at).toLocaleDateString('fr-FR')}
       </p>
 
       {session && (

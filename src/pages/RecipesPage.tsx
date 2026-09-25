@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { PageIntro } from '../components/PageIntro';
 import { LibraryView } from '../components/LibraryView';
 import { RecipeImage } from '../components/RecipeImage';
+import { profileLabel, useProfiles } from '../lib/profileContext';
 import { dominantMacro } from '../lib/macros';
 import { listRecipes, getFavoriteRecipeIds } from '../api/recipes';
 import { listMyEndorsedRecipeIds } from '../api/endorsements';
@@ -47,6 +48,15 @@ export function RecipesPage() {
   // Bibliothèque partagée : toutes les recettes, ou seulement les miennes.
   const [ownerFilter, setOwnerFilter] = useState<'toutes' | 'miennes'>('toutes');
   const myId = session?.user.id ?? null;
+  // « Les miennes » = recettes du profil actif (toi, ou l'enfant sélectionné).
+  const { active, profiles, accountId } = useProfiles();
+  const activeProfileId = active?.id ?? myId;
+  const isMine = (r: Recipe) => (r.profile_id ?? r.user_id) === activeProfileId;
+  const authorName = (r: Recipe): string | null => {
+    if (r.user_id !== myId) return null;
+    const author = profiles.find((p) => p.id === (r.profile_id ?? r.user_id));
+    return profileLabel(author ?? null, accountId);
+  };
 
   useEffect(() => {
     listRecipes()
@@ -75,13 +85,14 @@ export function RecipesPage() {
   const filteredByCategory = useMemo(
     () =>
       recipes.filter((r) => {
-        if (ownerFilter === 'miennes' && r.user_id !== myId) return false;
+        if (ownerFilter === 'miennes' && !isMine(r)) return false;
         if (categoryFilter && r.category !== categoryFilter) return false;
         if (testedOnly && !testedIds.has(r.id)) return false;
         if (favoritesOnly && !favoriteIds.has(r.id)) return false;
         return true;
       }),
-    [recipes, categoryFilter, testedOnly, favoritesOnly, favoriteIds, testedIds, ownerFilter, myId],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [recipes, categoryFilter, testedOnly, favoritesOnly, favoriteIds, testedIds, ownerFilter, activeProfileId],
   );
 
   const items = useMemo(
@@ -109,7 +120,7 @@ export function RecipesPage() {
           <div className="recipe-card-badges">
             {testedIds.has(r.id) && <span title="Déjà testée">✅</span>}
             {favoriteIds.has(r.id) && <span title="Favorite du mois">⭐</span>}
-            {r.user_id === myId && <span title="Ta recette">✨ À moi</span>}
+            {authorName(r) && <span title="Ajoutée par">✨ {authorName(r)}</span>}
           </div>
           {r.category && (
             <span className="recipe-card-category">
@@ -191,7 +202,7 @@ export function RecipesPage() {
               {(
                 [
                   ['toutes', `Toutes (${recipes.length})`],
-                  ['miennes', `Les miennes (${recipes.filter((r) => r.user_id === myId).length})`],
+                  ['miennes', `Les miennes (${recipes.filter(isMine).length})`],
                 ] as const
               ).map(([value, label]) => (
                 <button

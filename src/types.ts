@@ -16,6 +16,8 @@ export interface Recipe {
   ai_image_url: string | null;
   /** Nombre de parts que fait la recette entière — null tant qu'il n'est pas renseigné. */
   servings: number | null;
+  /** Profil qui a ajouté la recette (toi, un enfant…) ; null = inconnu. */
+  profile_id: string | null;
   ingredients: RecipeIngredient[];
   steps: string | null;
   tags: string[];
@@ -24,7 +26,7 @@ export interface Recipe {
   created_at: string;
 }
 
-export type RecipeInput = Omit<Recipe, 'id' | 'created_at' | 'ai_image_url'>;
+export type RecipeInput = Omit<Recipe, 'id' | 'created_at' | 'ai_image_url' | 'profile_id'>;
 
 export const RECIPE_CATEGORIES = [
   'Pain', 'Banana bread', 'Gâteau', 'Cookie', 'Dessert', 'Viande', 'Poisson',

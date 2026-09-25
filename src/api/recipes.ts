@@ -27,7 +27,7 @@ export async function createRecipe(input: Omit<RecipeInput, 'user_id'>): Promise
   if (!userId) throw new Error('Connecte-toi pour ajouter une recette.');
   const { data, error } = await supabase
     .from('recipes')
-    .insert({ ...input, user_id: userId })
+    .insert({ ...input, user_id: userId, profile_id: await activeProfileId() })
     .select()
     .single();
   if (error) throw error;
@@ -40,7 +40,7 @@ export async function duplicateRecipe(source: Recipe): Promise<Recipe> {
   const { id: _id, user_id: _userId, created_at: _createdAt, ...rest } = source;
   const { data, error } = await supabase
     .from('recipes')
-    .insert({ ...rest, title: `${source.title} (copie)`, user_id: userId })
+    .insert({ ...rest, title: `${source.title} (copie)`, user_id: userId, profile_id: await activeProfileId() })
     .select()
     .single();
   if (error) throw error;
