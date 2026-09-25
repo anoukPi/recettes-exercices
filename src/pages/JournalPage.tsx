@@ -5,6 +5,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { addDays, formatDateKeyFr, toDateKey } from '../lib/date';
 import { useDayNutrition } from '../lib/useDayNutrition';
 import { OMEGA6_OMEGA3_RATIO_MAX, targetsBlockedReason } from '../lib/dailyNeeds';
+import { childTargets } from '../lib/childNeeds';
 import { useSession } from '../lib/auth';
 import { MonthCalendar } from '../components/MonthCalendar';
 import { listCycleEntries } from '../api/cycle';
@@ -205,6 +206,8 @@ export function JournalPage() {
   // adulte, et une logique de déficit n'a pas de sens en croissance).
   const age = childAge(profile);
   const bilan = age === null ? rawBilan : null;
+  // Enfant : repères de macros et de nutriments selon l'âge et le sexe (sans calories).
+  const kid = age !== null ? childTargets(profile) : null;
   const activityMinutesToday = activityEntries.reduce((sum, a) => sum + a.duration_minutes, 0);
 
   useEffect(() => {
@@ -431,18 +434,40 @@ export function JournalPage() {
             <MacroMeter
               label="Protéines"
               actual={dayTotals.totals.protein_g}
-              target={dailyTargets?.protein_g}
+              target={kid ? kid.protein_g : dailyTargets?.protein_g}
               unit="g"
+              moreIsBetter={!!kid}
             />
-            <MacroMeter label="Glucides" actual={dayTotals.totals.carbs_g} target={dailyTargets?.carbs_g} unit="g" />
-            <MacroMeter label="Lipides" actual={dayTotals.totals.fat_g} target={dailyTargets?.fat_g} unit="g" />
             <MacroMeter
-              label="dont saturés"
-              actual={dayTotals.totals.fat_saturated_g}
-              target={dailyTargets?.fat_saturated_g}
+              label="Glucides"
+              actual={dayTotals.totals.carbs_g}
+              target={kid ? kid.carbs_g : dailyTargets?.carbs_g}
+              unit="g"
+              moreIsBetter={!!kid}
+            />
+            <MacroMeter
+              label="Lipides"
+              actual={dayTotals.totals.fat_g}
+              target={kid ? kid.fat_g : dailyTargets?.fat_g}
               unit="g"
             />
+            <MacroMeter
+              label={kid ? 'dont saturés (maximum)' : 'dont saturés'}
+              actual={dayTotals.totals.fat_saturated_g}
+              target={kid ? kid.fat_saturated_max_g : dailyTargets?.fat_saturated_g}
+              unit="g"
+            />
+            {kid && (
+              <MacroMeter label="Fibres" actual={dayTotals.totals.fiber_g} target={kid.fiber_g} unit="g" moreIsBetter />
+            )}
           </div>
+          {kid && (
+            <p className="hint">
+              Repères pour {profile?.display_name || 'cet enfant'} ({kid.ageBand} ans
+              {profile?.sex ? `, ${profile.sex === 'femme' ? 'fille' : 'garçon'}` : ''}) : apports recommandés par jour
+              pour son âge et son sexe. Protéines, glucides et fibres : à atteindre ; saturés : à ne pas dépasser.
+            </p>
+          )}
           {dayGi !== null && (
             <>
               <p className={`gi-appreciation ${cgAppreciation(dayTotals.totals.glycemic_load).className}`}>
@@ -477,9 +502,25 @@ export function JournalPage() {
           <div className="block b-blanc block-omegas">
             <h4 className="block-label">Oméga 3 · 6 · 9</h4>
             <div className="meter-group">
-              <MacroMeter label="Oméga-3" actual={dayTotals.totals.omega3_g} target={dailyTargets?.omega3_g} unit="g" />
-              <MacroMeter label="Oméga-6" actual={dayTotals.totals.omega6_g} target={dailyTargets?.omega6_g} unit="g" />
-              <MacroMeter label="Oméga-9" actual={dayTotals.totals.omega9_g} target={dailyTargets?.omega9_g} unit="g" />
+              <MacroMeter
+                label="Oméga-3"
+                actual={dayTotals.totals.omega3_g}
+                target={kid ? kid.omega3_g : dailyTargets?.omega3_g}
+                unit="g"
+                moreIsBetter={!!kid}
+              />
+              <MacroMeter
+                label="Oméga-6"
+                actual={dayTotals.totals.omega6_g}
+                target={kid ? kid.omega6_g : dailyTargets?.omega6_g}
+                unit="g"
+              />
+              <MacroMeter
+                label="Oméga-9"
+                actual={dayTotals.totals.omega9_g}
+                target={kid ? undefined : dailyTargets?.omega9_g}
+                unit="g"
+              />
             </div>
             {dayTotals.totals.omega3_g > 0 && (
               <p className="omega-ratio">
@@ -492,12 +533,19 @@ export function JournalPage() {
                 <span className="hint">(repère : moins de {OMEGA6_OMEGA3_RATIO_MAX})</span>
               </p>
             )}
-            <p className="hint">
-              Repères ANSES adaptés à ton objectif calorique : oméga-3 = 1 % des calories + 0,5 g d'EPA/DHA (poissons
-              gras) ; oméga-6 = 4 % ; oméga-9 = 15 à 20 %
-              {dailyTargets ? ` (jusqu'à ${Math.round(dailyTargets.omega9_max_g)} g)` : ''}. Un « 0 » peut vouloir dire
-              « non mesuré » : le détail des acides gras manque pour certains aliments.
-            </p>
+            {kid ? (
+              <p className="hint">
+                Repères selon l’âge et le sexe pour les oméga-3 et oméga-6 (pas de repère pour les oméga-9). Un « 0 »
+                peut vouloir dire « non mesuré » : le détail des acides gras manque pour certains aliments.
+              </p>
+            ) : (
+              <p className="hint">
+                Repères ANSES adaptés à ton objectif calorique : oméga-3 = 1 % des calories + 0,5 g d'EPA/DHA (poissons
+                gras) ; oméga-6 = 4 % ; oméga-9 = 15 à 20 %
+                {dailyTargets ? ` (jusqu'à ${Math.round(dailyTargets.omega9_max_g)} g)` : ''}. Un « 0 » peut vouloir
+                dire « non mesuré » : le détail des acides gras manque pour certains aliments.
+              </p>
+            )}
           </div>
         )}
 
@@ -532,6 +580,28 @@ export function JournalPage() {
                 Rien loguée aujourd'hui — <Link to="/activity">ajouter une activité</Link>.
               </p>
             )}
+          </div>
+        )}
+
+        {kid && (
+          <div className="block b-blanc block-child-micros">
+            <h4 className="block-label">Vitamines & minéraux</h4>
+            <div className="meter-group">
+              {kid.micros.map((m) => (
+                <MacroMeter
+                  key={m.key}
+                  label={m.label}
+                  actual={dayTotals.totals[m.key]}
+                  target={m.target}
+                  unit={m.unit}
+                  moreIsBetter={m.kind === 'min'}
+                />
+              ))}
+            </div>
+            <p className="hint">
+              Apports recommandés par jour selon l’âge et le sexe. Certains aliments n’ont pas le détail de toutes les
+              vitamines : un chiffre bas peut aussi vouloir dire « non mesuré ».
+            </p>
           </div>
         )}
 
