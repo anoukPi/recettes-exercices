@@ -10,6 +10,11 @@ export interface ReferenceNutrition {
   values: Partial<NutritionPer100g>;
 }
 
+const LAIT_AVOINE: ReferenceNutrition = {
+  label: "Boisson à l'avoine nature",
+  values: { calories_kcal: 46, protein_g: 1, carbs_g: 6.7, fat_g: 1.5, fat_saturated_g: 0.2, fiber_g: 0.8, sugar_g: 4 },
+};
+
 const ZERO: Partial<NutritionPer100g> = {
   calories_kcal: 0, protein_g: 0, carbs_g: 0, fat_g: 0, fiber_g: 0, sugar_g: 0,
 };
@@ -72,10 +77,15 @@ export const REFERENCE_NUTRITION: Record<string, ReferenceNutrition> = {
 
   lait: LAIT_DEMI,
   'lait demi-écrémé': LAIT_DEMI,
-  "lait d'avoine": {
-    label: "Boisson à l'avoine nature",
-    values: { calories_kcal: 46, protein_g: 1, carbs_g: 6.7, fat_g: 1.5, fat_saturated_g: 0.2, fiber_g: 0.8, sugar_g: 4 },
-  },
+  "lait d'avoine": LAIT_AVOINE,
+  // Autres façons courantes de l'écrire (sinon « lait avoine » restait inconnu).
+  'lait avoine': LAIT_AVOINE,
+  'lait à l’avoine': LAIT_AVOINE,
+  "lait à l'avoine": LAIT_AVOINE,
+  'boisson avoine': LAIT_AVOINE,
+  "boisson d'avoine": LAIT_AVOINE,
+  "boisson à l'avoine": LAIT_AVOINE,
+  'boisson à l’avoine': LAIT_AVOINE,
   'boisson coco': {
     label: 'Boisson coco en brique (non sucrée)',
     values: { calories_kcal: 20, protein_g: 0.1, carbs_g: 2.7, fat_g: 0.9, fat_saturated_g: 0.9, sugar_g: 1.9 },

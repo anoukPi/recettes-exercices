@@ -228,6 +228,12 @@ export const INGREDIENT_FDC_ID: Record<string, number> = {
   // Boissons végétales & divers
   "lait d'amande": 174832, // Beverages, almond milk, unsweetened, shelf stable
   'lait de soja': 175215, // Soymilk, unsweetened, with added calcium
+  'lait amande': 174832,
+  "boisson d'amande": 174832,
+  'boisson amande': 174832,
+  'lait soja': 175215,
+  'boisson soja': 175215,
+  'boisson de soja': 175215,
   'lait de coco': 170173, // Nuts, coconut milk, canned
   'lait coco': 170173,
   tofu: 172475, // Tofu, raw, firm, prepared with calcium sulfate

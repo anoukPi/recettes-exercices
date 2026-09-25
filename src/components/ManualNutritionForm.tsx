@@ -7,6 +7,8 @@ interface ManualNutritionFormProps {
   label: string;
   unit: string;
   onSaved: () => void;
+  /** Ouvert d'emblée (ex. depuis une recette : on sait déjà qu'il faut le remplir). */
+  defaultOpen?: boolean;
 }
 
 const PIECE_UNITS = new Set(['unité', 'pièce', 'sachet', 'boîte', 'botte', 'feuille', 'brin']);
@@ -44,8 +46,8 @@ const FIELDS: {
   { key: 'sodium_mg', label: 'Sodium', unit: 'mg' },
 ];
 
-export function ManualNutritionForm({ referenceItemId, label, unit, onSaved }: ManualNutritionFormProps) {
-  const [open, setOpen] = useState(false);
+export function ManualNutritionForm({ referenceItemId, label, unit, onSaved, defaultOpen = false }: ManualNutritionFormProps) {
+  const [open, setOpen] = useState(defaultOpen);
   const [values, setValues] = useState<Record<string, string>>({});
   const [pieceWeightG, setPieceWeightG] = useState('');
   const [saving, setSaving] = useState(false);

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { RecipeForm } from '../components/RecipeForm';
 import { deleteRecipe, duplicateRecipe, getRecipe, updateRecipe, updateRecipeServings } from '../api/recipes';
 import { RecipeImage } from '../components/RecipeImage';
+import { RecipeIngredientFixes } from '../components/RecipeIngredientFixes';
 import { dominantMacro } from '../lib/macros';
 import {
   endorseRecipe,
@@ -19,7 +20,7 @@ export function RecipeDetailPage() {
   const navigate = useNavigate();
   const { session } = useSession();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
-  const { result: nutrition, loading: nutritionLoading } = useRecipeNutrition(recipe);
+  const { result: nutrition, loading: nutritionLoading, reload: reloadNutrition } = useRecipeNutrition(recipe);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
@@ -197,6 +198,14 @@ export function RecipeDetailPage() {
         <div className="summary-card">
           <h4>Valeurs nutritionnelles</h4>
           {nutritionLoading && <p className="hint">Calcul en cours…</p>}
+          {!nutritionLoading && nutrition && (
+            <RecipeIngredientFixes
+              issues={nutrition.issues}
+              canEdit={session?.user.id === recipe.user_id}
+              onFixed={reloadNutrition}
+              onEditRecipe={() => setEditing(true)}
+            />
+          )}
           {!nutritionLoading && nutrition?.anyFound && recipe.servings && (
             <div className="recipe-per-part">
               <span className="recipe-per-part-label">Pour 1 part (1/{recipe.servings} de la recette)</span>
@@ -269,10 +278,10 @@ export function RecipeDetailPage() {
                   converties avec un poids moyen.
                 </p>
               )}
-              {nutrition.partial && (
+              {nutrition.partial && nutrition.issues.length === 0 && (
                 <p className="hint warning-hint">
-                  ⚠️ Calcul partiel — certains ingrédients n'ont pas pu être trouvés ou convertis
-                  (mesure inconnue, ingrédient introuvable). Le total ci-dessus les exclut.
+                  ⚠️ Certaines valeurs viennent d’une recherche automatique non vérifiée : l’ordre de grandeur est
+                  bon, le détail peut varier selon le produit.
                 </p>
               )}
               {!recipe.servings && (

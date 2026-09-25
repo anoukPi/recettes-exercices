@@ -101,6 +101,10 @@ export const PIECE_WEIGHTS_G: Record<string, number> = {
   'donut chocolat': 60,
   'donuts chocolat': 60,
   'donut au chocolat': 60,
+  // Levures : « 1 unité » = 1 sachet
+  'levure chimique': 11,
+  'levure boulangère': 7,
+  'levure de boulanger': 7,
 };
 
 // Poids qui dépendent à la fois de l'unité ET de l'ingrédient — un "sachet" ou
