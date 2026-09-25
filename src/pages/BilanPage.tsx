@@ -13,6 +13,7 @@ import {
 import { usePeriodSummary, type DaySummary } from '../lib/usePeriodSummary';
 import { useSession } from '../lib/auth';
 import { DailyValueChart } from '../components/DailyValueChart';
+import { CriteriaLineChart } from '../components/CriteriaLineChart';
 import { TrendChart } from '../components/TrendChart';
 import { listFitnessTests } from '../api/fitnessTests';
 import { definitionFor, TEST_CATEGORIES } from '../lib/fitnessTestCatalog';
@@ -76,7 +77,8 @@ function useStoredSelection<T extends string>(key: string, defaults: T[], allowe
     try {
       const raw = localStorage.getItem(key);
       if (raw) {
-        const parsed = (JSON.parse(raw) as string[]).filter((v): v is T => (allowed as readonly string[]).includes(v));
+        const stored = JSON.parse(raw) as string[];
+        const parsed = allowed.filter((v) => stored.includes(v));
         if (parsed.length > 0) return parsed;
       }
     } catch {
@@ -92,7 +94,13 @@ function useStoredSelection<T extends string>(key: string, defaults: T[], allowe
     }
   }, [key, selected]);
   const toggle = (v: T) =>
-    setSelected((cur) => (cur.includes(v) ? (cur.length > 1 ? cur.filter((x) => x !== v) : cur) : [...cur, v]));
+    setSelected((cur) =>
+      cur.includes(v)
+        ? cur.length > 1
+          ? cur.filter((x) => x !== v)
+          : cur
+        : allowed.filter((x) => x === v || cur.includes(x)),
+    );
   return [selected, toggle] as const;
 }
 
@@ -102,7 +110,13 @@ type Level = 'none' | 'low' | 'ok' | 'over' | 'deficit' | 'act1' | 'act2' | 'act
 
 interface CalendarMetric {
   label: string;
-  short: string;
+  emoji: string;
+  /** Premières lettres affichées dans la case. */
+  abbr: string;
+  unit: string;
+  /** Couleur du trait dans la vue graphique. */
+  color: string;
+  target?: (t: DailyTargets) => number;
   value: (d: DaySummary | undefined, t: DailyTargets | null) => number | null;
   format: (v: number) => string;
   level: (v: number, t: DailyTargets | null) => Level;
@@ -132,7 +146,11 @@ const ACTIVITY_LEGEND: [Level, string][] = [
 const CALENDAR_METRICS = {
   calories: {
     label: 'Calories du jour',
-    short: 'kcal',
+    emoji: '🍽️',
+    abbr: 'Cal',
+    unit: 'kcal',
+    color: '#0e4e5c',
+    target: (t) => t.calories_kcal,
     value: (d) => (d?.hasData ? d.calories : null),
     format: (v) => fmt(Math.round(v)),
     level: (v, t) => ratioLevel(v, t?.calories_kcal),
@@ -140,7 +158,10 @@ const CALENDAR_METRICS = {
   },
   ecart: {
     label: 'Écart calories',
-    short: 'écart',
+    emoji: '⚖️',
+    abbr: 'Éc',
+    unit: 'kcal',
+    color: '#ff6f61',
     value: (d, t) => (d?.hasData && t ? d.calories - expensesFor(d, t) : null),
     format: (v) => `${v >= 0 ? '+' : ''}${fmt(Math.round(v))}`,
     level: (v) => (v > 200 ? 'over' : v < -200 ? 'deficit' : 'ok'),
@@ -152,7 +173,10 @@ const CALENDAR_METRICS = {
   },
   depense: {
     label: 'Kcal dépensées (activité)',
-    short: 'dép.',
+    emoji: '🔥',
+    abbr: 'Dép',
+    unit: 'kcal',
+    color: '#2c8a7b',
     value: (d) => (d && d.activities.length > 0 ? d.activityCalories : null),
     format: (v) => fmt(Math.round(v)),
     level: (v) => (v >= 400 ? 'act3' : v >= 150 ? 'act2' : 'act1'),
@@ -160,7 +184,10 @@ const CALENDAR_METRICS = {
   },
   met: {
     label: 'MET-heures',
-    short: 'MET·h',
+    emoji: '⚡',
+    abbr: 'MET',
+    unit: 'MET·h',
+    color: '#121212',
     value: (d) => (d && d.activities.length > 0 ? metHours(d) : null),
     format: (v) => fmt(v, 1),
     level: (v) => (v >= 6 ? 'act3' : v >= 3 ? 'act2' : 'act1'),
@@ -168,7 +195,10 @@ const CALENDAR_METRICS = {
   },
   minutes: {
     label: 'Minutes d’activité',
-    short: 'min',
+    emoji: '⏱️',
+    abbr: 'Min',
+    unit: 'min',
+    color: '#0e4e5c',
     value: (d) => (d && d.activities.length > 0 ? activityMinutes(d) : null),
     format: (v) => fmt(Math.round(v)),
     level: (v) => (v >= 60 ? 'act3' : v >= 30 ? 'act2' : 'act1'),
@@ -176,7 +206,11 @@ const CALENDAR_METRICS = {
   },
   proteines: {
     label: 'Protéines',
-    short: 'P',
+    emoji: '🥩',
+    abbr: 'Pro',
+    unit: 'g',
+    color: '#0e4e5c',
+    target: (t) => t.protein_g,
     value: (d) => (d?.hasData ? d.protein_g : null),
     format: (v) => `${fmt(Math.round(v))} g`,
     level: (v, t) => ratioLevel(v, t?.protein_g),
@@ -184,7 +218,11 @@ const CALENDAR_METRICS = {
   },
   glucides: {
     label: 'Glucides',
-    short: 'G',
+    emoji: '🍞',
+    abbr: 'Glu',
+    unit: 'g',
+    color: '#ff6f61',
+    target: (t) => t.carbs_g,
     value: (d) => (d?.hasData ? d.carbs_g : null),
     format: (v) => `${fmt(Math.round(v))} g`,
     level: (v, t) => ratioLevel(v, t?.carbs_g),
@@ -192,7 +230,11 @@ const CALENDAR_METRICS = {
   },
   lipides: {
     label: 'Lipides',
-    short: 'L',
+    emoji: '🥑',
+    abbr: 'Lip',
+    unit: 'g',
+    color: '#2c8a7b',
+    target: (t) => t.fat_g,
     value: (d) => (d?.hasData ? d.fat_g : null),
     format: (v) => `${fmt(Math.round(v))} g`,
     level: (v, t) => ratioLevel(v, t?.fat_g),
@@ -232,6 +274,21 @@ function BilanCalendar({
     CALENDAR_KEYS,
   );
   const [openDay, setOpenDay] = useState<string | null>(null);
+  const [view, setView] = useState<'calendrier' | 'graphique'>(() => {
+    try {
+      return localStorage.getItem('kaly-bilan-vue') === 'graphique' ? 'graphique' : 'calendrier';
+    } catch {
+      return 'calendrier';
+    }
+  });
+  const changeView = (v: 'calendrier' | 'graphique') => {
+    setView(v);
+    try {
+      localStorage.setItem('kaly-bilan-vue', v);
+    } catch {
+      // confort seulement
+    }
+  };
   const today = toDateKey(new Date());
   const byDate = useMemo(() => new Map(days.map((d) => [d.date, d])), [days]);
 
@@ -242,6 +299,24 @@ function BilanCalendar({
     ...Array.from({ length: count }, (_, i) => addDays(start, i)),
   ];
   const detail = openDay ? byDate.get(openDay) : undefined;
+  const dates = cells.filter((c): c is string => c !== null);
+  // Un graphique par unité : on ne mélange pas des kcal et des grammes sur le même axe.
+  const chartGroups = Array.from(new Set(selected.map((k) => CALENDAR_METRICS[k].unit))).map((unit) => ({
+    unit,
+    series: selected
+      .filter((k) => CALENDAR_METRICS[k].unit === unit)
+      .map((k) => {
+        const m: CalendarMetric = CALENDAR_METRICS[k];
+        return {
+          key: k,
+          label: m.label,
+          emoji: m.emoji,
+          color: m.color,
+          target: m.target && targets ? m.target(targets) : null,
+          values: dates.map((date) => m.value(byDate.get(date), targets)),
+        };
+      }),
+  }));
 
   return (
     <>
@@ -254,74 +329,116 @@ function BilanCalendar({
             className={`tag-chip${selected.includes(k) ? ' selected' : ''}`}
             onClick={() => toggle(k)}
           >
-            {CALENDAR_METRICS[k].label}
+            {CALENDAR_METRICS[k].emoji} {CALENDAR_METRICS[k].label}
           </button>
         ))}
       </div>
 
-      <div className={`bilan-calendar ${periodType}`}>
-        {WEEKDAYS.map((w) => (
-          <span key={w} className="bilan-calendar-weekday">
-            {periodType === 'mois' ? w.slice(0, 1) : w}
-          </span>
+      <div className="bilan-period-toggle bilan-view-toggle" role="group" aria-label="Affichage">
+        {(
+          [
+            ['calendrier', '📅 Calendrier'],
+            ['graphique', '📈 Graphique'],
+          ] as const
+        ).map(([v, label]) => (
+          <button
+            key={v}
+            type="button"
+            aria-pressed={view === v}
+            className={view === v ? 'selected' : ''}
+            onClick={() => changeView(v)}
+          >
+            {label}
+          </button>
         ))}
-        {cells.map((date, i) => {
-          if (!date) return <span key={`vide-${i}`} />;
-          const day = byDate.get(date);
-          const empty = !day?.hasData && !day?.activities.length;
-          return (
-            <button
-              type="button"
-              key={date}
-              className={`bilan-day${date === today ? ' today' : ''}${openDay === date ? ' open' : ''}${empty ? ' empty' : ''}`}
-              onClick={() => setOpenDay(openDay === date ? null : date)}
-              aria-label={formatDateKeyFr(date)}
-            >
-              <span className="bilan-day-number">
-                {Number(date.slice(8))}
-                {day?.hasPeriod && <span className="bilan-day-period" title="Règles" />}
-              </span>
-              {!empty && selected.map((k) => {
-                const m: CalendarMetric = CALENDAR_METRICS[k];
-                const v = m.value(day, targets);
-                return (
-                  <span
-                    key={k}
-                    className={`bilan-pill level-${v === null ? 'none' : m.level(v, targets)}`}
-                    title={m.label}
-                  >
-                    {v === null ? (
-                      '·'
-                    ) : (
-                      <>
-                        <span className="bilan-pill-full">{m.format(v)}</span>
-                        <span className="bilan-pill-compact">{compact(v, m.format)}</span>
-                      </>
-                    )}
-                    {periodType === 'semaine' && v !== null && <small> {m.short}</small>}
-                  </span>
-                );
-              })}
-            </button>
-          );
-        })}
       </div>
 
-      <ul className="bilan-legend">
-        {selected.map((k) => {
-          const m: CalendarMetric = CALENDAR_METRICS[k];
-          return (
-            <li key={k}>
-              <strong>{m.label}</strong>
-              {m.legend.map(([level, text]) => (
-                <span key={level}>
-                  <span className={`bilan-swatch level-${level}`} /> {text}
-                </span>
-              ))}
-            </li>
-          );
-        })}
-      </ul>
+      {view === 'graphique' ? (
+        <div className="criteria-chart-list">
+          {chartGroups.map((g) => (
+            <CriteriaLineChart
+              key={g.unit}
+              unit={g.unit}
+              dates={dates}
+              series={g.series}
+              openDate={openDay}
+              onOpen={(d) => setOpenDay(openDay === d ? null : d)}
+            />
+          ))}
+        </div>
+      ) : (
+        <>
+          <div className={`bilan-calendar ${periodType}`}>
+            {WEEKDAYS.map((w) => (
+              <span key={w} className="bilan-calendar-weekday">
+                {periodType === 'mois' ? w.slice(0, 1) : w}
+              </span>
+            ))}
+            {cells.map((date, i) => {
+              if (!date) return <span key={`vide-${i}`} />;
+              const day = byDate.get(date);
+              const empty = !day?.hasData && !day?.activities.length;
+              return (
+                <button
+                  type="button"
+                  key={date}
+                  className={`bilan-day${date === today ? ' today' : ''}${openDay === date ? ' open' : ''}${empty ? ' empty' : ''}`}
+                  onClick={() => setOpenDay(openDay === date ? null : date)}
+                  aria-label={formatDateKeyFr(date)}
+                >
+                  <span className="bilan-day-number">
+                    {Number(date.slice(8))}
+                    {day?.hasPeriod && <span className="bilan-day-period" title="Règles" />}
+                  </span>
+                  {!empty &&
+                    selected.map((k) => {
+                      const m: CalendarMetric = CALENDAR_METRICS[k];
+                      const v = m.value(day, targets);
+                      return (
+                        <span
+                          key={k}
+                          className={`bilan-pill level-${v === null ? 'none' : m.level(v, targets)}`}
+                          title={m.label}
+                        >
+                          <span className="bilan-pill-label">
+                            <span aria-hidden="true">{m.emoji}</span>
+                            <span className="bilan-pill-abbr">{m.abbr}</span>
+                          </span>
+                          {v === null ? (
+                            <span className="bilan-pill-value">·</span>
+                          ) : (
+                            <span className="bilan-pill-value">
+                              <span className="bilan-pill-full">{m.format(v)}</span>
+                              <span className="bilan-pill-compact">{compact(v, m.format)}</span>
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })}
+                </button>
+              );
+            })}
+          </div>
+
+          <ul className="bilan-legend">
+            {selected.map((k) => {
+              const m: CalendarMetric = CALENDAR_METRICS[k];
+              return (
+                <li key={k}>
+                  <strong>
+                    {m.emoji} {m.abbr} = {m.label}
+                  </strong>
+                  {m.legend.map(([level, text]) => (
+                    <span key={level}>
+                      <span className={`bilan-swatch level-${level}`} /> {text}
+                    </span>
+                  ))}
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      )}
 
       {openDay ? (
         <div className="block b-blanc bilan-day-detail">
@@ -334,8 +451,8 @@ function BilanCalendar({
               <strong>{fmt(Math.round(detail.calories))} kcal</strong>
               {targets && <span className="hint"> / objectif {fmt(Math.round(targets.calories_kcal))}</span>}
               <br />
-              Protéines {fmt(Math.round(detail.protein_g))} g · Glucides {fmt(Math.round(detail.carbs_g))} g ·
-              Lipides {fmt(Math.round(detail.fat_g))} g
+              Protéines {fmt(Math.round(detail.protein_g))} g · Glucides {fmt(Math.round(detail.carbs_g))} g · Lipides{' '}
+              {fmt(Math.round(detail.fat_g))} g
               {targets && (
                 <>
                   <br />
@@ -366,7 +483,9 @@ function BilanCalendar({
           )}
         </div>
       ) : (
-        <p className="hint">Touche un jour pour voir le détail de l’alimentation et de l’activité.</p>
+        <p className="hint">
+          Touche un jour (ou une ligne du graphique) pour voir le détail de l’alimentation et de l’activité.
+        </p>
       )}
     </>
   );
@@ -497,8 +616,12 @@ function StatsView({
       </div>
 
       <div className="bilan-stat-grid">
-        {on('proteines') && <MacroStat label="Protéines" values={s.food.map((d) => d.protein_g)} target={targets?.protein_g} />}
-        {on('glucides') && <MacroStat label="Glucides" values={s.food.map((d) => d.carbs_g)} target={targets?.carbs_g} />}
+        {on('proteines') && (
+          <MacroStat label="Protéines" values={s.food.map((d) => d.protein_g)} target={targets?.protein_g} />
+        )}
+        {on('glucides') && (
+          <MacroStat label="Glucides" values={s.food.map((d) => d.carbs_g)} target={targets?.carbs_g} />
+        )}
         {on('lipides') && <MacroStat label="Lipides" values={s.food.map((d) => d.fat_g)} target={targets?.fat_g} />}
         {on('entrainements') && (
           <div className="bilan-stat-card">
@@ -607,7 +730,8 @@ function StatsView({
           data={Array.from({ length: count }, (_, i) => {
             const date = addDays(start, i);
             const d = byDate.get(date);
-            if (curve === 'ecart') return { date, value: d?.hasData && targets ? d.calories - expensesFor(d, targets) : null };
+            if (curve === 'ecart')
+              return { date, value: d?.hasData && targets ? d.calories - expensesFor(d, targets) : null };
             if (!d) return { date, value: curveDef.food ? null : 0 };
             return { date, value: curveDef.food && !d.hasData ? null : curveDef.value(d) };
           })}
@@ -685,7 +809,10 @@ function TestsEvolution() {
                       </p>
                     )}
                     {entries.length > 1 ? (
-                      <TrendChart points={entries.map((e) => ({ date: e.entry_date, value: e.value }))} unit={last.unit} />
+                      <TrendChart
+                        points={entries.map((e) => ({ date: e.entry_date, value: e.value }))}
+                        unit={last.unit}
+                      />
                     ) : (
                       <p className="hint">
                         Un seul résultat ({new Date(`${last.entry_date}T12:00:00`).toLocaleDateString('fr-CH')}) : la
@@ -766,11 +893,19 @@ export function BilanPage() {
               ))}
             </div>
             <div className="journal-date-nav">
-              <button type="button" onClick={() => setAnchor(shiftAnchor(periodType, anchor, -1))} aria-label="Période précédente">
+              <button
+                type="button"
+                onClick={() => setAnchor(shiftAnchor(periodType, anchor, -1))}
+                aria-label="Période précédente"
+              >
                 ←
               </button>
               <strong>{formatDateRangeFr(start, end)}</strong>
-              <button type="button" onClick={() => setAnchor(shiftAnchor(periodType, anchor, 1))} aria-label="Période suivante">
+              <button
+                type="button"
+                onClick={() => setAnchor(shiftAnchor(periodType, anchor, 1))}
+                aria-label="Période suivante"
+              >
                 →
               </button>
             </div>

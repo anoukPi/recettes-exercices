@@ -3600,3 +3600,136 @@ a.button,
     letter-spacing: -0.02em;
   }
 }
+
+/* --- Bilan : étiquettes des cases + vue graphique --- */
+.bilan-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.2rem;
+  padding: 0.15rem 0.3rem;
+}
+
+.bilan-pill-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-weight: 800;
+  opacity: 0.85;
+}
+
+.bilan-pill-abbr {
+  font-size: 0.85em;
+}
+
+@media (max-width: 899px) {
+  .bilan-pill {
+    flex-direction: column;
+    gap: 0;
+    padding: 0.15rem 0.05rem;
+    line-height: 1.15;
+  }
+  .bilan-pill-label {
+    font-size: 0.56rem;
+  }
+  .bilan-calendar.mois .bilan-pill-abbr {
+    display: none;
+  }
+}
+
+.bilan-view-toggle {
+  margin-bottom: 0.9rem;
+}
+
+.criteria-chart-list {
+  display: grid;
+  gap: 0.9rem;
+}
+
+@media (min-width: 900px) {
+  .criteria-chart-list {
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  }
+}
+
+.criteria-chart {
+  margin: 0;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 0.8rem 0.6rem 0.4rem;
+}
+
+.criteria-chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.criteria-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin: 0 0.2rem 0.4rem;
+}
+
+.criteria-chart-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.criteria-chart-swatch {
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+}
+
+.criteria-chart-row {
+  cursor: pointer;
+}
+
+.criteria-chart-rowbg {
+  fill: transparent;
+}
+
+.criteria-chart-row:nth-child(even) .criteria-chart-rowbg {
+  fill: var(--surface-muted);
+}
+
+.criteria-chart-row.open .criteria-chart-rowbg {
+  fill: var(--eau-soft);
+}
+
+.criteria-chart-day {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--text);
+}
+
+.criteria-chart-tick {
+  font-size: 9px;
+  fill: var(--text-muted);
+  text-anchor: middle;
+}
+
+.criteria-chart-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.criteria-chart-zero {
+  stroke: var(--noir);
+  stroke-width: 1;
+}
+
+.bilan-view-toggle button {
+  font-size: 0.9rem;
+}
+
+.criteria-chart {
+  max-width: 640px;
+  width: 100%;
+}
