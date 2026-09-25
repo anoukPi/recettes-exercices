@@ -90,3 +90,14 @@ export async function deleteActivityEntry(id: string): Promise<void> {
   const { error } = await supabase.from('activity_entries').delete().eq('id', id);
   if (error) throw error;
 }
+
+/** Au moins une activité notée pour le profil actif (premiers pas). */
+export async function hasAnyActivityEntry(): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('activity_entries')
+    .select('id')
+    .eq('profile_id', await activeProfileId())
+    .limit(1);
+  if (error) throw error;
+  return (data ?? []).length > 0;
+}

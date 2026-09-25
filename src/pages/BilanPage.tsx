@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { PageIntro } from '../components/PageIntro';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   addDays,
@@ -1044,6 +1045,14 @@ export function BilanPage() {
   return (
     <section className="journal bilan-page">
       <h2>Bilan</h2>
+      <PageIntro id="bilan" emoji="📊" title="Ta semaine ou ton mois en un coup d’œil">
+        <p>
+          <strong>Bilan</strong> : un calendrier (ou un graphique) coloré selon les critères que tu choisis — calories,
+          écart, protéines, activité… <strong>Stat</strong> : tes moyennes, tes entraînements, tes activités favorites.{' '}
+          <strong>Test</strong> : les courbes de tes tests.
+        </p>
+        <p>Garde jusqu’à 6 critères en favoris avec « ＋ Ajouter », et retire-les avec ×.</p>
+      </PageIntro>
       <div className="section-tabs" role="tablist" aria-label="Bilan">
         {TABS.map((t) => (
           <button

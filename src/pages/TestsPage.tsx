@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { PageIntro } from '../components/PageIntro';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toDateKey } from '../lib/date';
 import {
@@ -423,6 +424,12 @@ export function TestsPage() {
   return (
     <section className="journal tests-page">
       <h2>Tests</h2>
+      <PageIntro id="tests" emoji="💪" title="Tes progrès, mois après mois">
+        <p>
+          Quelques tests simples à faire chez toi une fois par mois : mesures, force (tractions, gainage…), souplesse,
+          endurance. Chaque test est expliqué et illustré. Tes courbes apparaissent dans « Tendances » et dans Bilan.
+        </p>
+      </PageIntro>
       <p className="hint">Un bilan par mois, dans les mêmes conditions : c'est ce qui rend tes progrès visibles.</p>
 
       <div className="section-tabs settings-tabs" role="tablist" aria-label="Catégories de tests">

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { PageIntro } from '../components/PageIntro';
 import {
   listComparableFoods,
   matchesSearch,
@@ -394,6 +395,12 @@ export function ComparePage() {
   return (
     <section className="compare-page">
       <h2>Comparer des aliments</h2>
+      <PageIntro id="comparer" emoji="⚖️" title="Quel aliment choisir ?">
+        <p>
+          La farine la moins calorique, la source de protéines la plus intéressante, le meilleur apport en fibres ou en
+          bons lipides : choisis une famille et ta question, Kaly classe les aliments pour toi (avec l’IG et les oméga).
+        </p>
+      </PageIntro>
       <p className="hint">
         Choisis ce que tu cherches, une famille ou un nom, puis ta question. Valeurs pour l'aliment
         cru ou sec, sauf mention « cuit » ou « en conserve ». Touche ☆ pour garder un aliment dans la

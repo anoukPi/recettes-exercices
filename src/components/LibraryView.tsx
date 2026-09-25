@@ -19,6 +19,8 @@ interface LibraryViewProps<T extends LibraryItem> {
   detailPath: (id: string) => string;
   /** Carte personnalisée (ex. recettes avec image) ; sinon la carte simple. */
   renderCard?: (item: T) => ReactNode;
+  /** Filtres propres à la page, affichés sous le titre. */
+  toolbar?: ReactNode;
   gridClassName?: string;
 }
 
@@ -32,6 +34,7 @@ export function LibraryView<T extends LibraryItem>({
   detailPath,
   renderCard,
   gridClassName = 'grid',
+  toolbar,
 }: LibraryViewProps<T>) {
   const [search, setSearch] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -65,6 +68,8 @@ export function LibraryView<T extends LibraryItem>({
           {newLabel}
         </Link>
       </div>
+
+      {toolbar}
 
       <input
         type="search"

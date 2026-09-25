@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { PageIntro } from '../components/PageIntro';
 import { Link, useSearchParams } from 'react-router-dom';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { addDays, defaultMealForNow, formatDateKeyFr, toDateKey } from '../lib/date';
@@ -254,6 +255,13 @@ export function MealsPage() {
       <Link to={`/journal?date=${dateKey}`} className="back-link">
         ← Résumé du jour
       </Link>
+      <PageIntro id="repas" emoji="🍽️" title="Note ce que tu manges">
+        <p>
+          Tape un aliment (« riz », « pomme »…) avec sa quantité, ou une recette de la bibliothèque en{' '}
+          <strong>parts</strong>. Kaly calcule calories, macros, IG et charge glycémique — tu peux aussi dicter 🎤.
+        </p>
+        <p>Choisis le repas (petit-déjeuner, dîner…) et utilise l’ajout rapide pour ce que tu manges souvent.</p>
+      </PageIntro>
 
       <div className="journal-date-nav">
         <button type="button" onClick={() => setDateKey(addDays(dateKey, -1))}>

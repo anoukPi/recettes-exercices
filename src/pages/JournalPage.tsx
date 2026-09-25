@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { PageIntro } from '../components/PageIntro';
+import { FirstSteps } from '../components/FirstSteps';
 import { Link, useSearchParams } from 'react-router-dom';
 import { addDays, formatDateKeyFr, toDateKey } from '../lib/date';
 import { useDayNutrition } from '../lib/useDayNutrition';
@@ -323,6 +325,17 @@ export function JournalPage() {
 
   return (
     <section className="journal">
+      <PageIntro id="carnet" emoji="📒" title="Ton carnet du jour">
+        <p>
+          Ton tableau de bord : <strong>calories restantes</strong>, protéines, glucides, lipides, oméga, eau et
+          activité. L’objectif s’adapte à ton profil et à ce que tu as bougé aujourd’hui.
+        </p>
+        <p>
+          Pour noter un repas ou une activité, touche le <strong>＋</strong>. Les flèches changent de jour ; « Voir le
+          calendrier du mois » montre tes journées d’un coup d’œil.
+        </p>
+      </PageIntro>
+      <FirstSteps profile={profile} isChild={age !== null} />
       <div className="journal-date-nav">
         <button type="button" onClick={() => setDateKey(addDays(dateKey, -1))}>
           ← <span className="date-nav-word">Veille</span>

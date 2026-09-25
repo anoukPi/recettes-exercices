@@ -99,3 +99,14 @@ export async function deleteJournalEntry(id: string): Promise<void> {
   const { error } = await supabase.from('journal_entries').delete().eq('id', id);
   if (error) throw error;
 }
+
+/** Au moins un repas noté pour le profil actif (premiers pas). */
+export async function hasAnyJournalEntry(): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('journal_entries')
+    .select('id')
+    .eq('profile_id', await activeProfileId())
+    .limit(1);
+  if (error) throw error;
+  return (data ?? []).length > 0;
+}

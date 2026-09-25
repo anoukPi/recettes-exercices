@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { signInWithPassword, signOut, signUpWithPassword, useSession } from '../lib/auth';
 import { AccountDataSection } from './AccountDataSection';
+import { translateAuthError } from '../lib/authErrors';
 
 export function AuthStatus() {
   const { session, loading } = useSession();
@@ -25,7 +26,7 @@ export function AuthStatus() {
       }
       setPassword('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue.');
+      setError(translateAuthError(err));
     } finally {
       setSubmitting(false);
     }

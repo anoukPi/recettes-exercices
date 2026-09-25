@@ -1,4 +1,5 @@
 import { useSearchParams } from 'react-router-dom';
+import { PageIntro } from '../components/PageIntro';
 import { ReferenceItemManager } from '../components/ReferenceItemManager';
 import { RecipeManager } from '../components/RecipeManager';
 import { ProfileSection } from '../components/ProfileSection';
@@ -22,6 +23,13 @@ export function SettingsPage() {
   return (
     <section className="settings-page">
       <h2>Paramètres</h2>
+      <PageIntro id="parametres" emoji="⚙️" title="Tes réglages">
+        <p>
+          <strong>Profil</strong> : sexe, âge, taille, poids, niveau d’activité et objectif — c’est lui qui calcule tes
+          besoins, pense à le remplir en premier. <strong>Mon compte</strong> : connexion, export de tes données.{' '}
+          <strong>Mesures</strong> et <strong>Ingrédients</strong> : les listes utilisées dans tes repas.
+        </p>
+      </PageIntro>
       <div className="section-tabs settings-tabs" role="tablist" aria-label="Paramètres">
         {TABS.map((t) => (
           <button

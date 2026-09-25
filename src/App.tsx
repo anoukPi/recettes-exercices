@@ -3,6 +3,8 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-
 import { NavIcon, type NavIconName } from './components/NavIcon';
 import { MonthlyTestReminder } from './components/MonthlyTestReminder';
 import { ProfileProvider } from './components/ProfileProvider';
+import { WelcomeScreen } from './components/WelcomeScreen';
+import { useSession } from './lib/auth';
 import { profileLabel, useProfiles } from './lib/profileContext';
 import { createProfile } from './api/profile';
 import { ageFromBirthDate } from './lib/dailyNeeds';
@@ -406,6 +408,11 @@ function ScrollManager() {
 }
 
 function App() {
+  const { session, loading } = useSession();
+  if (loading) return null;
+  // Pas connectée : présentation de Kaly + inscription/connexion.
+  if (!session) return <WelcomeScreen />;
+
   return (
     <ProfileProvider>
       {(profileKey) => (

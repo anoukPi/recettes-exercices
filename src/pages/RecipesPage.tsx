@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { PageIntro } from '../components/PageIntro';
 import { LibraryView } from '../components/LibraryView';
 import { RecipeImage } from '../components/RecipeImage';
 import { listRecipes, getFavoriteRecipeIds } from '../api/recipes';
@@ -18,7 +19,12 @@ function recipeSubtitle(
   if (isTested) badges.push('✅ Testée');
   if (isFavorite) badges.push('⭐ Favorite');
   const nutritionParts = n
-    ? [`${n.approx ? '≈ ' : ''}${Math.round(n.calories)} kcal`, `${n.proteinPct}% P`, `${n.carbsPct}% G`, `${n.fatPct}% L`]
+    ? [
+        `${n.approx ? '≈ ' : ''}${Math.round(n.calories)} kcal`,
+        `${n.proteinPct}% P`,
+        `${n.carbsPct}% G`,
+        `${n.fatPct}% L`,
+      ]
     : [];
   if (n?.avgGi !== null && n?.avgGi !== undefined) nutritionParts.push(`IG ${Math.round(n.avgGi)}`);
   // Signal de fiabilité visible dans le pool partagé : une recette mal saisie par
@@ -37,6 +43,9 @@ export function RecipesPage() {
   const [categoryFilter, setCategoryFilter] = useState('');
   const [testedOnly, setTestedOnly] = useState(false);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
+  // Bibliothèque partagée : toutes les recettes, ou seulement les miennes.
+  const [ownerFilter, setOwnerFilter] = useState<'toutes' | 'miennes'>('toutes');
+  const myId = session?.user.id ?? null;
 
   useEffect(() => {
     listRecipes()
@@ -65,12 +74,13 @@ export function RecipesPage() {
   const filteredByCategory = useMemo(
     () =>
       recipes.filter((r) => {
+        if (ownerFilter === 'miennes' && r.user_id !== myId) return false;
         if (categoryFilter && r.category !== categoryFilter) return false;
         if (testedOnly && !testedIds.has(r.id)) return false;
         if (favoritesOnly && !favoriteIds.has(r.id)) return false;
         return true;
       }),
-    [recipes, categoryFilter, testedOnly, favoritesOnly, favoriteIds, testedIds],
+    [recipes, categoryFilter, testedOnly, favoritesOnly, favoriteIds, testedIds, ownerFilter, myId],
   );
 
   const items = useMemo(
@@ -98,6 +108,7 @@ export function RecipesPage() {
           <div className="recipe-card-badges">
             {testedIds.has(r.id) && <span title="Déjà testée">✅</span>}
             {favoriteIds.has(r.id) && <span title="Favorite du mois">⭐</span>}
+            {r.user_id === myId && <span title="Ta recette">✨ À moi</span>}
           </div>
           {r.category && (
             <span className="recipe-card-category">
@@ -146,7 +157,9 @@ export function RecipesPage() {
               </p>
             </>
           ) : (
-            <p className="recipe-card-kcal hint">{nutritionLoading ? 'Calcul des calories…' : 'Calories non calculables'}</p>
+            <p className="recipe-card-kcal hint">
+              {nutritionLoading ? 'Calcul des calories…' : 'Calories non calculables'}
+            </p>
           )}
         </div>
       </>
@@ -155,38 +168,13 @@ export function RecipesPage() {
 
   return (
     <>
-      <div className="recipe-category-filters">
-        <div className="field">
-          <label htmlFor="recipe-category-filter">Catégorie</label>
-          <select
-            id="recipe-category-filter"
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-          >
-            <option value="">Toutes les recettes</option>
-            {usedCategories.map((c) => (
-              <option key={c} value={c}>
-                {RECIPE_CATEGORY_EMOJI[c] ?? ''} {c}
-              </option>
-            ))}
-          </select>
-        </div>
-        <button
-          type="button"
-          className={`tag-chip${testedOnly ? ' selected' : ''}`}
-          onClick={() => setTestedOnly((v) => !v)}
-        >
-          ✅ Déjà testées
-        </button>
-        <button
-          type="button"
-          className={`tag-chip${favoritesOnly ? ' selected' : ''}`}
-          onClick={() => setFavoritesOnly((v) => !v)}
-        >
-          ⭐ Favorites (top 5 du mois)
-        </button>
-      </div>
-
+      <PageIntro id="recettes" emoji="📚" title="La bibliothèque de recettes">
+        <p>
+          Les recettes de toutes les utilisatrices, pour s’inspirer : filtre « Les miennes » pour ne voir que les
+          tiennes. Calories et macros sont calculées à partir des ingrédients ; indique le{' '}
+          <strong>nombre de parts</strong> pour noter ensuite « 1 part » dans tes repas.
+        </p>
+      </PageIntro>
       <LibraryView
         title="Recettes"
         items={items}
@@ -196,6 +184,60 @@ export function RecipesPage() {
         newLabel="+ Ajouter une recette"
         detailPath={(id) => `/recipes/${id}`}
         renderCard={renderCard}
+        toolbar={
+          <>
+            <div className="recipe-owner-toggle bilan-period-toggle" role="group" aria-label="Recettes affichées">
+              {(
+                [
+                  ['toutes', `Toutes (${recipes.length})`],
+                  ['miennes', `Les miennes (${recipes.filter((r) => r.user_id === myId).length})`],
+                ] as const
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={ownerFilter === value}
+                  className={ownerFilter === value ? 'selected' : ''}
+                  onClick={() => setOwnerFilter(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <div className="recipe-category-filters">
+              <div className="field">
+                <label htmlFor="recipe-category-filter">Catégorie</label>
+                <select
+                  id="recipe-category-filter"
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                >
+                  <option value="">Toutes les recettes</option>
+                  {usedCategories.map((c) => (
+                    <option key={c} value={c}>
+                      {RECIPE_CATEGORY_EMOJI[c] ?? ''} {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                type="button"
+                className={`tag-chip${testedOnly ? ' selected' : ''}`}
+                onClick={() => setTestedOnly((v) => !v)}
+              >
+                ✅ Déjà testées
+              </button>
+              <button
+                type="button"
+                className={`tag-chip${favoritesOnly ? ' selected' : ''}`}
+                onClick={() => setFavoritesOnly((v) => !v)}
+              >
+                ⭐ Favorites (top 5 du mois)
+              </button>
+            </div>
+          </>
+        }
         gridClassName="recipe-grid"
       />
     </>

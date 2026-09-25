@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { PageIntro } from '../components/PageIntro';
 import { Link, useSearchParams } from 'react-router-dom';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { addDays, formatDateKeyFr, toDateKey } from '../lib/date';
@@ -253,6 +254,16 @@ export function ActivityPage() {
   return (
     <section className="journal">
       <TrainingTabs />
+      <PageIntro id="activite" emoji="🏃" title="Ton activité">
+        <p>
+          <strong>Mon activité</strong> : note ce que tu as fait (course, escalade, marche…) avec la durée et l’intensité
+          ressentie — Kaly estime les calories dépensées et ajuste ton objectif du jour.
+        </p>
+        <p>
+          <strong>Exercices</strong> et <strong>Séances</strong> : crée tes exercices, assemble-les en séances, puis
+          indique « j’ai fait cette séance ».
+        </p>
+      </PageIntro>
       <div className="journal-date-nav">
         <button type="button" onClick={() => setDateKey((d) => addDays(d, -1))}>
           ← <span className="date-nav-word">Veille</span>

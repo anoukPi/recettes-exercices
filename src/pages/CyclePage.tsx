@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { PageIntro } from '../components/PageIntro';
 import { Link } from 'react-router-dom';
 import { formatDateKeyFr, toDateKey } from '../lib/date';
 import { addCycleEntry, deleteCycleEntry, listCycleEntries } from '../api/cycle';
@@ -127,6 +128,13 @@ export function CyclePage() {
   return (
     <section className="journal">
       <h2>Cycle</h2>
+      <PageIntro id="cycle" emoji="🌙" title="Ton cycle">
+        <p>
+          Note le premier jour de tes règles : Kaly prévoit les prochaines, affiche tes phases (fertile, ovulation,
+          lutéale…) et adapte tes repères du Carnet (fer pendant les règles, un peu plus de calories la semaine d’avant).
+          Plus tu notes de dates, plus les prévisions sont justes.
+        </p>
+      </PageIntro>
       {lateSince && (
         <div className="block b-corail cycle-today">
           <h4 className="block-label">Aujourd'hui</h4>
