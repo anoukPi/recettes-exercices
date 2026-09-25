@@ -22,7 +22,7 @@ import { WorkoutSessionDetailPage } from './pages/WorkoutSessionDetailPage';
 // Navigation (voir EXPERIENCE.md de l'atelier UX, révisée le 25/09/2026) :
 // - mobile : barre du bas noire (Carnet, Comparer, +, Bilan, Plus) ;
 // - tablette/ordinateur (≥ 900 px) : menu latéral noir, même logique.
-// Règle d'Anouk : ce qui est dans « + » (repas, activité, eau, recettes)
+// Règle d'Anouk : ce qui est dans « + » (repas, activité, tests, recettes)
 // n'apparaît nulle part ailleurs dans les menus.
 interface NavItem {
   path: string;
@@ -36,14 +36,13 @@ const NAV_CARNET: NavItem = { path: '/journal', label: 'Carnet', icon: 'carnet' 
 const NAV_COMPARER: NavItem = { path: '/comparer', label: 'Comparer', icon: 'comparer' };
 const NAV_BILAN: NavItem = { path: '/bilan', label: 'Bilan', icon: 'bilan' };
 const NAV_CYCLE: NavItem = { path: '/cycle', label: 'Cycle', icon: 'cycle' };
-const NAV_TESTS: NavItem = { path: '/tests', label: 'Tests', icon: 'tests' };
 const NAV_PARAMETRES: NavItem = { path: '/settings', label: 'Paramètres', icon: 'parametres' };
 
 const TAB_ITEMS_LEFT = [NAV_CARNET, NAV_COMPARER];
 const TAB_ITEMS_RIGHT = [NAV_BILAN];
-const SIDEBAR_ITEMS = [NAV_CARNET, NAV_COMPARER, NAV_BILAN, NAV_CYCLE, NAV_TESTS];
+const SIDEBAR_ITEMS = [NAV_CARNET, NAV_COMPARER, NAV_BILAN, NAV_CYCLE];
 // Rangé dans la feuille « Plus » sur mobile.
-const MORE_ITEMS = [NAV_CYCLE, NAV_TESTS, NAV_PARAMETRES];
+const MORE_ITEMS = [NAV_CYCLE, NAV_PARAMETRES];
 
 // Le bouton + : seul accès à ces espaces (une couleur = un sens, voir DESIGN.md).
 const ADD_ACTIONS = [
@@ -55,7 +54,7 @@ const ADD_ACTIONS = [
     className: 'b-corail',
     activeOn: ['/activity', '/sessions', '/exercises'],
   },
-  { path: '/journal#hydratation', label: 'Eau', hint: 'Eau, café, thé', className: 'b-eau', activeOn: [] },
+  { path: '/tests', label: 'Tests', hint: 'Poids, forme, performances', className: 'b-eau', activeOn: ['/tests'] },
   { path: '/recipes', label: 'Recettes', hint: 'Ta bibliothèque', className: '', activeOn: ['/recipes'] },
 ];
 
