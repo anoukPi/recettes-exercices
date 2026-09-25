@@ -78,14 +78,6 @@ export function ExerciseDetailPage() {
         </p>
       )}
 
-      {exercise.instagram_link && (
-        <p>
-          <a href={exercise.instagram_link} target="_blank" rel="noreferrer">
-            {exercise.instagram_link}
-          </a>
-        </p>
-      )}
-
       {exercise.tags.length > 0 && (
         <div className="tags">
           {exercise.tags.map((tag) => (

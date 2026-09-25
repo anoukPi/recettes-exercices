@@ -19,10 +19,11 @@ import { WorkoutSessionsPage } from './pages/WorkoutSessionsPage';
 import { NewWorkoutSessionPage } from './pages/NewWorkoutSessionPage';
 import { WorkoutSessionDetailPage } from './pages/WorkoutSessionDetailPage';
 
-// Navigation (voir EXPERIENCE.md de l'atelier UX du 24/09/2026) :
-// - mobile : barre du bas noire (Carnet, Repas, +, Entraînement, Plus) ;
-// - tablette/ordinateur (≥ 900 px) : menu latéral noir avec toutes les pages.
-// Séances et Exercices forment un seul espace « Entraînement ».
+// Navigation (voir EXPERIENCE.md de l'atelier UX, révisée le 25/09/2026) :
+// - mobile : barre du bas noire (Carnet, Comparer, +, Bilan, Plus) ;
+// - tablette/ordinateur (≥ 900 px) : menu latéral noir, même logique.
+// Règle d'Anouk : ce qui est dans « + » (repas, activité, eau, recettes)
+// n'apparaît nulle part ailleurs dans les menus.
 interface NavItem {
   path: string;
   label: string;
@@ -32,40 +33,30 @@ interface NavItem {
 }
 
 const NAV_CARNET: NavItem = { path: '/journal', label: 'Carnet', icon: 'carnet' };
-const NAV_REPAS: NavItem = { path: '/repas', label: 'Repas', icon: 'repas' };
-// Activité, Séances et Exercices forment un seul espace (onglets).
-const NAV_ENTRAINEMENT: NavItem = {
-  path: '/activity',
-  label: 'Entraînement',
-  icon: 'entrainement',
-  alsoActiveOn: ['/sessions', '/exercises'],
-};
-const NAV_RECETTES: NavItem = { path: '/recipes', label: 'Recettes', icon: 'recettes' };
 const NAV_COMPARER: NavItem = { path: '/comparer', label: 'Comparer', icon: 'comparer' };
 const NAV_BILAN: NavItem = { path: '/bilan', label: 'Bilan', icon: 'bilan' };
 const NAV_CYCLE: NavItem = { path: '/cycle', label: 'Cycle', icon: 'cycle' };
 const NAV_TESTS: NavItem = { path: '/tests', label: 'Tests', icon: 'tests' };
 const NAV_PARAMETRES: NavItem = { path: '/settings', label: 'Paramètres', icon: 'parametres' };
 
-const SIDEBAR_ITEMS = [
-  NAV_CARNET,
-  NAV_REPAS,
-  NAV_ENTRAINEMENT,
-  NAV_RECETTES,
-  NAV_COMPARER,
-  NAV_BILAN,
-  NAV_CYCLE,
-  NAV_TESTS,
-];
+const TAB_ITEMS_LEFT = [NAV_CARNET, NAV_COMPARER];
+const TAB_ITEMS_RIGHT = [NAV_BILAN];
+const SIDEBAR_ITEMS = [NAV_CARNET, NAV_COMPARER, NAV_BILAN, NAV_CYCLE, NAV_TESTS];
 // Rangé dans la feuille « Plus » sur mobile.
-const MORE_ITEMS = [NAV_RECETTES, NAV_COMPARER, NAV_BILAN, NAV_CYCLE, NAV_TESTS, NAV_PARAMETRES];
+const MORE_ITEMS = [NAV_CYCLE, NAV_TESTS, NAV_PARAMETRES];
 
-// Raccourcis du bouton + (une couleur = un sens, voir DESIGN.md).
+// Le bouton + : seul accès à ces espaces (une couleur = un sens, voir DESIGN.md).
 const ADD_ACTIONS = [
-  { path: '/repas', label: 'Un repas', hint: 'Aliment ou recette', className: 'b-petrole' },
-  { path: '/activity#ajouter', label: 'Une activité', hint: 'Sport ou séance faite', className: 'b-corail' },
-  { path: '/journal#hydratation', label: 'De l\'eau', hint: 'Eau, café, thé', className: 'b-eau' },
-  { path: '/recipes/new', label: 'Une recette', hint: 'Dans ta bibliothèque', className: '' },
+  { path: '/repas', label: 'Repas', hint: 'Aliments et recettes du jour', className: 'b-petrole', activeOn: ['/repas'] },
+  {
+    path: '/activity',
+    label: 'Activité',
+    hint: 'Séances, exercices, sport',
+    className: 'b-corail',
+    activeOn: ['/activity', '/sessions', '/exercises'],
+  },
+  { path: '/journal#hydratation', label: 'Eau', hint: 'Eau, café, thé', className: 'b-eau', activeOn: [] },
+  { path: '/recipes', label: 'Recettes', hint: 'Ta bibliothèque', className: '', activeOn: ['/recipes'] },
 ];
 
 function isActive(item: NavItem, pathname: string): boolean {
@@ -103,6 +94,8 @@ function AppNavigation() {
   };
 
   const moreActive = MORE_ITEMS.some((item) => isActive(item, pathname));
+  // Espace du + où l'on se trouve (Repas, Activité…) : le + le signale.
+  const addActive = ADD_ACTIONS.find((a) => a.activeOn.some((p) => pathname.startsWith(p)));
 
   return (
     <>
@@ -110,7 +103,11 @@ function AppNavigation() {
         <p className="app-logo">
           Kaly<span>.</span>
         </p>
-        <button type="button" className="sidebar-add" onClick={() => setOpenSheet('add')}>
+        <button
+          type="button"
+          className={`sidebar-add${addActive ? ' active' : ''}`}
+          onClick={() => setOpenSheet('add')}
+        >
           <NavIcon name="add" /> Ajouter
         </button>
         {SIDEBAR_ITEMS.map((item) => (
@@ -142,7 +139,7 @@ function AppNavigation() {
       </header>
 
       <nav className="app-tabbar" aria-label="Navigation principale">
-        {[NAV_CARNET, NAV_REPAS].map((item) => (
+        {TAB_ITEMS_LEFT.map((item) => (
           <button
             key={item.path}
             type="button"
@@ -153,17 +150,25 @@ function AppNavigation() {
             {item.label}
           </button>
         ))}
-        <button type="button" className="tab-add" onClick={() => setOpenSheet('add')} aria-label="Ajouter">
-          <NavIcon name="add" />
-        </button>
         <button
           type="button"
-          className={`tab-item${isActive(NAV_ENTRAINEMENT, pathname) ? ' active' : ''}`}
-          onClick={() => go(NAV_ENTRAINEMENT.path)}
+          className={`tab-add${addActive ? ' active' : ''}`}
+          onClick={() => setOpenSheet('add')}
+          aria-label={addActive ? `Ajouter — tu es dans ${addActive.label}` : 'Ajouter'}
         >
-          <NavIcon name="entrainement" />
-          Entraînement
+          <NavIcon name="add" />
         </button>
+        {TAB_ITEMS_RIGHT.map((item) => (
+          <button
+            key={item.path}
+            type="button"
+            className={`tab-item${isActive(item, pathname) ? ' active' : ''}`}
+            onClick={() => go(item.path)}
+          >
+            <NavIcon name={item.icon} />
+            {item.label}
+          </button>
+        ))}
         <button
           type="button"
           className={`tab-item${moreActive ? ' active' : ''}`}
@@ -178,7 +183,12 @@ function AppNavigation() {
         <Sheet title="Ajouter" onClose={() => setOpenSheet(null)}>
           <div className="sheet-grid">
             {ADD_ACTIONS.map((a) => (
-              <button key={a.path} type="button" className={`sheet-link ${a.className}`} onClick={() => go(a.path)}>
+              <button
+                key={a.path}
+                type="button"
+                className={`sheet-link ${a.className}${addActive === a ? ' active' : ''}`}
+                onClick={() => go(a.path)}
+              >
                 {a.label}
                 <small>{a.hint}</small>
               </button>
@@ -255,6 +265,7 @@ function App() {
           <Route path="/bilan" element={<BilanPage />} />
           <Route path="/comparer" element={<ComparePage />} />
           <Route path="/entrainement" element={<Navigate to="/activity" replace />} />
+          <Route path="/activite" element={<Navigate to="/activity" replace />} />
           <Route path="/sessions" element={<WorkoutSessionsPage />} />
           <Route path="/sessions/new" element={<NewWorkoutSessionPage />} />
           <Route path="/sessions/:id" element={<WorkoutSessionDetailPage />} />

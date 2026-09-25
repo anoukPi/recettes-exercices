@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 
-// Espace « Entraînement » : activité, séances et exercices réunis (décisions
-// UX du 24/09/2026) — on construit sa bibliothèque d'exercices, on compose
+// Espace « Activité » (ex-« Entraînement ») : activité, séances et exercices
+// réunis (décisions UX des 24-25/09/2026) — on construit sa bibliothèque d'exercices, on compose
 // autant de séances qu'on veut, puis on note ce qu'on a fait tel jour (une
 // séance ou une activité libre).
 const TABS = [
@@ -15,8 +15,8 @@ export function TrainingTabs() {
   const { pathname } = useLocation();
   return (
     <div className="training-header">
-      <h2>Entraînement</h2>
-      <div className="section-tabs" role="tablist" aria-label="Entraînement">
+      <h2>Activité</h2>
+      <div className="section-tabs" role="tablist" aria-label="Activité">
         {TABS.map((t) => (
           <button
             key={t.path}

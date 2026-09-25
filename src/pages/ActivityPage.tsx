@@ -7,6 +7,7 @@ import {
   addActivityEntry,
   deleteActivityEntry,
   getLastWorkoutSessionId,
+  listPastActivityMets,
   listActivityEntries,
   updateActivityEntry,
 } from '../api/activities';
@@ -38,7 +39,11 @@ export function ActivityPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  // MET des activités déjà notées (dont les activités personnalisées), pour
+  // les proposer et préremplir leur MET.
   const [customMets, setCustomMets] = useState<Record<string, number>>({});
+  const [metInput, setMetInput] = useState('');
+  const [metTouched, setMetTouched] = useState(false);
 
   const [activityType, setActivityType] = useState('');
   const [duration, setDuration] = useState('');
@@ -63,6 +68,18 @@ export function ActivityPage() {
 
   const isRouteClimbing = activityType === 'Escalade de voie';
   const isBoulderClimbing = activityType === 'Escalade de bloc';
+  // MET proposé : celui de la table (Compendium), sinon celui de ta dernière
+  // saisie de cette activité, sinon une valeur générique modérée.
+  const suggestedMet = (type: string) => MET_VALUES[type] ?? customMets[type] ?? DEFAULT_MET;
+  const activityOptions = useMemo(
+    () => Array.from(new Set([...ACTIVITY_TYPES, ...Object.keys(customMets)])).sort((a, b) => a.localeCompare(b, 'fr')),
+    [customMets],
+  );
+
+  const handleActivityTypeChange = (type: string) => {
+    setActivityType(type);
+    if (!metTouched) setMetInput(type.trim() ? String(suggestedMet(type.trim())) : '');
+  };
   const workoutSessionById = useMemo(
     () => new Map(workoutSessions.map((s) => [s.id, s])),
     [workoutSessions],
@@ -84,6 +101,9 @@ export function ActivityPage() {
     getProfile().then(setProfile).catch(() => {});
     listWorkoutSessions().then(setWorkoutSessions).catch(() => {});
     getLastWorkoutSessionId().then(setLastWorkoutSessionId).catch(() => {});
+    listPastActivityMets()
+      .then((mets) => setCustomMets((prev) => ({ ...mets, ...prev })))
+      .catch(() => {});
   }, []);
 
   const dayTotalCalories = useMemo(
@@ -93,6 +113,8 @@ export function ActivityPage() {
 
   const resetForm = () => {
     setActivityType('');
+    setMetInput('');
+    setMetTouched(false);
     setDuration('');
     setIntensity('');
     setTrainingType('');
@@ -111,6 +133,8 @@ export function ActivityPage() {
   const handleStartEdit = (entry: ActivityEntry) => {
     setEditingEntryId(entry.id);
     setActivityType(entry.activity_type);
+    setMetInput(String(entry.met));
+    setMetTouched(true);
     setDuration(String(entry.duration_minutes));
     setIntensity(entry.intensity ?? '');
     setTrainingType(entry.training_type ?? '');
@@ -150,7 +174,12 @@ export function ActivityPage() {
       return;
     }
 
-    const met = MET_VALUES[type] ?? customMets[type] ?? DEFAULT_MET;
+    const manualMet = parseFloat(metInput.replace(',', '.'));
+    if (metInput.trim() && (Number.isNaN(manualMet) || manualMet <= 0 || manualMet > 25)) {
+      setFormError('Renseigne un MET entre 1 et 25 (ex. 3 marche, 6 escalade, 10 course rapide).');
+      return;
+    }
+    const met = metInput.trim() ? manualMet : suggestedMet(type);
     const calories = estimateCaloriesBurned(met, profile.weight_kg, minutes);
 
     const input = {
@@ -188,6 +217,7 @@ export function ActivityPage() {
         }
         loadEntries(dateKey);
       }
+      setCustomMets((prev) => ({ ...prev, [type]: met }));
       resetForm();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Une erreur est survenue.');
@@ -203,6 +233,7 @@ export function ActivityPage() {
   const addCustomActivity = (name: string) => {
     if (!name) return;
     setCustomMets((prev) => (name in prev ? prev : { ...prev, [name]: metForActivity(name) }));
+    handleActivityTypeChange(name);
   };
 
   if (authLoading) return null;
@@ -372,9 +403,10 @@ export function ActivityPage() {
             <SearchableSelect
               id="activity-type"
               value={activityType}
-              onChange={setActivityType}
-              options={ACTIVITY_TYPES}
-              placeholder="Activité"
+              onChange={handleActivityTypeChange}
+              options={activityOptions}
+              placeholder="Activité (ou une nouvelle)"
+              newLabel="Nouvelle activité"
               onAddNew={addCustomActivity}
             />
           </div>
@@ -387,15 +419,29 @@ export function ActivityPage() {
                 </option>
               ))}
             </select>
-            <select value={intensity} onChange={(e) => setIntensity(e.target.value as Intensity)}>
-              <option value="">Intensité</option>
-              {INTENSITIES.map((i) => (
-                <option key={i.value} value={i.value}>
-                  {i.label}
-                </option>
-              ))}
-            </select>
+            <div className="met-field">
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                min="1"
+                max="25"
+                value={metInput}
+                onChange={(e) => {
+                  setMetInput(e.target.value);
+                  setMetTouched(true);
+                }}
+                placeholder="MET"
+                aria-label="MET (intensité métabolique)"
+              />
+              <span className="hint">MET</span>
+            </div>
           </div>
+          <p className="hint">
+            MET = intensité de l'activité (1 au repos, 3 marche, 6 escalade, 10 course rapide). Prérempli
+            d'après l'activité choisie ; modifie-le si tu connais mieux ton effort. Une nouvelle activité
+            est gardée avec son MET pour les prochaines fois.
+          </p>
 
           {isRouteClimbing && (
             <div className="climbing-fields">

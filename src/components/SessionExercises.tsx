@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { SearchableSelect } from './SearchableSelect';
+import { ExerciseAmountFields, type ExerciseAmount } from './ExerciseAmountFields';
+import { describePrescription, effortMinutes } from '../lib/exerciseFormat';
 import { listExercises } from '../api/exercises';
 import {
   addSessionExercise,
@@ -10,6 +12,8 @@ import {
 import { getProfile } from '../api/profile';
 import { estimateCaloriesBurned } from '../lib/metValues';
 import { EXERCISE_INTENSITY_LEVELS, type Exercise, type ExerciseIntensity, type SessionExercise } from '../types';
+
+const EMPTY_AMOUNT: ExerciseAmount = { reps: null, duration_minutes: null, duration_unit: null, load_kg: null };
 
 interface SessionExercisesProps {
   activityEntryId: string;
@@ -24,9 +28,11 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [exerciseName, setExerciseName] = useState('');
   const [sets, setSets] = useState('');
-  const [reps, setReps] = useState('');
+  const [amount, setAmount] = useState<ExerciseAmount>(EMPTY_AMOUNT);
+  // Remonte le composant de saisie à chaque changement de ligne éditée, pour
+  // qu'il reparte du bon mode (répétitions ou durée).
+  const [amountKey, setAmountKey] = useState(0);
   const [restSeconds, setRestSeconds] = useState('');
-  const [duration, setDuration] = useState('');
   const [intensity, setIntensity] = useState<ExerciseIntensity | ''>('');
   const [error, setError] = useState<string | null>(null);
 
@@ -54,9 +60,9 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
     setEditingId(null);
     setExerciseName('');
     setSets('');
-    setReps('');
+    setAmount(EMPTY_AMOUNT);
+    setAmountKey((k) => k + 1);
     setRestSeconds('');
-    setDuration('');
     setIntensity('');
   };
 
@@ -64,9 +70,14 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
     setEditingId(se.id);
     setExerciseName(exerciseById.get(se.exercise_id)?.title ?? '');
     setSets(se.sets != null ? String(se.sets) : '');
-    setReps(se.reps != null ? String(se.reps) : '');
+    setAmount({
+      reps: se.reps,
+      duration_minutes: se.duration_minutes,
+      duration_unit: se.duration_unit,
+      load_kg: se.load_kg,
+    });
+    setAmountKey((k) => k + 1);
     setRestSeconds(se.rest_seconds != null ? String(se.rest_seconds) : '');
-    setDuration(se.duration_minutes != null ? String(se.duration_minutes) : '');
     setIntensity(se.intensity_level ?? '');
     setError(null);
   };
@@ -79,15 +90,18 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
       setError('Choisis un exercice de ta bibliothèque.');
       return;
     }
-    const durationMinutes = duration ? parseFloat(duration) : null;
+    const setsCount = sets ? parseFloat(sets) : null;
     const met = intensity ? EXERCISE_INTENSITY_LEVELS.find((l) => l.value === intensity)?.met : null;
-    const calories =
-      durationMinutes && met && weightKg ? estimateCaloriesBurned(met, weightKg, durationMinutes) : null;
+    // Durée donnée par série : l'effort total = séries × durée.
+    const minutes = effortMinutes({ ...amount, sets: setsCount, rest_seconds: null });
+    const calories = minutes && met && weightKg ? estimateCaloriesBurned(met, weightKg, minutes) : null;
     const input = {
-      sets: sets ? parseFloat(sets) : null,
-      reps: reps ? parseFloat(reps) : null,
+      sets: setsCount,
+      reps: amount.reps,
       rest_seconds: restSeconds ? parseFloat(restSeconds) : null,
-      duration_minutes: durationMinutes,
+      duration_minutes: amount.duration_minutes,
+      duration_unit: amount.duration_minutes != null ? (amount.duration_unit ?? 'min') : null,
+      load_kg: amount.load_kg,
       intensity_level: intensity || null,
       calories_kcal: calories,
       notes: null,
@@ -136,9 +150,7 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
                   <li key={se.id}>
                     <span>
                       {exerciseById.get(se.exercise_id)?.title ?? 'Exercice'}
-                      {se.sets && se.reps ? ` — ${se.sets} × ${se.reps}` : ''}
-                      {se.rest_seconds ? ` (repos ${se.rest_seconds}s)` : ''}
-                      {se.duration_minutes ? ` · ${se.duration_minutes} min` : ''}
+                      {describePrescription(se) ? ` — ${describePrescription(se)}` : ''}
                       {se.intensity_level &&
                         ` · ${EXERCISE_INTENSITY_LEVELS.find((l) => l.value === se.intensity_level)?.label.split(' (')[0]}`}
                       {se.calories_kcal ? ` · ${Math.round(se.calories_kcal)} kcal` : ''}
@@ -175,12 +187,11 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
               onChange={(e) => setSets(e.target.value)}
               placeholder="Séries"
             />
-            <input
-              type="number"
-              step="any"
-              value={reps}
-              onChange={(e) => setReps(e.target.value)}
-              placeholder="Répétitions"
+            <ExerciseAmountFields
+              key={amountKey}
+              idPrefix={`session-exercise-${activityEntryId}`}
+              value={amount}
+              onChange={(patch) => setAmount((prev) => ({ ...prev, ...patch }))}
             />
             <input
               type="number"
@@ -188,13 +199,6 @@ export function SessionExercises({ activityEntryId }: SessionExercisesProps) {
               value={restSeconds}
               onChange={(e) => setRestSeconds(e.target.value)}
               placeholder="Repos (s)"
-            />
-            <input
-              type="number"
-              step="any"
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              placeholder="Durée (min)"
             />
             <select value={intensity} onChange={(e) => setIntensity(e.target.value as ExerciseIntensity)}>
               <option value="">Intensité</option>

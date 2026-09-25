@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabaseClient';
 import { estimateCaloriesBurned } from '../lib/metValues';
+import { effortMinutes } from '../lib/exerciseFormat';
 import { EXERCISE_INTENSITY_LEVELS, type SessionExercise, type SessionExerciseInput, type WorkoutSession } from '../types';
 
 export async function listSessionExercises(activityEntryId: string): Promise<SessionExercise[]> {
@@ -54,7 +55,8 @@ export async function populateFromWorkoutSession(
     const met = e.intensity_level
       ? EXERCISE_INTENSITY_LEVELS.find((l) => l.value === e.intensity_level)?.met
       : null;
-    const calories = e.duration_minutes && met && weightKg ? estimateCaloriesBurned(met, weightKg, e.duration_minutes) : null;
+    const minutes = effortMinutes(e);
+    const calories = minutes && met && weightKg ? estimateCaloriesBurned(met, weightKg, minutes) : null;
     return {
       activity_entry_id: activityEntryId,
       exercise_id: e.exercise_id,
@@ -62,6 +64,8 @@ export async function populateFromWorkoutSession(
       reps: e.reps,
       rest_seconds: e.rest_seconds,
       duration_minutes: e.duration_minutes,
+      duration_unit: e.duration_minutes != null ? (e.duration_unit ?? 'min') : null,
+      load_kg: e.load_kg ?? null,
       intensity_level: e.intensity_level,
       calories_kcal: calories,
       notes: null,

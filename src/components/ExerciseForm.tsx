@@ -13,7 +13,6 @@ interface ExerciseFormProps {
 
 export function ExerciseForm({ initial, onSubmit, submitLabel }: ExerciseFormProps) {
   const [title, setTitle] = useState(initial?.title ?? '');
-  const [instagramLink, setInstagramLink] = useState(initial?.instagram_link ?? '');
   const [muscles, setMuscles] = useState(formatTagList(initial?.muscles ?? []));
   const [description, setDescription] = useState(initial?.description ?? '');
   const [tags, setTags] = useState(formatTagList(initial?.tags ?? []));
@@ -63,7 +62,8 @@ export function ExerciseForm({ initial, onSubmit, submitLabel }: ExerciseFormPro
 
       await onSubmit({
         title: title.trim(),
-        instagram_link: instagramLink.trim() || null,
+        // Champ retiré du formulaire (24/09) : un lien déjà saisi est conservé tel quel.
+        instagram_link: initial?.instagram_link ?? null,
         photo_url: photoUrl,
         video_url: videoUrl.trim() || null,
         muscles: parseTagList(muscles),
@@ -90,17 +90,6 @@ export function ExerciseForm({ initial, onSubmit, submitLabel }: ExerciseFormPro
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
-        />
-      </div>
-
-      <div className="field">
-        <label htmlFor="exercise-link">Lien Instagram</label>
-        <input
-          id="exercise-link"
-          type="text"
-          value={instagramLink}
-          onChange={(e) => setInstagramLink(e.target.value)}
-          placeholder="https://instagram.com/p/..."
         />
       </div>
 

@@ -2629,7 +2629,7 @@ a.button,
   outline: none;
 }
 
-/* --- Espace Entraînement (Séances + Exercices) --- */
+/* --- Espace Activité (activité du jour + Séances + Exercices) --- */
 .training-header {
   display: flex;
   flex-wrap: wrap;
@@ -2769,4 +2769,69 @@ a.button,
   margin: 0 0 0.5rem;
   font-size: 0.9rem;
   font-weight: 600;
+}
+
+/* Champ MET (formulaire d'activité) */
+.met-field {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.met-field input {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Répétitions OU durée + charge (séances) */
+.exercise-amount {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin: 0.45rem 0;
+}
+
+.exercise-amount-mode {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.exercise-amount-mode .tag-chip {
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+}
+
+.exercise-amount-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.exercise-amount-duration {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.3rem;
+}
+
+.exercise-amount input,
+.exercise-amount select {
+  min-width: 0;
+  padding: 0.5rem 0.6rem;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+
+/* Le + signale l'espace où l'on se trouve (Repas, Activité, Recettes) :
+   ces espaces ne sont accessibles que par lui. */
+.tab-add.active {
+  border-color: var(--eau);
+}
+
+@media (min-width: 900px) {
+  .sidebar-add.active {
+    box-shadow: 0 0 0 3px var(--eau);
+  }
 }

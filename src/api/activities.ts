@@ -24,6 +24,24 @@ export async function listActivityEntriesInRange(startDate: string, endDate: str
 
 /** Le workout_session_id de l'activité loguée la plus récente qui en a une —
  * pour proposer "répéter la dernière séance" sans tout re-sélectionner. */
+/** Activités déjà notées par l'utilisatrice, avec le MET de la plus récente —
+ * pour retrouver ses activités personnalisées (et leur MET) d'une fois à
+ * l'autre et d'un appareil à l'autre. */
+export async function listPastActivityMets(): Promise<Record<string, number>> {
+  const { data, error } = await supabase
+    .from('activity_entries')
+    .select('activity_type, met')
+    .order('entry_date', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(1000);
+  if (error) throw error;
+  const mets: Record<string, number> = {};
+  for (const row of data ?? []) {
+    if (row.activity_type && row.met != null && !(row.activity_type in mets)) mets[row.activity_type] = Number(row.met);
+  }
+  return mets;
+}
+
 export async function getLastWorkoutSessionId(): Promise<string | null> {
   const { data, error } = await supabase
     .from('activity_entries')

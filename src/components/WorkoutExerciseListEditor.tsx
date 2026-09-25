@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SearchableSelect } from './SearchableSelect';
+import { ExerciseAmountFields } from './ExerciseAmountFields';
 import { createExercise, listExercises } from '../api/exercises';
 import { EXERCISE_INTENSITY_LEVELS, type Exercise, type ExerciseIntensity, type WorkoutSessionExercise } from '../types';
 
@@ -94,6 +95,8 @@ export function WorkoutExerciseListEditor({ rows, onChange }: WorkoutExerciseLis
         reps: null,
         rest_seconds: null,
         duration_minutes: null,
+        duration_unit: null,
+        load_kg: null,
         intensity_level: null,
       },
     ]);
@@ -108,8 +111,9 @@ export function WorkoutExerciseListEditor({ rows, onChange }: WorkoutExerciseLis
       </p>
       {createError && <p className="error">{createError}</p>}
       <p className="hint">
-        Durée et intensité sont indicatives (le plan) — tu pourras les ajuster au moment de loguer
-        la séance, la réalité variant souvent d'une fois à l'autre.
+        Pour chaque exercice : des répétitions <em>ou</em> une durée par série (sec, min ou h), une
+        charge si tu es lestée, le repos et l'intensité. C'est le plan — tu pourras l'ajuster au
+        moment de noter la séance.
       </p>
       <div className="ingredient-rows">
         {rows.map((row, index) => (
@@ -123,7 +127,16 @@ export function WorkoutExerciseListEditor({ rows, onChange }: WorkoutExerciseLis
               options={exercises.map((e) => e.title)}
               placeholder="Exercice"
               newLabel="Créer l'exercice"
-
+            />
+            <ExerciseAmountFields
+              idPrefix={`workout-exercise-${index}`}
+              value={{
+                reps: row.reps,
+                duration_minutes: row.duration_minutes,
+                duration_unit: row.duration_unit ?? null,
+                load_kg: row.load_kg ?? null,
+              }}
+              onChange={(patch) => updateRow(index, patch)}
             />
             <div className="workout-exercise-row-rest">
               <input
@@ -141,34 +154,12 @@ export function WorkoutExerciseListEditor({ rows, onChange }: WorkoutExerciseLis
                 step="1"
                 min="0"
                 className="ingredient-qty"
-                value={row.reps ?? ''}
-                onChange={(e) => updateRow(index, { reps: e.target.value ? parseFloat(e.target.value) : null })}
-                placeholder="Répétitions"
-                aria-label="Répétitions"
-              />
-              <input
-                type="number"
-                step="1"
-                min="0"
-                className="ingredient-qty"
                 value={row.rest_seconds ?? ''}
                 onChange={(e) =>
                   updateRow(index, { rest_seconds: e.target.value ? parseFloat(e.target.value) : null })
                 }
                 placeholder="Repos (s)"
                 aria-label="Repos en secondes"
-              />
-              <input
-                type="number"
-                step="any"
-                min="0"
-                className="ingredient-qty"
-                value={row.duration_minutes ?? ''}
-                onChange={(e) =>
-                  updateRow(index, { duration_minutes: e.target.value ? parseFloat(e.target.value) : null })
-                }
-                placeholder="Durée (min)"
-                aria-label="Durée en minutes"
               />
               <select
                 value={row.intensity_level ?? ''}

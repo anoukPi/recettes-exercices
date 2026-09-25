@@ -9,6 +9,7 @@ import {
 } from '../api/workoutSessions';
 import { listExercises } from '../api/exercises';
 import { useSession } from '../lib/auth';
+import { describePrescription } from '../lib/exerciseFormat';
 import type { Exercise, WorkoutSession, WorkoutSessionInput } from '../types';
 
 export function WorkoutSessionDetailPage() {
@@ -96,8 +97,7 @@ export function WorkoutSessionDetailPage() {
                     )}
                   </span>
                   <span className="journal-entry-qty">
-                    {row.sets && row.reps ? `${row.sets} × ${row.reps}` : ''}
-                    {row.rest_seconds ? ` · repos ${row.rest_seconds}s` : ''}
+                    {describePrescription(row)}
                   </span>
                 </div>
                 {exercise?.photo_url && (

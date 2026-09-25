@@ -1,3 +1,4 @@
+import type { DurationUnit } from './lib/exerciseFormat';
 export interface RecipeIngredient {
   quantity: string;
   unit: string;
@@ -78,9 +79,14 @@ export type ExerciseIntensity = (typeof EXERCISE_INTENSITY_LEVELS)[number]['valu
 export interface WorkoutSessionExercise {
   exercise_id: string;
   sets: number | null;
+  /** Répétitions OU durée, jamais les deux (voir lib/exerciseFormat.ts). */
   reps: number | null;
   rest_seconds: number | null;
+  /** Durée par série, stockée en minutes ; duration_unit = unité de saisie. */
   duration_minutes: number | null;
+  duration_unit?: DurationUnit | null;
+  /** Charge quand on est lesté (kg). */
+  load_kg?: number | null;
   intensity_level: ExerciseIntensity | null;
 }
 
@@ -274,6 +280,8 @@ export interface SessionExercise {
   reps: number | null;
   rest_seconds: number | null;
   duration_minutes: number | null;
+  duration_unit: DurationUnit | null;
+  load_kg: number | null;
   intensity_level: ExerciseIntensity | null;
   calories_kcal: number | null;
   notes: string | null;
