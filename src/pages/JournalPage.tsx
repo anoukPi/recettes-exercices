@@ -480,7 +480,11 @@ export function JournalPage() {
                     + <Link to="/activity">activité loguée</Link> {Math.round(bilan.activityCalories)} kcal
                   </>
                 ) : (
-                  <> × niveau d'activité du profil (estimation — logue une activité pour un bilan basé sur du réel)</>
+                  <>
+                    {' '}
+                    seulement — aucune activité notée aujourd’hui. <Link to="/activity">Ajoute-la</Link> quand tu l’as
+                    faite, elle s’ajoutera ici.
+                  </>
                 )}
               </p>
             )}

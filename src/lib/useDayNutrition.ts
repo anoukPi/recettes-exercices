@@ -221,16 +221,21 @@ export function useDayNutrition(dateKey: string, lutealPhaseExtraKcal = 0) {
     [profile, activityEntries.length, dayActivityCalories, lutealPhaseExtraKcal],
   );
 
+  // Dépense du jour = métabolisme de base + activités réellement notées. Sans
+  // activité notée : le métabolisme de base seul — pas d'estimation d'une
+  // activité qui n'a peut-être pas encore eu lieu (sinon le chiffre baisse
+  // quand on note sa séance). Demande d'Anouk, 25/09/2026.
   const bilan = useMemo(() => {
     if (!dailyTargets) return null;
+    const expenses = dailyTargets.bmr_kcal + dayActivityCalories;
     return {
-      expenses: dailyTargets.tdee_kcal,
-      measured: dailyTargets.tdeeSource === 'measured',
+      expenses,
+      measured: activityEntries.length > 0,
       bmr: dailyTargets.bmr_kcal,
       activityCalories: dayActivityCalories,
-      gap: dayTotals.totals.calories_kcal - dailyTargets.tdee_kcal,
+      gap: dayTotals.totals.calories_kcal - expenses,
     };
-  }, [dailyTargets, dayActivityCalories, dayTotals.totals.calories_kcal]);
+  }, [dailyTargets, dayActivityCalories, activityEntries.length, dayTotals.totals.calories_kcal]);
 
   const dayGi = useMemo(() => {
     if (dayTotals.totals.carbs_g < 1) return null;

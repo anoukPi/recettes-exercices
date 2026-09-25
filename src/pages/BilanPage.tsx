@@ -62,10 +62,10 @@ function formatGap(gap: number | null, unit: string): string {
   return `${gap >= 0 ? '+' : ''}${fmt(Math.round(gap))} ${unit}`;
 }
 
-/** Dépenses du jour, comme dans le Carnet : métabolisme de base + activité
- * notée, ou dépense totale estimée du profil si aucune activité. */
+/** Dépenses du jour, comme dans le Carnet : métabolisme de base + activités
+ * notées (métabolisme seul s'il n'y en a pas). */
 function expensesFor(d: DaySummary, t: DailyTargets): number {
-  return d.activities.length > 0 ? t.bmr_kcal + d.activityCalories : t.tdee_kcal;
+  return t.bmr_kcal + d.activityCalories;
 }
 
 function activityMinutes(d: DaySummary): number {
