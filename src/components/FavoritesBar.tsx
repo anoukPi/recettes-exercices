@@ -18,6 +18,7 @@ export function FavoritesBar({
   onRemove,
   onAdd,
   noun = 'critère',
+  feminine = false,
 }: {
   options: FavoriteOption[];
   favorites: string[];
@@ -26,7 +27,10 @@ export function FavoritesBar({
   onRemove: (key: string) => void;
   onAdd: (key: string) => void;
   noun?: string;
+  feminine?: boolean;
 }) {
+  const un = feminine ? 'une' : 'un';
+  const le = feminine ? 'la' : 'le';
   const byKey = new Map(options.map((o) => [o.key, o]));
   const groups = Array.from(new Set(options.map((o) => o.group)));
   const full = favorites.length >= MAX_FAVORITES;
@@ -60,12 +64,12 @@ export function FavoritesBar({
         value=""
         disabled={full}
         onChange={(e) => e.target.value && onAdd(e.target.value)}
-        aria-label={`Ajouter un ${noun}`}
+        aria-label={`Ajouter ${un} ${noun}`}
       >
         <option value="">
           {full
-            ? `${MAX_FAVORITES} favoris maximum — retire-en un avec ×`
-            : `＋ Ajouter un ${noun} (${favorites.length}/${MAX_FAVORITES})`}
+            ? `${MAX_FAVORITES} favoris maximum — retire-en ${un} avec ×`
+            : `＋ Ajouter ${un} ${noun} (${favorites.length}/${MAX_FAVORITES})`}
         </option>
         {groups.map((g) => {
           const available = options.filter((o) => o.group === g && !favorites.includes(o.key));
@@ -81,7 +85,7 @@ export function FavoritesBar({
         })}
       </select>
       <p className="hint fav-hint">
-        Touche un {noun} pour l’afficher ou le masquer, × pour le retirer des favoris.
+        Touche {un} {noun} pour l’afficher ou {le} masquer, × pour {le} retirer des favoris.
       </p>
     </div>
   );

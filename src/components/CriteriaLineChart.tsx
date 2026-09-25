@@ -38,11 +38,15 @@ function niceTicks(min: number, max: number): number[] {
 export function CriteriaLineChart({
   dates,
   series,
+  texts = [],
   openDate,
   onOpen,
 }: {
   dates: string[];
   series: CriteriaSeries[];
+  /** Critères en texte (noms des activités…) : pas de courbe, affichés sous
+   * le graphique pour le jour touché. */
+  texts?: { key: string; label: string; emoji: string; values: (string | null)[] }[];
   openDate: string | null;
   onOpen: (date: string) => void;
 }) {
@@ -116,6 +120,11 @@ export function CriteriaLineChart({
           </span>
         ))}
         {shared && units[0] && <span className="hint">en {units[0]}</span>}
+        {texts.map((t) => (
+          <span key={t.key} className="hint">
+            {t.emoji} {t.label} : touche un jour
+          </span>
+        ))}
       </figcaption>
       <div ref={wrapRef}>
         <svg width={width} height={HEIGHT} viewBox={`0 0 ${width} ${HEIGHT}`} role="img" aria-label="Critères jour par jour">
@@ -232,6 +241,11 @@ export function CriteriaLineChart({
               </li>
             );
           })}
+          {texts.map((t) => (
+            <li key={t.key}>
+              {t.emoji} {t.label} : <strong>{t.values[openIndex] ?? '—'}</strong>
+            </li>
+          ))}
         </ul>
       ) : (
         !shared && (

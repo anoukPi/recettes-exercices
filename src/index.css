@@ -3958,3 +3958,21 @@ a.button,
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+.bilan-pill-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: normal;
+  text-align: left;
+  font-size: 0.66rem;
+  line-height: 1.2;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.bilan-calendar.mois .bilan-pill-text {
+  -webkit-line-clamp: 2;
+  font-size: 0.55rem;
+}

@@ -73,39 +73,6 @@ function metHours(d: DaySummary): number {
   return d.activities.reduce((s, a) => s + (a.met * a.duration_minutes) / 60, 0);
 }
 
-/** Choix mémorisé sur cet appareil — confort seulement, l'app marche sans. */
-function useStoredSelection<T extends string>(key: string, defaults: T[], allowed: readonly T[]) {
-  const [selected, setSelected] = useState<T[]>(() => {
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const stored = JSON.parse(raw) as string[];
-        const parsed = allowed.filter((v) => stored.includes(v));
-        if (parsed.length > 0) return parsed;
-      }
-    } catch {
-      // stockage indisponible : on garde la présélection
-    }
-    return defaults;
-  });
-  useEffect(() => {
-    try {
-      localStorage.setItem(key, JSON.stringify(selected));
-    } catch {
-      // idem
-    }
-  }, [key, selected]);
-  const toggle = (v: T) =>
-    setSelected((cur) =>
-      cur.includes(v)
-        ? cur.length > 1
-          ? cur.filter((x) => x !== v)
-          : cur
-        : allowed.filter((x) => x === v || cur.includes(x)),
-    );
-  return [selected, toggle] as const;
-}
-
 // ---------------------------------------------------------------- BILAN
 
 type Level = 'none' | 'low' | 'ok' | 'over' | 'deficit' | 'act1' | 'act2' | 'act3';
@@ -119,6 +86,9 @@ interface CalendarMetric {
   unit: string;
   target?: (t: DailyTargets) => number;
   value: (d: DaySummary | undefined, t: DailyTargets | null) => number | null;
+  /** Critère affiché en texte (ex. noms des activités) plutôt qu'en chiffre :
+   * dans le calendrier et dans la lecture du jour, pas en courbe. */
+  text?: (d: DaySummary | undefined) => string | null;
   format: (v: number) => string;
   level: (v: number, t: DailyTargets | null) => Level;
   legend: [Level, string][];
@@ -146,6 +116,11 @@ const ACTIVITY_LEGEND: [Level, string][] = [
 
 // Repère ANSES pour les fibres chez l'adulte.
 const FIBER_TARGET_G = 30;
+
+function activityNames(d: DaySummary | undefined): string | null {
+  if (!d || d.activities.length === 0) return null;
+  return Array.from(new Set(d.activities.map((a) => a.activity_type))).join(', ');
+}
 
 const LEVEL3 = (a: string, b: string, c: string): [Level, string][] => [
   ['act1', a],
@@ -373,19 +348,17 @@ const CALENDAR_METRICS = {
     level: (v) => (v >= 4 ? 'act3' : v >= 3 ? 'act2' : 'act1'),
     legend: LEVEL3('facile (1-2)', 'modérée (3)', 'intense (4-5)'),
   },
-  voies: {
+  activites: {
     group: 'activite',
-    label: 'Voies / blocs grimpés',
-    emoji: '🧗',
-    abbr: 'Voi',
-    unit: 'voies',
-    value: (d) => {
-      const counts = (d?.activities ?? []).map((a) => a.climbing_routes_count).filter((c): c is number => c !== null);
-      return counts.length ? counts.reduce((x, y) => x + y, 0) : null;
-    },
+    label: 'Activités faites',
+    emoji: '🏃',
+    abbr: 'Act',
+    unit: '',
+    value: (d) => (d && d.activities.length > 0 ? d.activities.length : null),
+    text: (d) => activityNames(d),
     format: (v) => fmt(v),
-    level: (v) => (v >= 12 ? 'act3' : v >= 5 ? 'act2' : 'act1'),
-    legend: LEVEL3('moins de 5', '5 à 11', '12 et plus'),
+    level: (v) => (v >= 3 ? 'act3' : v >= 2 ? 'act2' : 'act1'),
+    legend: LEVEL3('1 activité', '2', '3 et plus'),
   },
 } satisfies Record<string, CalendarMetric>;
 type CalendarMetricKey = keyof typeof CALENDAR_METRICS;
@@ -458,7 +431,13 @@ function BilanCalendar({
   const dates = cells.filter((c): c is string => c !== null);
   // Un seul graphique : couleurs et traits (plein puis pointillé) selon
   // l'ordre d'affichage, pour que 6 critères restent distincts.
-  const chartSeries = selected.map((k, i) => {
+  const numericKeys = selected.filter((k) => !(CALENDAR_METRICS[k] as CalendarMetric).text);
+  const textKeys = selected.filter((k) => (CALENDAR_METRICS[k] as CalendarMetric).text);
+  const chartTexts = textKeys.map((k) => {
+    const m: CalendarMetric = CALENDAR_METRICS[k];
+    return { key: k, label: m.label, emoji: m.emoji, values: dates.map((date) => m.text?.(byDate.get(date)) ?? null) };
+  });
+  const chartSeries = numericKeys.map((k, i) => {
     const m: CalendarMetric = CALENDAR_METRICS[k];
     return {
       key: k,
@@ -507,6 +486,7 @@ function BilanCalendar({
         <CriteriaLineChart
           dates={dates}
           series={chartSeries}
+          texts={chartTexts}
           openDate={openDay}
           onOpen={(d) => setOpenDay(openDay === d ? null : d)}
         />
@@ -548,7 +528,9 @@ function BilanCalendar({
                             <span aria-hidden="true">{m.emoji}</span>
                             <span className="bilan-pill-abbr">{m.abbr}</span>
                           </span>
-                          {v === null ? (
+                          {m.text && v !== null ? (
+                            <span className="bilan-pill-text">{m.text(day)}</span>
+                          ) : v === null ? (
                             <span className="bilan-pill-value">·</span>
                           ) : (
                             <span className="bilan-pill-value">
@@ -638,17 +620,20 @@ function BilanCalendar({
 // ---------------------------------------------------------------- STAT
 
 const STAT_OPTIONS = [
-  { value: 'proteines', label: 'Protéines' },
-  { value: 'glucides', label: 'Glucides' },
-  { value: 'lipides', label: 'Lipides' },
-  { value: 'entrainements', label: 'Entraînements' },
-  { value: 'activite', label: 'Activités pratiquées' },
-  { value: 'calories', label: 'Calories' },
-  { value: 'depense', label: 'Kcal dépensées' },
-  { value: 'minutes', label: 'Temps d’activité' },
-  { value: 'omegas', label: 'Oméga 3·6·9' },
-  { value: 'regularite', label: 'Jours actifs' },
-  { value: 'regles', label: 'Règles' },
+  { value: 'proteines', label: 'Protéines', emoji: '🥩', group: '🍽️ Alimentation' },
+  { value: 'glucides', label: 'Glucides', emoji: '🍞', group: '🍽️ Alimentation' },
+  { value: 'lipides', label: 'Lipides', emoji: '🥑', group: '🍽️ Alimentation' },
+  { value: 'calories', label: 'Calories', emoji: '🍽️', group: '🍽️ Alimentation' },
+  { value: 'fibres', label: 'Fibres', emoji: '🌾', group: '🍽️ Alimentation' },
+  { value: 'sucres', label: 'Sucres', emoji: '🍬', group: '🍽️ Alimentation' },
+  { value: 'satures', label: 'Graisses saturées', emoji: '🧈', group: '🍽️ Alimentation' },
+  { value: 'omegas', label: 'Oméga 3·6·9', emoji: '🐟', group: '🍽️ Alimentation' },
+  { value: 'entrainements', label: 'Entraînements', emoji: '🏋️', group: '🏃 Activité' },
+  { value: 'activite', label: 'Activités pratiquées', emoji: '🏃', group: '🏃 Activité' },
+  { value: 'depense', label: 'Kcal dépensées', emoji: '🔥', group: '🏃 Activité' },
+  { value: 'minutes', label: 'Temps d’activité', emoji: '⏱️', group: '🏃 Activité' },
+  { value: 'regularite', label: 'Jours actifs', emoji: '📅', group: '🏃 Activité' },
+  { value: 'regles', label: 'Règles', emoji: '🩸', group: '🌙 Cycle' },
 ] as const;
 type StatKey = (typeof STAT_OPTIONS)[number]['value'];
 const STAT_KEYS = STAT_OPTIONS.map((o) => o.value);
@@ -712,10 +697,11 @@ function StatsView({
   start: string;
   count: number;
 }) {
-  const [selected, toggle] = useStoredSelection<StatKey>(
-    'kaly-bilan-stats',
-    ['proteines', 'glucides', 'lipides', 'entrainements', 'activite'],
+  const fav = useFavorites<StatKey>(
+    'kaly-bilan-stats-favoris',
     STAT_KEYS,
+    ['proteines', 'glucides', 'lipides', 'entrainements', 'activite'],
+    ['proteines', 'glucides', 'lipides', 'entrainements', 'activite'],
   );
   const [curve, setCurve] = useState<CurveKey>('proteines');
 
@@ -740,25 +726,22 @@ function StatsView({
     };
   }, [days, targets]);
 
-  const on = (k: StatKey) => selected.includes(k);
+  const on = (k: StatKey) => fav.active.includes(k);
   const curveDef = CURVES[curve];
   const byDate = new Map(days.map((d) => [d.date, d]));
 
   return (
     <>
-      <div className="bilan-chips" role="group" aria-label="Statistiques affichées">
-        {STAT_OPTIONS.map((o) => (
-          <button
-            key={o.value}
-            type="button"
-            aria-pressed={on(o.value)}
-            className={`tag-chip${on(o.value) ? ' selected' : ''}`}
-            onClick={() => toggle(o.value)}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
+      <FavoritesBar
+        options={STAT_OPTIONS.map((o) => ({ key: o.value, label: o.label, emoji: o.emoji, group: o.group }))}
+        favorites={fav.favorites}
+        active={fav.active}
+        onToggle={(k) => fav.toggle(k as StatKey)}
+        onRemove={(k) => fav.remove(k as StatKey)}
+        onAdd={(k) => fav.add(k as StatKey)}
+        noun="statistique"
+        feminine
+      />
 
       <div className="bilan-stat-grid">
         {on('proteines') && (
@@ -768,6 +751,15 @@ function StatsView({
           <MacroStat label="Glucides" values={s.food.map((d) => d.carbs_g)} target={targets?.carbs_g} />
         )}
         {on('lipides') && <MacroStat label="Lipides" values={s.food.map((d) => d.fat_g)} target={targets?.fat_g} />}
+        {on('fibres') && <MacroStat label="Fibres" values={s.food.map((d) => d.fiber_g)} target={FIBER_TARGET_G} />}
+        {on('sucres') && <MacroStat label="Sucres" values={s.food.map((d) => d.sugar_g)} />}
+        {on('satures') && (
+          <MacroStat
+            label="Graisses saturées"
+            values={s.food.map((d) => d.fat_saturated_g)}
+            target={targets?.fat_saturated_g}
+          />
+        )}
         {on('entrainements') && (
           <div className="bilan-stat-card">
             <span className="bilan-stat-label">Entraînements</span>
